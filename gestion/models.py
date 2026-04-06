@@ -39,3 +39,26 @@ class Cita(models.Model):
 
     def __str__(self):
         return f"{self.paciente.nombre} - {self.fecha}"
+
+
+class DienteEstado(models.Model):
+        paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='odontograma')
+        diente = models.IntegerField()  # Usaremos los números FDI (11-18, 21-28, etc.)
+
+        ESTADOS = [
+            ('Sano', 'Sano'),
+            ('Caries', 'Caries (Rojo)'),
+            ('Resina', 'Resina/Empaste (Azul)'),
+            ('Extraccion', 'Para Extracción (Naranja)'),
+            ('Ausente', 'Ausente (Negro)'),
+            ('Corona', 'Corona (Amarillo)')
+        ]
+        estado = models.CharField(max_length=20, choices=ESTADOS, default='Sano')
+        notas = models.CharField(max_length=100, blank=True, null=True, help_text="Ej: Cara oclusal, dolor agudo...")
+
+        class Meta:
+            # Esto evita que guardemos dos veces el estado del mismo diente para el mismo paciente
+            unique_together = ('paciente', 'diente')
+
+        def __str__(self):
+            return f"Diente {self.diente} - {self.estado}"

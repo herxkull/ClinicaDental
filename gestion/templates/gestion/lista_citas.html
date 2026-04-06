@@ -1,0 +1,45 @@
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Agenda de Citas</h2>
+    <a href="{% url 'nueva_cita' %}" class="btn btn-success">+ Agendar Cita</a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Paciente</th>
+                    <th>Tratamiento</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cita in citas %}
+                <tr>
+                    <td>{{ cita.fecha }}</td>
+                    <td>{{ cita.hora }}</td>
+                    <td>{{ cita.paciente.nombre }}</td>
+                    <td>{{ cita.tratamiento.nombre }}</td>
+                    <td>
+                        {% if cita.completada %}
+                        <span class="badge bg-success">Completada</span>
+                        {% else %}
+                        <span class="badge bg-primary">Pendiente</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center p-4">No hay citas agendadas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

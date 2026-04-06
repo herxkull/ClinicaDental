@@ -1,0 +1,154 @@
+{% extends 'gestion/base.html' %}
+{% load mis_filtros %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Expediente: {{ paciente.nombre }}</h1>
+        <a href="{% url 'editar_paciente' paciente.pk %}" class="btn btn-warning text-dark">✏️ Editar Datos</a>
+        <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary text-white">Volver al listado</a>
+    </div>
+
+    <div class="row">
+        <!-- Columna de Información Médica -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white">Datos Médicos</div>
+                <div class="card-body">
+                    <p><strong>Cédula:</strong> {{ paciente.cedula }}</p>
+                    <p><strong>Teléfono:</strong> {{ paciente.telefono }}</p>
+                    <hr>
+                    <h6 class="text-danger">Alertas:</h6>
+                    <ul class="list-unstyled">
+                        <li>Diabetes: {% if paciente.diabetes %} ✅ Sí {% else %} ❌ No {% endif %}</li>
+                        <li>Hipertensión: {% if paciente.hipertension %} ✅ Sí {% else %} ❌ No {% endif %}</li>
+                    </ul>
+                    <p><strong>Alergias:</strong><br> 
+                        <span class="text-muted">{{ paciente.alergias|default:"Ninguna registrada" }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    <!-- SECCIÓN ODONTOGRAMA -->
+<div class="card shadow-sm border-0 mb-4 mt-4">
+    <div class="card-header bg-dark text-white">🦷 Odontograma Básico</div>
+    <div class="card-body">
+
+        <!-- Cuadrícula Visual FDI -->
+        <div class="text-center mb-4">
+            <style>
+                .diente {
+                    display: inline-block; width: 35px; height: 35px;
+                    line-height: 35px; border: 1px solid #ccc;
+                    border-radius: 5px; margin: 2px; font-weight: bold;
+                    background-color: #f8f9fa; /* Color por defecto: Sano */
+                }
+                .diente-Caries { background-color: #dc3545; color: white; border-color: darkred; } /* Rojo */
+                .diente-Resina { background-color: #0d6efd; color: white; border-color: darkblue; } /* Azul */
+                .diente-Extraccion { background-color: #fd7e14; color: white; border-color: darkorange; } /* Naranja */
+                .diente-Ausente { background-color: #212529; color: white; border-color: black; } /* Negro */
+                .diente-Corona { background-color: #ffc107; color: black; border-color: goldenrod; } /* Amarillo */
+                .cuadrante { padding: 10px; border: 1px solid #dee2e6; }
+            </style>
+
+            <!-- Superior -->
+            <div class="d-flex justify-content-center mb-1">
+                <div class="cuadrante border-end-0">
+                    {% for i in "18 17 16 15 14 13 12 11"|split:" " %}
+                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
+                    {% endfor %}
+                </div>
+                <div class="cuadrante">
+                    {% for i in "21 22 23 24 25 26 27 28"|split:" " %}
+                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Inferior -->
+            <div class="d-flex justify-content-center">
+                <div class="cuadrante border-end-0 border-top-0">
+                    {% for i in "48 47 46 45 44 43 42 41"|split:" " %}
+                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
+                    {% endfor %}
+                </div>
+                <div class="cuadrante border-top-0">
+                    {% for i in "31 32 33 34 35 36 37 38"|split:" " %}
+                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario para actualizar dientes -->
+        <hr>
+        <form method="POST" class="row g-3 align-items-center bg-light p-3 rounded">
+            {% csrf_token %}
+            <div class="col-auto"><strong>Actualizar Pieza:</strong></div>
+            <div class="col-auto">
+                {{ form_diente.diente }}
+            </div>
+            <div class="col-auto">
+                {{ form_diente.estado }}
+            </div>
+            <div class="col-md-4">
+                {{ form_diente.notas }}
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Guardar Diente</button>
+            </div>
+        </form>
+
+        <!-- Lista de notas de los dientes -->
+        {% if dientes_detalle %}
+        <div class="mt-3">
+            <h6>📝 Notas de Piezas Dentales:</h6>
+            <ul class="list-group list-group-flush text-sm">
+                {% for d in dientes_detalle %}
+                    {% if d.notas and d.estado != 'Sano' %}
+                    <li class="list-group-item py-1 text-muted"><strong>Pieza {{ d.diente }}:</strong> {{ d.estado }} - {{ d.notas }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+        <!-- Columna de Historial de Citas -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    Historial de Consultas
+                    <a href="{% url 'nueva_cita' %}" class="btn btn-sm btn-light">+ Nueva Cita</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tratamiento</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cita in citas %}
+                            <tr>
+                                <td>{{ cita.fecha }}</td>
+                                <td>{{ cita.tratamiento.nombre }}</td>
+                                <td>{{ cita.observaciones_doctor|truncatechars:50 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center p-4 text-muted">Este paciente aún no tiene citas registradas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

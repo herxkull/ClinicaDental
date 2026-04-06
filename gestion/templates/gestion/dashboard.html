@@ -1,24 +1,93 @@
 {% extends 'gestion/base.html' %}
 
-{% block title %}Dashboard - Clínica{% endblock %}
+{% block title %}Dashboard - Hersan Dental{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Resumen General</h1>
-    <a href="{% url 'nuevo_paciente' %}" class="btn btn-primary">+ Nuevo Paciente</a>
+    <h1>Panel de Control</h1>
+    <a href="{% url 'nueva_cita' %}" class="btn btn-primary">+ Agendar Cita</a>
 </div>
 
-<div class="row text-center">
+<!-- Tarjetas de Resumen -->
+<div class="row text-center mb-4">
     <div class="col-md-4">
-        <div class="card shadow-sm p-3 border-0">
+        <div class="card shadow-sm p-3 border-0 bg-white">
             <h2 class="text-primary">{{ total_pacientes }}</h2>
-            <p class="mb-0">Pacientes Registrados</p>
+            <p class="mb-0 text-muted">Pacientes Totales</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm p-3 border-0 bg-info text-white">
+            <h2 class="mb-0">{{ citas_hoy }}</h2>
+            <p class="mb-0">Citas para Hoy</p>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card shadow-sm p-3 border-0 bg-success text-white">
-            <h2 class="mb-0">{{ citas_hoy }}</h2>
-            <p class="mb-0">Citas para Hoy</p>
+            <h2 class="mb-0">${{ ingresos_esperados|floatformat:2 }}</h2>
+            <p class="mb-0">Ingresos Esperados Hoy</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Citas del Día -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white">
+                🦷 Agenda de Hoy
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Hora</th>
+                            <th>Paciente</th>
+                            <th>Tratamiento</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cita in citas_hoy_lista %}
+                        <tr>
+                            <td><strong>{{ cita.hora }}</strong></td>
+                            <td><a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-decoration-none fw-bold">{{ cita.paciente.nombre }}</a></td>
+                            <td>{{ cita.tratamiento.nombre }}</td>
+                            <td>
+                                <a href="{% url 'completar_cita' cita.pk %}"
+                                   class="btn btn-sm {% if cita.completada %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                                    {% if cita.completada %}✅ Lista{% else %}⏱️ Pendiente{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center p-4 text-muted">¡Día libre! No hay citas programadas para hoy.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos Pacientes Registrados -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+                Nuevos Pacientes
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for paciente in ultimos_pacientes %}
+                <li class="list-group-item">
+                    <a href="{% url 'detalle_paciente' paciente.pk %}" class="text-decoration-none">
+                        {{ paciente.nombre }}
+                    </a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No hay pacientes.</li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 </div>

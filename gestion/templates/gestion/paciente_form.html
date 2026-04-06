@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 800px;">
-    <h3>Registrar Nuevo Paciente</h3>
+    <h3>{% if editando %}Actualizar Datos de {{ form.instance.nombre }}{% else %}Registrar Nuevo Paciente{% endif %}</h3>
     <hr>
     <form method="POST">
         {% csrf_token %}
