@@ -30,6 +30,75 @@
             </div>
         </div>
 
+    <!-- ESTADO DE CUENTA FINANCIERO -->
+<div class="card shadow-sm border-0 mb-4 mt-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        Estado de Cuenta
+        <a href="{% url 'registrar_pago' paciente.pk %}" class="btn btn-sm btn-light text-success">💰 Registrar Abono</a>
+    </div>
+    <div class="card-body">
+        <div class="row text-center mb-3">
+            <div class="col-4">
+                <p class="mb-0 text-muted">Total Cargos</p>
+                <h5>${{ total_tratamientos|floatformat:2 }}</h5>
+            </div>
+            <div class="col-4">
+                <p class="mb-0 text-muted">Total Pagado</p>
+                <h5 class="text-success">${{ total_pagos|floatformat:2 }}</h5>
+            </div>
+            <div class="col-4 border-start">
+                <p class="mb-0 text-muted fw-bold">Saldo Pendiente</p>
+                <h4 class="{% if saldo_pendiente > 0 %}text-danger{% else %}text-primary{% endif %}">
+                    ${{ saldo_pendiente|floatformat:2 }}
+                </h4>
+            </div>
+        </div>
+
+        <!-- Historial de Pagos -->
+        {% if pagos %}
+        <hr>
+        <p class="fw-bold mb-2">Últimos Abonos:</p>
+        <ul class="list-group list-group-flush small">
+            {% for pago in pagos %}
+            <li class="list-group-item d-flex justify-content-between px-0">
+                <span>{{ pago.fecha|date:"d M Y" }} - {{ pago.notas }}</span>
+                <span class="text-success fw-bold">+ ${{ pago.monto|floatformat:2 }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+
+    <!-- GALERÍA DE ARCHIVOS Y RADIOGRAFÍAS -->
+<div class="card shadow-sm border-0 mb-4 mt-4">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        📷 Archivos y Radiografías
+        <a href="{% url 'subir_archivo' paciente.pk %}" class="btn btn-sm btn-light text-dark">+ Subir Archivo</a>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for archivo in paciente.archivos.all %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-light shadow-sm">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">{{ archivo.titulo }}</h6>
+                        <p class="text-muted small">{{ archivo.fecha_subida|date:"d M Y" }}</p>
+                        <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
+                            👁️ Ver Archivo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted p-3">
+                No hay radiografías ni archivos guardados para este paciente.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
     <!-- SECCIÓN ODONTOGRAMA -->
 <div class="card shadow-sm border-0 mb-4 mt-4">
     <div class="card-header bg-dark text-white">🦷 Odontograma Básico</div>

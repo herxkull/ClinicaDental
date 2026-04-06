@@ -1,0 +1,27 @@
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 500px;">
+    <h3>Registrar Pago</h3>
+    <p class="text-muted">Abono a la cuenta de: <strong>{{ paciente.nombre }}</strong></p>
+    <hr>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label fw-bold">Monto del Abono ($)</label>
+            <div class="input-group">
+                <span class="input-group-text bg-success text-white">$</span>
+                {{ form.monto }}
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Método de Pago / Notas</label>
+            {{ form.notas }}
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success w-100 mb-2">Registrar Ingreso</button>
+            <a href="{% url 'detalle_paciente' paciente.pk %}" class="btn btn-light w-100">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

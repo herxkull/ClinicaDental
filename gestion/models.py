@@ -62,3 +62,23 @@ class DienteEstado(models.Model):
 
         def __str__(self):
             return f"Diente {self.diente} - {self.estado}"
+
+class Pago(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='pagos')
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True) # Guarda la fecha y hora automáticamente
+    notas = models.CharField(max_length=200, blank=True, null=True, help_text="Ej. Efectivo, Transferencia, Tarjeta...")
+
+    def __str__(self):
+        return f"{self.paciente.nombre} - ${self.monto} ({self.fecha.strftime('%d/%m/%Y')})"
+
+
+
+class ArchivoPaciente(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='archivos')
+    titulo = models.CharField(max_length=100, help_text="Ej. Radiografía Panorámica, Examen de Sangre...")
+    archivo = models.FileField(upload_to='pacientes_archivos/')
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.titulo} - {self.paciente.nombre}"

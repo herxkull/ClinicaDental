@@ -1,0 +1,23 @@
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="card shadow-sm border-0 p-4 mx-auto" style="max-width: 500px;">
+    <h3>Subir Archivo / Radiografía</h3>
+    <p class="text-muted">Paciente: <strong>{{ paciente.nombre }}</strong></p>
+    <hr>
+    <!-- EL ENCTYPE ES OBLIGATORIO PARA SUBIR ARCHIVOS -->
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label fw-bold">Título o Descripción</label>
+            {{ form.titulo }}
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-bold">Seleccionar Archivo</label>
+            {{ form.archivo }}
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-2">💾 Guardar Archivo</button>
+        <a href="{% url 'detalle_paciente' paciente.pk %}" class="btn btn-light w-100">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

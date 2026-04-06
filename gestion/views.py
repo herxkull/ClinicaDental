@@ -2,13 +2,13 @@ from django.shortcuts import render, get_object_or_404
 from .models import Paciente, Cita
 from datetime import date
 from django.shortcuts import redirect
-from .forms import PacienteForm
-from .forms import CitaForm
-from .forms import DienteEstadoForm
-from .models import DienteEstado
-from django.db.models import Sum
-from django.db.models import Q
+from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm
+from django.db.models import Sum, Q
+from .models import Tratamiento, Pago, ArchivoPaciente
+from django.contrib.auth.decorators import login_required
 
+
+@login_required
 def dashboard(request):
     hoy = date.today()
 
@@ -45,6 +45,7 @@ def completar_cita(request, pk):
     # Redirige a la página anterior (así funciona desde el dashboard o desde la lista de citas)
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 # Vista para listar pacientes
+@login_required
 def lista_pacientes(request):
     # Capturamos lo que el usuario escriba en la barra de búsqueda
     query = request.GET.get('q')
@@ -109,34 +110,100 @@ def detalle_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
 
-    # Procesar el formulario de actualización de dientes
+    # --- LÓGICA DEL ODONTOGRAMA (Mantén tu código anterior del request.POST aquí) ---
     if request.method == 'POST':
         form_diente = DienteEstadoForm(request.POST)
         if form_diente.is_valid():
             num_diente = form_diente.cleaned_data['diente']
-            # update_or_create busca si el diente ya tiene registro, si lo tiene lo actualiza, si no, lo crea.
             DienteEstado.objects.update_or_create(
-                paciente=paciente,
-                diente=num_diente,
-                defaults={
-                    'estado': form_diente.cleaned_data['estado'],
-                    'notas': form_diente.cleaned_data['notas']
-                }
+                paciente=paciente, diente=num_diente,
+                defaults={'estado': form_diente.cleaned_data['estado'], 'notas': form_diente.cleaned_data['notas']}
             )
             return redirect('detalle_paciente', pk=paciente.pk)
     else:
         form_diente = DienteEstadoForm()
 
-    # Traer todos los dientes registrados para colorear el odontograma
     dientes_registrados = paciente.odontograma.all()
-    # Convertimos los datos en un diccionario {11: 'Caries', 12: 'Sano'} para usarlo fácil en el HTML
     diccionario_dientes = {d.diente: d.estado for d in dientes_registrados}
+    # ----------------------------------------------------------------------------------
+
+    # --- NUEVA LÓGICA FINANCIERA ---
+    # Sumamos el costo de todos los tratamientos de sus citas
+    total_tratamientos = citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    # Traemos todos sus pagos y los sumamos
+    pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
+    total_pagos = pagos.aggregate(total=Sum('monto'))['total'] or 0
+    # Calculamos cuánto debe
+    saldo_pendiente = total_tratamientos - total_pagos
 
     return render(request, 'gestion/detalle_paciente.html', {
         'paciente': paciente,
         'citas': citas,
         'form_diente': form_diente,
         'estados_dientes': diccionario_dientes,
-        'dientes_detalle': dientes_registrados
+        'dientes_detalle': dientes_registrados,
+        # Pasamos las nuevas variables al HTML
+        'total_tratamientos': total_tratamientos,
+        'total_pagos': total_pagos,
+        'saldo_pendiente': saldo_pendiente,
+        'pagos': pagos
     })
+
+def lista_tratamientos(request):
+    tratamientos = Tratamiento.objects.all().order_by('nombre')
+    return render(request, 'gestion/lista_tratamientos.html', {'tratamientos': tratamientos})
+
+def gestionar_tratamiento(request, pk=None):
+    # Si recibimos un 'pk' (ID), buscamos el tratamiento para editarlo. Si no, creamos uno en blanco.
+    if pk:
+        tratamiento = get_object_or_404(Tratamiento, pk=pk)
+        titulo = f"Editar Tratamiento: {tratamiento.nombre}"
+    else:
+        tratamiento = None
+        titulo = "Nuevo Tratamiento"
+
+    if request.method == "POST":
+        form = TratamientoForm(request.POST, instance=tratamiento)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_tratamientos')
+    else:
+        form = TratamientoForm(instance=tratamiento)
+
+    return render(request, 'gestion/tratamiento_form.html', {'form': form, 'titulo': titulo})
+
+
+def registrar_pago(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
+    if request.method == "POST":
+        form = PagoForm(request.POST)
+        if form.is_valid():
+            # No guardamos directamente porque nos falta asignarle el paciente
+            pago = form.save(commit=False)
+            pago.paciente = paciente
+            pago.save()
+            return redirect('detalle_paciente', pk=paciente.pk)
+    else:
+        form = PagoForm()
+
+    return render(request, 'gestion/pago_form.html', {'form': form, 'paciente': paciente})
+
+
+@login_required
+def subir_archivo(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
+    if request.method == "POST":
+        # ¡IMPORTANTE! request.FILES es necesario para procesar archivos
+        form = ArchivoPacienteForm(request.POST, request.FILES)
+        if form.is_valid():
+            archivo = form.save(commit=False)
+            archivo.paciente = paciente
+            archivo.save()
+            return redirect('detalle_paciente', pk=paciente.pk)
+    else:
+        form = ArchivoPacienteForm()
+
+    return render(request, 'gestion/archivo_form.html', {'form': form, 'paciente': paciente})
 # Create your views here.
