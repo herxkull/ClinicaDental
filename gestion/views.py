@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from .models import Paciente, Cita
 from datetime import date
-
+from django.shortcuts import redirect
+from .forms import PacienteForm
 
 def dashboard(request):
     # Contamos los datos de la base de datos
@@ -18,6 +19,20 @@ def dashboard(request):
     return render(request, 'gestion/dashboard.html', context)
 
 
-from django.shortcuts import render
+# Vista para listar pacientes
+def lista_pacientes(request):
+    pacientes = Paciente.objects.all()
+    return render(request, 'gestion/lista_pacientes.html', {'pacientes': pacientes})
+
+# Vista para registrar paciente
+def nuevo_paciente(request):
+    if request.method == "POST":
+        form = PacienteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_pacientes')
+    else:
+        form = PacienteForm()
+    return render(request, 'gestion/paciente_form.html', {'form': form})
 
 # Create your views here.
