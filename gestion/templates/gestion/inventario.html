@@ -1,43 +1,131 @@
-<div class="container mt-4">
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Encabezado con Botón de Agregar -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📦 Inventario de Materiales</h2>
-        <a href="#" class="btn btn-primary">+ Nuevo Producto</a>
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">📦 Inventario de Suministros</h1>
+            <p class="text-muted">Gestión de materiales y stock de Hersan Dental</p>
+        </div>
+        <a href="/admin/gestion/producto/add/" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Agregar Nuevo Producto
+        </a>
     </div>
 
-    <!-- Sección de Alertas -->
+    <!-- Sección de Alertas Críticas -->
     {% if alertas %}
-    <div class="alert alert-warning shadow-sm">
-        <i class="fas fa-exclamation-triangle"></i>
-        Hay <strong>{{ alertas|length }}</strong> productos por debajo del stock mínimo.
+    <div class="alert alert-danger shadow-sm border-left-danger" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <strong class="d-block">¡Atención! Stock Crítico detectado</strong>
+                Hay {{ alertas|length }} productos por debajo del límite mínimo. Es necesario reabastecer pronto.
+            </div>
+        </div>
     </div>
     {% endif %}
 
-    <div class="card shadow">
-        <div class="card-body">
-            <table class="table table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Material</th>
-                        <th>Cantidad</th>
-                        <th>Mínimo</th>
-                        <th>Precio Compra</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for producto in productos %}
-                    <tr class="{% if producto.necesita_reabastecimiento %}table-danger{% endif %}">
-                        <td>{{ producto.nombre }}</td>
-                        <td><strong>{{ producto.cantidad_actual }}</strong></td>
-                        <td>{{ producto.stock_minimo }}</td>
-                        <td>${{ producto.precio_compra }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-info">Ajustar Stock</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Tarjetas de Resumen Rápido -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total de Productos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ productos|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Inventario -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-dark text-white">
+            <h6 class="m-0 font-weight-bold">Listado de Materiales</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Producto</th>
+                            <th class="text-center">Stock Actual</th>
+                            <th class="text-center">Mínimo</th>
+                            <th class="text-center">Costo Unitario</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end pe-4">Acciones Rápidas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr {% if producto.necesita_reabastecimiento %}class="table-warning"{% endif %}>
+                            <td class="ps-4">
+                                <span class="fw-bold text-gray-800">{{ producto.nombre }}</span>
+                                <br>
+                                <small class="text-muted">{{ producto.descripcion|default:"Sin descripción" }}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if producto.necesita_reabastecimiento %}bg-danger{% else %}bg-secondary{% endif %} fs-6">
+                                    {{ producto.cantidad_actual }}
+                                </span>
+                            </td>
+                            <td class="text-center text-muted">{{ producto.stock_minimo }}</td>
+                            <td class="text-center">${{ producto.precio_compra }}</td>
+                            <td class="text-center">
+                                {% if producto.necesita_reabastecimiento %}
+                                    <span class="text-danger fw-bold small"><i class="fas fa-arrow-down"></i> Reordenar</span>
+                                {% else %}
+                                    <span class="text-success small"><i class="fas fa-check-circle"></i> Óptimo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm" role="group">
+                                    <!-- Botón Disminuir -->
+                                    <a href="{% url 'disminuir_stock' producto.pk %}" class="btn btn-sm btn-white border border-end-0">
+                                        <i class="fas fa-minus text-danger"></i>
+                                    </a>
+                                    <!-- Indicador Visual -->
+                                    <button class="btn btn-sm btn-light disabled fw-bold border-top border-bottom px-3">
+                                        {{ producto.cantidad_actual }}
+                                    </button>
+                                    <!-- Botón Aumentar -->
+                                    <a href="{% url 'aumentar_stock' producto.pk %}" class="btn btn-sm btn-white border border-start-0">
+                                        <i class="fas fa-plus text-success"></i>
+                                    </a>
+                                </div>
+                                
+                                <!-- Botón Editar (Admin) -->
+                                <a href="/admin/gestion/producto/{{ producto.pk }}/change/" class="btn btn-sm btn-outline-secondary ms-2" title="Editar detalles">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
+                                No hay productos registrados en el inventario.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    .border-left-primary { border-left: .25rem solid #4e73df!important; }
+    .border-left-danger { border-left: .25rem solid #e74a3b!important; }
+    .btn-white { background-color: #fff; }
+    .btn-white:hover { background-color: #f8f9fc; }
+</style>
+{% endblock %}

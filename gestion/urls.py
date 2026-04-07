@@ -23,4 +23,6 @@ urlpatterns = [
     path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
     path('pacientes/<int:pk>/estado-cuenta/', views.estado_cuenta_pdf, name='estado_cuenta'),
     path('inventario/', views.lista_inventario, name='inventario'),
+    path('inventario/subir/<int:pk>/', views.aumentar_stock, name='aumentar_stock'),
+    path('inventario/bajar/<int:pk>/', views.disminuir_stock, name='disminuir_stock'),
 ]

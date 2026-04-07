@@ -361,4 +361,19 @@ def lista_inventario(request):
         'productos': productos,
         'alertas': alertas
     })
+
+@login_required
+def aumentar_stock(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    producto.cantidad_actual += 1
+    producto.save()
+    return redirect('inventario')
+
+@login_required
+def disminuir_stock(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    if producto.cantidad_actual > 0:
+        producto.cantidad_actual -= 1
+        producto.save()
+    return redirect('inventario')
 # Create your views here.
