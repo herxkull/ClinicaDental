@@ -1,226 +1,201 @@
 {% extends 'gestion/base.html' %}
+{% load static %}
 
 {% block title %}Dashboard - Hersan Dental{% endblock %}
 
 {% block content %}
+<!-- TÍTULO Y ACCIÓN PRINCIPAL -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Panel de Control</h1>
-    <a href="{% url 'nueva_cita' %}" class="btn btn-primary">+ Agendar Cita</a>
+    <h1 class="h3 mb-0 text-gray-800">Panel de Control</h1>
+    <a href="{% url 'nueva_cita' %}" class="btn btn-primary shadow-sm">
+        <i class="fas fa-plus fa-sm text-white-50"></i> Agendar Cita
+    </a>
 </div>
 
-<!-- Tarjetas de Resumen -->
-<div class="row text-center mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm p-3 border-0 bg-white">
-            <h2 class="text-primary">{{ total_pacientes }}</h2>
-            <p class="mb-0 text-muted">Pacientes Totales</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm p-3 border-0 bg-info text-white">
-            <h2 class="mb-0">{{ citas_hoy }}</h2>
-            <p class="mb-0">Citas para Hoy</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm p-3 border-0 bg-success text-white">
-            <h2 class="mb-0">${{ ingresos_esperados|floatformat:2 }}</h2>
-            <p class="mb-0">Ingresos Esperados Hoy</p>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Citas del Día -->
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-dark text-white">
-                🦷 Agenda de Hoy
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Hora</th>
-                            <th>Paciente</th>
-                            <th>Tratamiento</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cita in citas_hoy_lista %}
-                        <tr>
-                            <td><strong>{{ cita.hora }}</strong></td>
-                            <td><a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-decoration-none fw-bold">{{ cita.paciente.nombre }}</a></td>
-                            <td>{{ cita.tratamiento.nombre }}</td>
-                           <td>
-                                {% if not cita.completada %}
-                                    <a href="{% url 'finalizar_cita' cita.pk %}"
-                                    class="btn btn-sm btn-outline-secondary shadow-sm">
-                                    <i class="fas fa-clock"></i> Pendiente
-                                    </a>
-                                {% else %}
-                                    <span class="btn btn-sm btn-success disabled">
-                                    <i class="fas fa-check"></i> Lista
-                                    </span>
-                                {% endif %}
-                           </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center p-4 text-muted">¡Día libre! No hay citas programadas para hoy.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+<!-- FILA DE MÉTRICAS (KPIs) - 4 TARJETAS IGUALES -->
+<div class="row mb-4">
+    <!-- Ingresos Totales -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card bg-success h-100 shadow">
+            <div class="stat-icon"><i class="fas fa-cash-register"></i></div>
+            <h6 class="text-uppercase fw-bold text-white-50 small">Ingresos Totales</h6>
+            <h2 class="fw-bold mb-0">${{ ingresos_totales|default:"0.00" }}</h2>
         </div>
     </div>
 
-    <!-- Últimos Pacientes Registrados -->
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom">
-                Nuevos Pacientes
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for paciente in ultimos_pacientes %}
-                <li class="list-group-item">
-                    <a href="{% url 'detalle_paciente' paciente.pk %}" class="text-decoration-none">
-                        {{ paciente.nombre }}
-                    </a>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted">No hay pacientes.</li>
-                {% endfor %}
-            </ul>
+    <!-- Cuentas por Cobrar -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card bg-danger h-100 shadow">
+            <div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div>
+            <h6 class="text-uppercase fw-bold text-white-50 small">Cuentas por Cobrar</h6>
+            <h2 class="fw-bold mb-0">${{ cuentas_por_cobrar|default:"0.00" }}</h2>
         </div>
     </div>
-</div>
-<div class="col-md-3">
-    <div class="card {% if alertas_inventario > 0 %}bg-warning text-dark{% else %}bg-light text-muted{% endif %} shadow h-100">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="text-uppercase mb-1 fw-bold">Stock Crítico</h6>
-                    <h2 class="mb-0">{{ alertas_inventario }}</h2>
-                </div>
-                <i class="fas fa-boxes fa-2x opacity-50"></i>
-            </div>
+
+    <!-- Total Pacientes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card bg-primary h-100 shadow">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <h6 class="text-uppercase fw-bold text-white-50 small">Total Pacientes</h6>
+            <h2 class="fw-bold mb-0">{{ total_pacientes }}</h2>
+        </div>
+    </div>
+
+    <!-- Stock Crítico -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card {% if alertas_inventario > 0 %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %} h-100 shadow">
+            <div class="stat-icon"><i class="fas fa-boxes"></i></div>
+            <h6 class="text-uppercase fw-bold {% if alertas_inventario > 0 %}text-dark-50{% else %}text-white-50{% endif %} small">Stock Crítico</h6>
+            <h2 class="fw-bold mb-0">{{ alertas_inventario }}</h2>
             {% if alertas_inventario > 0 %}
-                <small class="mt-2 d-block fw-bold">
-                    <a href="{% url 'inventario' %}" class="text-dark text-decoration-none">Ver productos agotados →</a>
-                </small>
-            {% else %}
-                <small class="mt-2 d-block">Todo en orden</small>
+                <a href="{% url 'inventario' %}" class="stretched-link" title="Ver productos agotados"></a>
             {% endif %}
         </div>
     </div>
 </div>
 
-    <!-- NUEVA FILA PARA EL GRÁFICO -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom fw-bold text-secondary">
-                📊 Tratamientos Más Solicitados (Histórico)
+<div class="row">
+    <!-- AGENDA DE HOY (COLUMNA IZQUIERDA) -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow border-0">
+            <div class="card-header bg-white py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-calendar-day me-2"></i>Agenda de Hoy</h6>
+                <span class="badge bg-primary rounded-pill">{{ citas_hoy_lista|length }} citas</span>
             </div>
-            <div class="card-body">
-                <!-- Aquí es donde Chart.js pintará el gráfico -->
-                <canvas id="graficoTratamientos" height="100"></canvas>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Hora</th>
+                                <th>Paciente</th>
+                                <th>Tratamiento</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cita in citas_hoy_lista %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-secondary">{{ cita.hora|time:"H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-decoration-none fw-bold text-dark">
+                                        {{ cita.paciente.nombre }}
+                                    </a>
+                                </td>
+                                <td><span class="text-muted">{{ cita.tratamiento.nombre }}</span></td>
+                                <td class="text-center">
+                                    {% if not cita.completada %}
+                                        <a href="{% url 'finalizar_cita' cita.pk %}" class="badge-status status-pendiente text-decoration-none">
+                                            <i class="fas fa-clock me-1"></i> Pendiente
+                                        </a>
+                                    {% else %}
+                                        <span class="badge-status status-lista">
+                                            <i class="fas fa-check-circle me-1"></i> Lista
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fas fa-mug-hot fa-3x mb-3 opacity-25"></i><br>
+                                    ¡Día libre! No hay citas programadas para hoy.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NUEVOS PACIENTES (COLUMNA DERECHA) -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-user-plus me-2"></i>Nuevos Pacientes</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for paciente in ultimos_pacientes %}
+                    <a href="{% url 'detalle_paciente' paciente.pk %}" class="list-group-item list-group-item-action border-0 py-3">
+                        <div class="d-flex w-100 align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-light rounded-circle p-2">
+                                    <i class="fas fa-user text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">{{ paciente.nombre }}</h6>
+                                <small class="text-muted">Registrado recientemente</small>
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="p-4 text-center text-muted small">No hay pacientes registrados aún.</div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <!-- Tarjeta Ingresos -->
-    <div class="col-md-4">
-        <div class="card bg-success text-white shadow">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-uppercase mb-1">Ingresos Totales</h6>
-                        <h2 class="mb-0">${{ ingresos_totales }}</h2>
-                    </div>
-                    <i class="fas fa-cash-register fa-2x opacity-50"></i>
-                </div>
+<!-- FILA DEL GRÁFICO -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card shadow border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-primary">📊 Análisis de Tratamientos (Histórico)</h6>
             </div>
-        </div>
-    </div>
-
-    <!-- Tarjeta Deudas -->
-    <div class="col-md-4">
-        <div class="card bg-danger text-white shadow">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-uppercase mb-1">Cuentas por Cobrar</h6>
-                        <h2 class="mb-0">${{ cuentas_por_cobrar }}</h2>
-                    </div>
-                    <i class="fas fa-hand-holding-usd fa-2x opacity-50"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tarjeta Pacientes -->
-    <div class="col-md-4">
-        <div class="card bg-primary text-white shadow">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-uppercase mb-1">Total Pacientes</h6>
-                        <h2 class="mb-0">{{ total_pacientes }}</h2>
-                    </div>
-                    <i class="fas fa-users fa-2x opacity-50"></i>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="graficoTratamientos"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- LIBRERÍA CHART.JS -->
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- SCRIPT PARA DIBUJAR EL GRÁFICO -->
 <script>
-    // 1. Recibimos los datos de Django (El filtro "safe" evita que Django bloquee los caracteres)
-    const etiquetas = {{ labels_grafico|safe }};
-    const datos = {{ data_grafico|safe }};
+    document.addEventListener('DOMContentLoaded', function() {
+        const etiquetas = {{ labels_grafico|safe|default:"[]" }};
+        const datos = {{ data_grafico|safe|default:"[]" }};
 
-    // 2. Seleccionamos el lienzo
-    const ctx = document.getElementById('graficoTratamientos').getContext('2d');
-
-    // 3. Creamos el gráfico
-    new Chart(ctx, {
-        type: 'bar', // Puede ser 'bar', 'line', 'pie', 'doughnut'
-        data: {
-            labels: etiquetas,
-            datasets: [{
-                label: 'Cantidad de Citas por Tratamiento',
-                data: datos,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Color azulito semi-transparente
-                borderColor: 'rgba(54, 162, 235, 1)',       // Borde azul sólido
-                borderWidth: 1,
-                borderRadius: 5 // Bordes redondeados para que se vea más moderno
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1 // Para que cuente de 1 en 1 (no medias citas)
+        if (etiquetas.length > 0) {
+            const ctx = document.getElementById('graficoTratamientos').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: etiquetas,
+                    datasets: [{
+                        label: 'Cantidad de Citas',
+                        data: datos,
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, font: { weight: 'bold' } },
+                            grid: { display: false }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
                     }
                 }
-            },
-            plugins: {
-                legend: {
-                    display: false // Ocultamos la leyenda superior para ahorrar espacio
-                }
-            }
+            });
         }
     });
 </script>
