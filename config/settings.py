@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-l(qa+)+!l_1hk$qb3nz)u*2dfh(=$@+52c$@+#pbs#xlb(nnjv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['herxkull.pythonanywhere.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -128,3 +128,5 @@ import os # Asegúrate de que esto esté aquí o al inicio del archivo
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+CSRF_TRUSTED_ORIGINS = ['https://herxull.pythonanywhere.com']
