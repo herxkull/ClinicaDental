@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-l(qa+)+!l_1hk$qb3nz)u*2dfh(=$@+52c$@+#pbs#xlb(nnjv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['herxkull.pythonanywhere.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -126,3 +126,5 @@ LOGOUT_REDIRECT_URL = 'login'
 MEDIA_URL = '/media/'
 import os # Asegúrate de que esto esté aquí o al inicio del archivo
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
