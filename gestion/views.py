@@ -2,29 +2,38 @@ from django.shortcuts import render, get_object_or_404
 from .models import Paciente, Cita
 from datetime import date
 from django.shortcuts import redirect
-from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm
-from django.db.models import Sum, Q
-from .models import Tratamiento, Pago, ArchivoPaciente
+from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
+from django.db.models import Sum, Q, Count
+from .models import Tratamiento, Pago, ArchivoPaciente, Receta
 from django.contrib.auth.decorators import login_required
-
+from django.core.paginator import Paginator
+import json
+from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
+import openpyxl
 
 @login_required
 def dashboard(request):
     hoy = date.today()
 
-    # 1. Contadores básicos
+    # --- 1. Contadores Básicos (Tu código actual) ---
     total_pacientes = Paciente.objects.count()
-
-    # 2. Citas de hoy y proyección financiera
     citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('hora')
     citas_hoy_count = citas_hoy_lista.count()
 
-    # Sumamos el 'costo_base' de los tratamientos de las citas de hoy
     ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total']
     if ingresos_esperados is None:
-        ingresos_esperados = 0  # Si no hay citas, los ingresos son 0
+        ingresos_esperados = 0
 
     ultimos_pacientes = Paciente.objects.all().order_by('-id')[:5]
+
+    # --- 2. LÓGICA PARA EL GRÁFICO ---
+    # Agrupamos las citas por tratamiento y contamos cuántas hay de cada uno
+    datos_tratamientos = Cita.objects.values('tratamiento__nombre').annotate(cantidad=Count('id')).order_by('-cantidad')
+
+    # Separamos los nombres y las cantidades en dos listas
+    labels_grafico = [item['tratamiento__nombre'] for item in datos_tratamientos]
+    data_grafico = [item['cantidad'] for item in datos_tratamientos]
 
     context = {
         'total_pacientes': total_pacientes,
@@ -32,6 +41,10 @@ def dashboard(request):
         'citas_hoy_lista': citas_hoy_lista,
         'ingresos_esperados': ingresos_esperados,
         'ultimos_pacientes': ultimos_pacientes,
+
+        # Pasamos las listas convertidas a JSON para que JavaScript las entienda
+        'labels_grafico': json.dumps(labels_grafico),
+        'data_grafico': json.dumps(data_grafico),
     }
     return render(request, 'gestion/dashboard.html', context)
 
@@ -47,21 +60,28 @@ def completar_cita(request, pk):
 # Vista para listar pacientes
 @login_required
 def lista_pacientes(request):
-    # Capturamos lo que el usuario escriba en la barra de búsqueda
     query = request.GET.get('q')
 
+    # 1. Obtenemos la lista completa (con o sin búsqueda)
     if query:
-        # Buscamos si el texto coincide con el nombre O con la cédula
-        pacientes = Paciente.objects.filter(
+        pacientes_lista = Paciente.objects.filter(
             Q(nombre__icontains=query) | Q(cedula__icontains=query)
         ).order_by('nombre')
     else:
-        # Si no hay búsqueda, mostramos todos
-        pacientes = Paciente.objects.all().order_by('nombre')
+        pacientes_lista = Paciente.objects.all().order_by('nombre')
+
+    # 2. Configuramos el Paginador (ej. 10 pacientes por página)
+    paginator = Paginator(pacientes_lista, 10)
+
+    # 3. Obtenemos el número de página actual de la URL (ej. ?page=2)
+    page_number = request.GET.get('page')
+
+    # 4. Le pedimos al paginador que nos dé solo los pacientes de esa página
+    pacientes = paginator.get_page(page_number)
 
     return render(request, 'gestion/lista_pacientes.html', {
         'pacientes': pacientes,
-        'query': query  # Mandamos el texto de vuelta para que no se borre de la barra
+        'query': query
     })
 # Vista para registrar paciente
 def nuevo_paciente(request):
@@ -206,4 +226,87 @@ def subir_archivo(request, pk):
         form = ArchivoPacienteForm()
 
     return render(request, 'gestion/archivo_form.html', {'form': form, 'paciente': paciente})
+
+
+@login_required
+def calendario(request):
+    return render(request, 'gestion/calendario.html')
+
+
+@login_required
+def citas_json(request):
+    # Traemos todas las citas
+    citas = Cita.objects.all()
+    eventos = []
+
+    for cita in citas:
+        # FullCalendar necesita un formato ISO (YYYY-MM-DDTHH:MM:SS)
+        # Combinamos la fecha y la hora de tu modelo
+        start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
+
+        eventos.append({
+            'title': f"{cita.paciente.nombre} ({cita.tratamiento.nombre})",
+            'start': start_dt,
+            # Al hacer clic, nos llevará directo a la ficha del paciente
+            'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
+            # Color dinámico: si está completada es verde, si no, azul
+            'backgroundColor': '#198754' if cita.completada else '#0d6efd',
+            'borderColor': '#198754' if cita.completada else '#0d6efd',
+        })
+
+    return JsonResponse(eventos, safe=False)
+
+
+@login_required
+def nueva_receta(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
+    if request.method == "POST":
+        form = RecetaForm(request.POST)
+        if form.is_valid():
+            receta = form.save(commit=False)
+            receta.paciente = paciente
+            receta.save()
+            # ¡Magia! Al guardar, redireccionamos directo a la vista de imprimir
+            return redirect('imprimir_receta', pk=receta.pk)
+    else:
+        form = RecetaForm()
+
+    return render(request, 'gestion/receta_form.html', {'form': form, 'paciente': paciente})
+
+
+@login_required
+def imprimir_receta(request, pk):
+    # Esta vista NO usará el base.html normal, será una página en blanco limpia
+    receta = get_object_or_404(Receta, pk=pk)
+    return render(request, 'gestion/receta_imprimir.html', {'receta': receta})
+
+
+@login_required
+def exportar_pacientes_excel(request):
+    # 1. Crear el libro y la hoja de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Reporte de Pacientes"
+
+    # 2. Definir los encabezados
+    headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
+    ws.append(headers)
+
+    # 3. Obtener los datos y escribirlos
+    pacientes = Paciente.objects.all()
+    for p in pacientes:
+        # Reutilizamos la lógica de cálculos que hicimos para el detalle
+        cargos = p.cita_set.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+        pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
+        saldo = cargos - pagos
+
+        ws.append([p.nombre, p.cedula, p.telefono, cargos, pagos, saldo])
+
+    # 4. Configurar la respuesta del navegador para descargar el archivo
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
+
+    wb.save(response)
+    return response
 # Create your views here.

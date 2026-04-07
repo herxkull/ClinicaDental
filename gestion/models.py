@@ -82,3 +82,12 @@ class ArchivoPaciente(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.paciente.nombre}"
+
+class Receta(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='recetas')
+    fecha = models.DateTimeField(auto_now_add=True)
+    prescripcion = models.TextField(help_text="Ej: Ibuprofeno 400mg - 1 pastilla cada 8 horas por 3 días")
+    notas_adicionales = models.TextField(blank=True, null=True, help_text="Recomendaciones (reposo, dieta, etc.)")
+
+    def __str__(self):
+        return f"Receta de {self.paciente.nombre} - {self.fecha.strftime('%d/%m/%Y')}"

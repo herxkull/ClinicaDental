@@ -16,6 +16,7 @@
             <a href="{% url 'lista_pacientes' %}" class="btn btn-outline-secondary">Limpiar</a>
         {% endif %}
     </div>
+<a href="{% url 'exportar_excel' %}" class="btn btn-outline-success">📊 Descargar Excel</a>
 </form>
 
 <div class="card shadow-sm border-0">
@@ -48,4 +49,42 @@
         </table>
     </div>
 </div>
+    <!-- CONTROLES DE PAGINACIÓN -->
+{% if pacientes.has_other_pages %}
+<nav aria-label="Navegación de pacientes" class="mt-4">
+    <ul class="pagination justify-content-center">
+
+        <!-- Botón Anterior -->
+        {% if pacientes.has_previous %}
+            <li class="page-item">
+                <!-- Mantenemos la búsqueda (?q=...) si existe, al cambiar de página -->
+                <a class="page-link" href="?page={{ pacientes.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&laquo; Anterior</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Anterior</span></li>
+        {% endif %}
+
+        <!-- Números de Página -->
+        {% for num in pacientes.paginator.page_range %}
+            {% if pacientes.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Botón Siguiente -->
+        {% if pacientes.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ pacientes.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Siguiente &raquo;</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente &raquo;</span></li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}

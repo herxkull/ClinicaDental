@@ -16,4 +16,9 @@ urlpatterns = [
     path('tratamientos/<int:pk>/editar/', views.gestionar_tratamiento, name='editar_tratamiento'),
     path('pacientes/<int:pk>/pagos/nuevo/', views.registrar_pago, name='registrar_pago'),
     path('pacientes/<int:pk>/archivos/subir/', views.subir_archivo, name='subir_archivo'),
+    path('calendario/', views.calendario, name='calendario'),
+    path('api/citas/', views.citas_json, name='citas_json'),
+    path('pacientes/<int:pk>/receta/nueva/', views.nueva_receta, name='nueva_receta'),
+    path('recetas/<int:pk>/imprimir/', views.imprimir_receta, name='imprimir_receta'),
+    path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
 ]

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Receta - {{ receta.paciente.nombre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilos específicos para que se vea bien al imprimir o guardar en PDF */
+        body { background-color: #fff; color: #000; font-family: Arial, sans-serif; }
+        .hoja-receta { max-width: 800px; margin: 0 auto; padding: 40px; border: 1px solid #ddd; }
+        @media print {
+            .hoja-receta { border: none; padding: 0; }
+            .no-print { display: none !important; }
+        }
+        .firma-linea { border-top: 1px solid #000; width: 250px; margin: 60px auto 10px auto; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <!-- Botón para volver al sistema (se oculta al imprimir) -->
+    <div class="text-center mb-3 no-print">
+        <a href="{% url 'detalle_paciente' receta.paciente.pk %}" class="btn btn-outline-secondary">← Volver al Expediente</a>
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+
+    <!-- EL MEMBRETE DE LA CLÍNICA -->
+    <div class="hoja-receta shadow-sm">
+        <div class="row border-bottom pb-3 mb-4 align-items-center">
+            <div class="col-8">
+                <h2 class="text-primary fw-bold mb-0">🦷 Hersan Dental</h2>
+                <p class="mb-0 text-muted">Odontología Integral y Especializada</p>
+            </div>
+            <div class="col-4 text-end small">
+                <p class="mb-0">Tel: +123 456 7890</p>
+                <p class="mb-0">Av. Principal #123, Ciudad</p>
+            </div>
+        </div>
+
+        <!-- DATOS DEL PACIENTE -->
+        <div class="row mb-4">
+            <div class="col-8">
+                <strong>Paciente:</strong> {{ receta.paciente.nombre }}<br>
+                <strong>Cédula:</strong> {{ receta.paciente.cedula }}
+            </div>
+            <div class="col-4 text-end">
+                <strong>Fecha:</strong> {{ receta.fecha|date:"d de F, Y" }}
+            </div>
+        </div>
+
+        <!-- CUERPO DE LA RECETA -->
+        <div class="mb-5" style="min-height: 200px;">
+            <h4 class="mb-3">Rp.</h4>
+            <!-- linebreaksbr respeta los enter/saltos de línea que puso el doctor -->
+            <p class="fs-5">{{ receta.prescripcion|linebreaksbr }}</p>
+
+            {% if receta.notas_adicionales %}
+            <div class="mt-4 pt-3 border-top border-light">
+                <strong>Indicaciones Adicionales:</strong>
+                <p>{{ receta.notas_adicionales|linebreaksbr }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- FIRMA -->
+        <div class="text-center mt-5 pt-5">
+            <div class="firma-linea"></div>
+            <p class="mb-0 fw-bold">Firma y Sello del Odontólogo</p>
+        </div>
+    </div>
+</div>
+
+<!-- ESTE SCRIPT ABRE AUTOMÁTICAMENTE LA VENTANA DE IMPRESIÓN/PDF -->
+<script>
+    window.onload = function() {
+        setTimeout(function() {
+            window.print();
+        }, 500); // Espera medio segundo a que carguen los estilos y abre la ventana
+    }
+</script>
+
+</body>
+</html>

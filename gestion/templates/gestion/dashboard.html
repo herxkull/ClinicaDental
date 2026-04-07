@@ -91,4 +91,64 @@
         </div>
     </div>
 </div>
+
+    <!-- NUEVA FILA PARA EL GRÁFICO -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom fw-bold text-secondary">
+                📊 Tratamientos Más Solicitados (Histórico)
+            </div>
+            <div class="card-body">
+                <!-- Aquí es donde Chart.js pintará el gráfico -->
+                <canvas id="graficoTratamientos" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LIBRERÍA CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- SCRIPT PARA DIBUJAR EL GRÁFICO -->
+<script>
+    // 1. Recibimos los datos de Django (El filtro "safe" evita que Django bloquee los caracteres)
+    const etiquetas = {{ labels_grafico|safe }};
+    const datos = {{ data_grafico|safe }};
+
+    // 2. Seleccionamos el lienzo
+    const ctx = document.getElementById('graficoTratamientos').getContext('2d');
+
+    // 3. Creamos el gráfico
+    new Chart(ctx, {
+        type: 'bar', // Puede ser 'bar', 'line', 'pie', 'doughnut'
+        data: {
+            labels: etiquetas,
+            datasets: [{
+                label: 'Cantidad de Citas por Tratamiento',
+                data: datos,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)', // Color azulito semi-transparente
+                borderColor: 'rgba(54, 162, 235, 1)',       // Borde azul sólido
+                borderWidth: 1,
+                borderRadius: 5 // Bordes redondeados para que se vea más moderno
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1 // Para que cuente de 1 en 1 (no medias citas)
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false // Ocultamos la leyenda superior para ahorrar espacio
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
