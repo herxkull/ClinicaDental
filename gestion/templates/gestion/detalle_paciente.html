@@ -82,22 +82,25 @@
     <div class="card-body">
         <div class="row">
             {% for archivo in paciente.archivos.all %}
-            <div class="col-md-4 mb-3">
-                <div class="card h-100 border-light shadow-sm">
-                    <div class="card-body text-center">
-                        <h6 class="card-title">{{ archivo.titulo }}</h6>
-                        <p class="text-muted small">{{ archivo.fecha_subida|date:"d M Y" }}</p>
-                        <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">
-                            👁️ Ver Archivo
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-12 text-center text-muted p-3">
-                No hay radiografías ni archivos guardados para este paciente.
-            </div>
-            {% endfor %}
+    <div class="card">
+        <div class="card-body">
+            <h5>{{ archivo.titulo }}</h5>
+            <p class="text-muted">Subido el: {{ archivo.fecha_subida|date:"d/m/Y" }}</p>
+
+            <!-- EL CAMBIO CRÍTICO ESTÁ AQUÍ: -->
+            <a href="{{ archivo.imagen.url }}" target="_blank" class="btn btn-sm btn-info">
+                <i class="fas fa-eye"></i> Ver archivo
+            </a>
+
+            <!-- Opción para descargar si lo prefieres -->
+            <a href="{{ archivo.imagen.url }}" download class="btn btn-sm btn-secondary">
+                <i class="fas fa-download"></i> Descargar
+            </a>
+        </div>
+    </div>
+{% empty %}
+    <p>Este paciente aún no tiene radiografías o archivos subidos.</p>
+{% endfor %}
         </div>
     </div>
 </div>

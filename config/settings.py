@@ -124,10 +124,7 @@ LOGIN_REDIRECT_URL = 'dashboard'
 # Redirigir a la pantalla de login al cerrar sesión
 LOGOUT_REDIRECT_URL = 'login'
 
-# Configuración para subir archivos e imágenes
-MEDIA_URL = '/media/'
-import os # Asegúrate de que esto esté aquí o al inicio del archivo
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
