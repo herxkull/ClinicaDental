@@ -107,6 +107,53 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <!-- Tarjeta Ingresos -->
+    <div class="col-md-4">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Ingresos Totales</h6>
+                        <h2 class="mb-0">${{ ingresos_totales }}</h2>
+                    </div>
+                    <i class="fas fa-cash-register fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta Deudas -->
+    <div class="col-md-4">
+        <div class="card bg-danger text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Cuentas por Cobrar</h6>
+                        <h2 class="mb-0">${{ cuentas_por_cobrar }}</h2>
+                    </div>
+                    <i class="fas fa-hand-holding-usd fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta Pacientes -->
+    <div class="col-md-4">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-1">Total Pacientes</h6>
+                        <h2 class="mb-0">{{ total_pacientes }}</h2>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- LIBRERÍA CHART.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 

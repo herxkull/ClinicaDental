@@ -46,6 +46,23 @@ def dashboard(request):
         'labels_grafico': json.dumps(labels_grafico),
         'data_grafico': json.dumps(data_grafico),
     }
+
+    # 1. Calcular Ingresos Totales (Suma de todos los pagos)
+    ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+
+    # 2. Calcular Cuentas por Cobrar
+    # Sumamos el costo de todos los tratamientos en las citas
+    total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    cuentas_por_cobrar = total_servicios - ingresos_totales
+
+    # 3. Contar pacientes
+    total_pacientes = Paciente.objects.count()
+
+    context = {
+        'ingresos_totales': ingresos_totales,
+        'cuentas_por_cobrar': cuentas_por_cobrar,
+        'total_pacientes': total_pacientes,
+    }
     return render(request, 'gestion/dashboard.html', context)
 
 
