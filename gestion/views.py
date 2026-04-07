@@ -12,6 +12,7 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 import openpyxl
 from django.utils import timezone
+from django.contrib import messages
 @login_required
 def dashboard(request):
     # Usamos timezone.now() para asegurar la hora local configurada
@@ -376,4 +377,28 @@ def disminuir_stock(request, pk):
         producto.cantidad_actual -= 1
         producto.save()
     return redirect('inventario')
+
+
+@login_required
+def finalizar_cita(request, pk):
+    cita = get_object_or_404(Cita, pk=pk)
+
+    if cita.estado != 'Completada':
+        # 1. Cambiar estado de la cita
+        cita.estado = 'Completada'
+        cita.save()
+
+        # 2. Descontar materiales automáticamente
+        materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
+
+        for item in materiales:
+            producto = item.producto
+            if producto.cantidad_actual >= item.cantidad_usada:
+                producto.cantidad_actual -= item.cantidad_usada
+                producto.save()
+                messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
+            else:
+                messages.warning(request, f"¡Ojo! No hay suficiente {producto.nombre} en inventario.")
+
+    return redirect('dashboard')
 # Create your views here.

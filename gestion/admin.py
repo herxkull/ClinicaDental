@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paciente, Cita, Tratamiento, Producto
+from .models import Paciente, Cita, Tratamiento, Producto, MaterialTratamiento
 
 # Configuración del panel de Pacientes
 @admin.register(Paciente)
@@ -38,3 +38,13 @@ class CitaAdmin(admin.ModelAdmin):
         list_display = ('nombre', 'cantidad_actual', 'stock_minimo', 'precio_compra', 'necesita_reabastecimiento')
         list_filter = ('nombre',)
         search_fields = ('nombre',)
+
+
+class MaterialInline(admin.TabularInline):
+    model = MaterialTratamiento
+    extra = 1
+
+@admin.register(Tratamiento)
+class TratamientoAdmin(admin.ModelAdmin):
+    inlines = [MaterialInline]
+    list_display = ('nombre', 'costo_base')

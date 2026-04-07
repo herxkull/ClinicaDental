@@ -107,3 +107,11 @@ class Producto(models.Model):
     @property
     def necesita_reabastecimiento(self):
         return self.cantidad_actual <= self.stock_minimo
+
+class MaterialTratamiento(models.Model):
+    tratamiento = models.ForeignKey('Tratamiento', on_delete=models.CASCADE, related_name='materiales')
+    producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    cantidad_usada = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.cantidad_usada} de {self.producto.nombre} para {self.tratamiento.nombre}"

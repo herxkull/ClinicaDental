@@ -53,12 +53,18 @@
                             <td><strong>{{ cita.hora }}</strong></td>
                             <td><a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-decoration-none fw-bold">{{ cita.paciente.nombre }}</a></td>
                             <td>{{ cita.tratamiento.nombre }}</td>
-                            <td>
-                                <a href="{% url 'completar_cita' cita.pk %}"
-                                   class="btn btn-sm {% if cita.completada %}btn-success{% else %}btn-outline-secondary{% endif %}">
-                                    {% if cita.completada %}✅ Lista{% else %}⏱️ Pendiente{% endif %}
-                                </a>
-                            </td>
+                           <td>
+                                {% if not cita.completada %}
+                                    <a href="{% url 'finalizar_cita' cita.pk %}"
+                                    class="btn btn-sm btn-outline-secondary shadow-sm">
+                                    <i class="fas fa-clock"></i> Pendiente
+                                    </a>
+                                {% else %}
+                                    <span class="btn btn-sm btn-success disabled">
+                                    <i class="fas fa-check"></i> Lista
+                                    </span>
+                                {% endif %}
+                           </td>
                         </tr>
                         {% empty %}
                         <tr>
