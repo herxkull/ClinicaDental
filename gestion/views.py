@@ -3,8 +3,8 @@ from .models import Paciente, Cita
 from datetime import date
 from django.shortcuts import redirect
 from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
-from django.db.models import Sum, Q, Count
-from .models import Tratamiento, Pago, ArchivoPaciente, Receta
+from django.db.models import Sum, Q, Count, F
+from .models import Tratamiento, Pago, ArchivoPaciente, Receta, Producto
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 import json
@@ -21,6 +21,7 @@ def dashboard(request):
     total_pacientes = Paciente.objects.count()
     citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('hora')
     citas_hoy_count = citas_hoy_lista.count()
+    alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
 
     # --- 2. Lógica Financiera ---
     # Ingresos esperados SOLO de hoy
@@ -55,6 +56,7 @@ def dashboard(request):
         'cuentas_por_cobrar': cuentas_por_cobrar,
         'labels_grafico': json.dumps(labels_grafico),
         'data_grafico': json.dumps(data_grafico),
+        'alertas_inventario': alertas_inventario,
     }
 
     return render(request, 'gestion/dashboard.html', context)
@@ -347,4 +349,16 @@ def estado_cuenta_pdf(request, pk):
         'fecha_emision': date.today(),
     }
     return render(request, 'gestion/estado_cuenta_imprimir.html', context)
+
+
+@login_required
+def lista_inventario(request):
+    productos = Producto.objects.all().order_by('nombre')
+    # Productos con stock bajo
+    alertas = [p for p in productos if p.necesita_reabastecimiento]
+
+    return render(request, 'gestion/inventario.html', {
+        'productos': productos,
+        'alertas': alertas
+    })
 # Create your views here.

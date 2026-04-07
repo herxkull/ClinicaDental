@@ -91,3 +91,19 @@ class Receta(models.Model):
 
     def __str__(self):
         return f"Receta de {self.paciente.nombre} - {self.fecha.strftime('%d/%m/%Y')}"
+
+
+class Producto(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    cantidad_actual = models.IntegerField(default=0)
+    stock_minimo = models.IntegerField(default=5)  # Para alertas
+    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    ultima_actualizacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.cantidad_actual})"
+
+    @property
+    def necesita_reabastecimiento(self):
+        return self.cantidad_actual <= self.stock_minimo

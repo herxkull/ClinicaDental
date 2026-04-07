@@ -22,4 +22,5 @@ urlpatterns = [
     path('recetas/<int:pk>/imprimir/', views.imprimir_receta, name='imprimir_receta'),
     path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
     path('pacientes/<int:pk>/estado-cuenta/', views.estado_cuenta_pdf, name='estado_cuenta'),
+    path('inventario/', views.lista_inventario, name='inventario'),
 ]

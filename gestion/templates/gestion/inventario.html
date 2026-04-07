@@ -1,0 +1,43 @@
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 Inventario de Materiales</h2>
+        <a href="#" class="btn btn-primary">+ Nuevo Producto</a>
+    </div>
+
+    <!-- Sección de Alertas -->
+    {% if alertas %}
+    <div class="alert alert-warning shadow-sm">
+        <i class="fas fa-exclamation-triangle"></i>
+        Hay <strong>{{ alertas|length }}</strong> productos por debajo del stock mínimo.
+    </div>
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Material</th>
+                        <th>Cantidad</th>
+                        <th>Mínimo</th>
+                        <th>Precio Compra</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr class="{% if producto.necesita_reabastecimiento %}table-danger{% endif %}">
+                        <td>{{ producto.nombre }}</td>
+                        <td><strong>{{ producto.cantidad_actual }}</strong></td>
+                        <td>{{ producto.stock_minimo }}</td>
+                        <td>${{ producto.precio_compra }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info">Ajustar Stock</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
