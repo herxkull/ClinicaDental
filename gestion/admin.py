@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paciente, Cita, Tratamiento, Producto, MaterialTratamiento
+from .models import Paciente, Cita, Tratamiento, Producto, MaterialTratamiento, ArchivoPaciente
 
 # --- Configuración del panel de Pacientes ---
 @admin.register(Paciente)
@@ -41,3 +41,8 @@ class CitaAdmin(admin.ModelAdmin):
     list_display = ('paciente', 'tratamiento', 'fecha', 'hora', 'completada')
     list_filter = ('fecha', 'completada', 'tratamiento')
     date_hierarchy = 'fecha'
+
+@admin.register(ArchivoPaciente)
+class ArchivoPacienteAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'paciente', 'fecha_subida')
+    list_filter = ('paciente',)
