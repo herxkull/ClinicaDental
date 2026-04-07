@@ -25,4 +25,5 @@ urlpatterns = [
     path('inventario/', views.lista_inventario, name='inventario'),
     path('inventario/subir/<int:pk>/', views.aumentar_stock, name='aumentar_stock'),
     path('inventario/bajar/<int:pk>/', views.disminuir_stock, name='disminuir_stock'),
+    path('citas/finalizar/<int:pk>/', views.finalizar_cita, name='finalizar_cita'),
 ]
