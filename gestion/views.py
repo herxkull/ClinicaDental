@@ -11,58 +11,52 @@ import json
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 import openpyxl
-
+from django.utils import timezone
 @login_required
 def dashboard(request):
-    hoy = date.today()
+    # Usamos timezone.now() para asegurar la hora local configurada
+    hoy = timezone.now().date()
 
-    # --- 1. Contadores Básicos (Tu código actual) ---
+    # --- 1. Datos de Citas y Pacientes ---
     total_pacientes = Paciente.objects.count()
     citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('hora')
     citas_hoy_count = citas_hoy_lista.count()
 
-    ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total']
-    if ingresos_esperados is None:
-        ingresos_esperados = 0
+    # --- 2. Lógica Financiera ---
+    # Ingresos esperados SOLO de hoy
+    ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
 
+    # Ingresos Totales Históricos
+    ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+
+    # Cuentas por Cobrar (Total de todos los servicios - Total pagado)
+    total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    cuentas_por_cobrar = total_servicios - ingresos_totales
+
+    # --- 3. Otros Datos ---
     ultimos_pacientes = Paciente.objects.all().order_by('-id')[:5]
 
-    # --- 2. LÓGICA PARA EL GRÁFICO ---
-    # Agrupamos las citas por tratamiento y contamos cuántas hay de cada uno
-    datos_tratamientos = Cita.objects.values('tratamiento__nombre').annotate(cantidad=Count('id')).order_by('-cantidad')
+    # --- 4. Lógica para el Gráfico ---
+    datos_tratamientos = Cita.objects.values('tratamiento__nombre').annotate(
+        cantidad=Count('id')
+    ).order_by('-cantidad')
 
-    # Separamos los nombres y las cantidades en dos listas
     labels_grafico = [item['tratamiento__nombre'] for item in datos_tratamientos]
     data_grafico = [item['cantidad'] for item in datos_tratamientos]
 
+    # --- 5. UN SOLO CONTEXTO (Sin sobrescribir) ---
     context = {
         'total_pacientes': total_pacientes,
         'citas_hoy': citas_hoy_count,
         'citas_hoy_lista': citas_hoy_lista,
         'ingresos_esperados': ingresos_esperados,
         'ultimos_pacientes': ultimos_pacientes,
-
-        # Pasamos las listas convertidas a JSON para que JavaScript las entienda
+        'ingresos_totales': ingresos_totales,
+        'cuentas_por_cobrar': cuentas_por_cobrar,
         'labels_grafico': json.dumps(labels_grafico),
         'data_grafico': json.dumps(data_grafico),
     }
 
-    # 1. Calcular Ingresos Totales (Suma de todos los pagos)
-    ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
-
-    # 2. Calcular Cuentas por Cobrar
-    # Sumamos el costo de todos los tratamientos en las citas
-    total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    cuentas_por_cobrar = total_servicios - ingresos_totales
-
-    # 3. Contar pacientes
-    total_pacientes = Paciente.objects.count()
-
-    context = {
-        'ingresos_totales': ingresos_totales,
-        'cuentas_por_cobrar': cuentas_por_cobrar,
-        'total_pacientes': total_pacientes,
-    }
     return render(request, 'gestion/dashboard.html', context)
 
 
