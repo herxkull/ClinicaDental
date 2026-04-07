@@ -326,4 +326,31 @@ def exportar_pacientes_excel(request):
 
     wb.save(response)
     return response
+
+
+@login_required
+def estado_cuenta_pdf(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
+    # Obtenemos todas las citas con tratamiento (Cargos)
+    cargos = Cita.objects.filter(paciente=paciente).order_by('fecha')
+
+    # Obtenemos todos los pagos (Abonos)
+    abonos = Pago.objects.filter(paciente=paciente).order_by('fecha')
+
+    # Calculamos totales
+    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    total_abonos = abonos.aggregate(total=Sum('monto'))['total'] or 0
+    saldo_pendiente = total_cargos - total_abonos
+
+    context = {
+        'paciente': paciente,
+        'cargos': cargos,
+        'abonos': abonos,
+        'total_cargos': total_cargos,
+        'total_abonos': total_abonos,
+        'saldo_pendiente': saldo_pendiente,
+        'fecha_emision': date.today(),
+    }
+    return render(request, 'gestion/estado_cuenta_imprimir.html', context)
 # Create your views here.
