@@ -4,7 +4,7 @@ from datetime import date
 from django.shortcuts import redirect
 from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
 from django.db.models import Sum, Q, Count, F
-from .models import Tratamiento, Pago, ArchivoPaciente, Receta, Producto
+from .models import Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 import json
@@ -383,12 +383,12 @@ def disminuir_stock(request, pk):
 def finalizar_cita(request, pk):
     cita = get_object_or_404(Cita, pk=pk)
 
-    if cita.estado != 'Completada':
-        # 1. Cambiar estado de la cita
-        cita.estado = 'Completada'
+    if not cita.completada:
+        # 1. Cambiar el booleano correcto
+        cita.completada = True
         cita.save()
 
-        # 2. Descontar materiales automáticamente
+        # 2. Descontar materiales (si existen)
         materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
 
         for item in materiales:
@@ -398,7 +398,7 @@ def finalizar_cita(request, pk):
                 producto.save()
                 messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
             else:
-                messages.warning(request, f"¡Ojo! No hay suficiente {producto.nombre} en inventario.")
+                messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
 
     return redirect('dashboard')
 # Create your views here.
