@@ -1,229 +1,391 @@
 {% extends 'gestion/base.html' %}
-{% load mis_filtros %}
+{% load static %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Expediente: {{ paciente.nombre }}</h1>
-        <a href="{% url 'editar_paciente' paciente.pk %}" class="btn btn-warning text-dark">✏️ Editar Datos</a>
-        <a href="{% url 'nueva_receta' paciente.pk %}" class="btn btn-sm btn-outline-info">📝 Generar Receta</a>
-        <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary text-white">Volver al listado</a>
+<style>
+ /* Odontograma */
+    .odontograma-svg {
+        width: 100%;
+        height: auto;
+        max-width: 800px;
+        display: block;
+        margin: auto;
+    }
+
+    .diente {
+        fill: white;
+        stroke: #333;
+        stroke-width: 1.5;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        transform-box: fill-box; /* Importante para que rote/escale sobre su propio centro */
+        transform-origin: center;
+    }
+
+    .diente:hover {
+        fill: #e3f2fd;
+        stroke: #0d6efd;
+        stroke-width: 2.5;
+        transform: scale(1.15); /* Efecto de aumento */
+    }
+
+/* Estados (con !important para asegurar que ganen al color base) */
+    .caries { fill: #e74c3c !important; opacity: 1 !important; }
+    .corona { fill: #f1c40f !important; opacity: 1 !important; }
+    .ausente { fill: #dee2e6 !important; opacity: 0.3 !important; }
+    .tratado { fill: #3498db !important; opacity: 1 !important; }
+
+    .diente-label {
+        font-size: 9px;
+        font-weight: bold;
+        fill: #666;
+        pointer-events: none; /* Evita que el texto interfiera con el clic en el diente */
+    }
+</style>
+
+<div class="container-fluid pb-5">
+    <!-- HEADER DE PACIENTE -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'lista_pacientes' %}">Pacientes</a></li>
+                    <li class="breadcrumb-item active">Expediente</li>
+                </ol>
+            </nav>
+            <h1 class="h2 fw-bold mb-0">{{ paciente.nombre }}</h1>
+            <p class="text-muted"><i class="fas fa-id-card me-2"></i>{{ paciente.cedula|default:"Sin Cédula" }}</p>
+        </div>
+        <div class="col-md-5 text-md-end">
+            <div class="btn-group shadow-sm">
+                <a href="{% url 'editar_paciente' paciente.pk %}" class="btn btn-white text-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
+                <a href="{% url 'nueva_receta' paciente.pk %}" class="btn btn-white text-info">
+                    <i class="fas fa-file-prescription me-1"></i> Receta
+                </a>
+                <a href="{% url 'estado_cuenta' paciente.pk %}" class="btn btn-primary">
+                    <i class="fas fa-print me-1"></i> Estado Cuenta
+                </a>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
-        <!-- Columna de Información Médica -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-dark text-white">Datos Médicos</div>
-                <div class="card-body">
-                    <p><strong>Cédula:</strong> {{ paciente.cedula }}</p>
-                    <p><strong>Teléfono:</strong> {{ paciente.telefono }}</p>
-                    <hr>
-                    <h6 class="text-danger">Alertas:</h6>
-                    <ul class="list-unstyled">
-                        <li>Diabetes: {% if paciente.diabetes %} ✅ Sí {% else %} ❌ No {% endif %}</li>
-                        <li>Hipertensión: {% if paciente.hipertension %} ✅ Sí {% else %} ❌ No {% endif %}</li>
-                    </ul>
-                    <p><strong>Alergias:</strong><br> 
-                        <span class="text-muted">{{ paciente.alergias|default:"Ninguna registrada" }}</span>
-                    </p>
+    <!-- PESTAÑAS -->
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="pacienteTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen" type="button">
+                <i class="fas fa-th-large me-2"></i>Resumen General
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="odontograma-tab" data-bs-toggle="tab" data-bs-target="#odontograma" type="button">
+                <i class="fas fa-tooth me-2"></i>Odontograma
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button">
+                <i class="fas fa-history me-2"></i>Historial Clínico
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="archivos-tab" data-bs-toggle="tab" data-bs-target="#archivos" type="button">
+                <i class="fas fa-images me-2"></i>Galería ({{ paciente.archivos.count }})
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pacienteTabContent">
+
+        <!-- SECCIÓN 1: RESUMEN -->
+        <div class="tab-pane fade show active" id="resumen" role="tabpanel">
+            <div class="row">
+                <!-- Tarjeta Info Médica -->
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold">Información de Contacto</h6></div>
+                        <div class="card-body">
+                            <div class="mb-3 d-flex">
+                                <div class="bg-light-primary p-3 rounded me-3"><i class="fas fa-phone"></i></div>
+                                <div><small class="text-muted d-block">Teléfono</small><strong>{{ paciente.telefono|default:"---" }}</strong></div>
+                            </div>
+                            <hr class="text-muted opacity-25">
+                            <h6 class="fw-bold mb-3 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Alertas Médicas</h6>
+                            <div class="mb-2">Diabetes: {% if paciente.diabetes %}<span class="badge bg-danger">SÍ</span>{% else %}<span class="badge bg-light text-dark">NO</span>{% endif %}</div>
+                            <div class="mb-3">Hipertensión: {% if paciente.hipertension %}<span class="badge bg-danger">SÍ</span>{% else %}<span class="badge bg-light text-dark">NO</span>{% endif %}</div>
+                            <small class="text-muted d-block">Alergias:</small>
+                            <p class="fw-bold text-dark">{{ paciente.alergias|default:"Ninguna registrada" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Financiera -->
+                <div class="col-md-8 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between">
+                            <h6 class="m-0 fw-bold">Resumen Financiero</h6>
+                            <a href="{% url 'registrar_pago' paciente.pk %}" class="btn btn-sm btn-success">+ Registrar Pago</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <h2 class="fw-bold">${{ total_tratamientos|default:0|floatformat:2 }}</h2>
+                                    <small class="text-muted">Total Cargos</small>
+                                </div>
+                                <div class="col-md-4 border-start">
+                                    <h2 class="fw-bold text-success">${{ total_pagos|default:0|floatformat:2 }}</h2>
+                                    <small class="text-muted">Abonado</small>
+                                </div>
+                                <div class="col-md-4 border-start">
+                                    <h2 class="fw-bold text-danger">${{ saldo_pendiente|default:0|floatformat:2 }}</h2>
+                                    <small class="text-muted">Saldo Pendiente</small>
+                                </div>
+                            </div>
+                            <hr>
+                            <h6 class="fw-bold mb-3">Últimos Pagos</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless">
+                                    {% for pago in pagos|slice:":3" %}
+                                    <tr>
+                                        <td>{{ pago.fecha|date:"d M Y" }}</td>
+                                        <td>{{ pago.notas|truncatechars:30 }}</td>
+                                        <td class="text-end text-success fw-bold">+ ${{ pago.monto|floatformat:2 }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="3" class="text-center text-muted">No hay pagos registrados</td></tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-    <!-- ESTADO DE CUENTA FINANCIERO -->
-<div class="card shadow-sm border-0 mb-4 mt-4">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-        Estado de Cuenta
-        <a href="{% url 'registrar_pago' paciente.pk %}" class="btn btn-sm btn-light text-success">💰 Registrar Abono</a> <a href="{% url 'estado_cuenta' paciente.pk %}" class="btn btn-outline-dark">
-    <i class="fas fa-file-invoice-dollar"></i> Generar Estado de Cuenta
-</a>
-    </div>
-    <div class="card-body">
-        <div class="row text-center mb-3">
-            <div class="col-4">
-                <p class="mb-0 text-muted">Total Cargos</p>
-                <h5>${{ total_tratamientos|floatformat:2 }}</h5>
-            </div>
-            <div class="col-4">
-                <p class="mb-0 text-muted">Total Pagado</p>
-                <h5 class="text-success">${{ total_pagos|floatformat:2 }}</h5>
-            </div>
-            <div class="col-4 border-start">
-                <p class="mb-0 text-muted fw-bold">Saldo Pendiente</p>
-                <h4 class="{% if saldo_pendiente > 0 %}text-danger{% else %}text-primary{% endif %}">
-                    ${{ saldo_pendiente|floatformat:2 }}
-                </h4>
-            </div>
-        </div>
-
-        <!-- Historial de Pagos -->
-        {% if pagos %}
-        <hr>
-        <p class="fw-bold mb-2">Últimos Abonos:</p>
-        <ul class="list-group list-group-flush small">
-            {% for pago in pagos %}
-            <li class="list-group-item d-flex justify-content-between px-0">
-                <span>{{ pago.fecha|date:"d M Y" }} - {{ pago.notas }}</span>
-                <span class="text-success fw-bold">+ ${{ pago.monto|floatformat:2 }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </div>
-</div>
-
-    <!-- GALERÍA DE ARCHIVOS Y RADIOGRAFÍAS -->
-<div class="card shadow-sm border-0 mb-4 mt-4">
-    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-        📷 Archivos y Radiografías
-        <a href="{% url 'subir_archivo' paciente.pk %}" class="btn btn-sm btn-light text-dark">+ Subir Archivo</a>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            {% for archivo in paciente.archivos.all %}
-    <div class="card">
-        <div class="card-body">
-            <h5>{{ archivo.titulo }}</h5>
-            <p class="text-muted">Subido el: {{ archivo.fecha_subida|date:"d/m/Y" }}</p>
-
-            <!-- EL CAMBIO CRÍTICO ESTÁ AQUÍ: -->
-            <a href="{{ archivo.imagen.url }}" target="_blank" class="btn btn-sm btn-info">
-                <i class="fas fa-eye"></i> Ver archivo
-            </a>
-
-            <!-- Opción para descargar si lo prefieres -->
-            <a href="{{ archivo.imagen.url }}" download class="btn btn-sm btn-secondary">
-                <i class="fas fa-download"></i> Descargar
-            </a>
-        </div>
-    </div>
-{% empty %}
-    <p>Este paciente aún no tiene radiografías o archivos subidos.</p>
-{% endfor %}
-        </div>
-    </div>
-</div>
-
-    <!-- SECCIÓN ODONTOGRAMA -->
-<div class="card shadow-sm border-0 mb-4 mt-4">
-    <div class="card-header bg-dark text-white">🦷 Odontograma Básico</div>
-    <div class="card-body">
-
-        <!-- Cuadrícula Visual FDI -->
-        <div class="text-center mb-4">
-            <style>
-                .diente {
-                    display: inline-block; width: 35px; height: 35px;
-                    line-height: 35px; border: 1px solid #ccc;
-                    border-radius: 5px; margin: 2px; font-weight: bold;
-                    background-color: #f8f9fa; /* Color por defecto: Sano */
-                }
-                .diente-Caries { background-color: #dc3545; color: white; border-color: darkred; } /* Rojo */
-                .diente-Resina { background-color: #0d6efd; color: white; border-color: darkblue; } /* Azul */
-                .diente-Extraccion { background-color: #fd7e14; color: white; border-color: darkorange; } /* Naranja */
-                .diente-Ausente { background-color: #212529; color: white; border-color: black; } /* Negro */
-                .diente-Corona { background-color: #ffc107; color: black; border-color: goldenrod; } /* Amarillo */
-                .cuadrante { padding: 10px; border: 1px solid #dee2e6; }
-            </style>
-
-            <!-- Superior -->
-            <div class="d-flex justify-content-center mb-1">
-                <div class="cuadrante border-end-0">
-                    {% for i in "18 17 16 15 14 13 12 11"|split:" " %}
-                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
-                    {% endfor %}
-                </div>
-                <div class="cuadrante">
-                    {% for i in "21 22 23 24 25 26 27 28"|split:" " %}
-                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Inferior -->
-            <div class="d-flex justify-content-center">
-                <div class="cuadrante border-end-0 border-top-0">
-                    {% for i in "48 47 46 45 44 43 42 41"|split:" " %}
-                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
-                    {% endfor %}
-                </div>
-                <div class="cuadrante border-top-0">
-                    {% for i in "31 32 33 34 35 36 37 38"|split:" " %}
-                    <div class="diente diente-{% for key, value in estados_dientes.items %}{% if key|stringformat:"i" == i %}{{ value }}{% endif %}{% endfor %}">{{ i }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Formulario para actualizar dientes -->
-        <hr>
-        <form method="POST" class="row g-3 align-items-center bg-light p-3 rounded">
-            {% csrf_token %}
-            <div class="col-auto"><strong>Actualizar Pieza:</strong></div>
-            <div class="col-auto">
-                {{ form_diente.diente }}
-            </div>
-            <div class="col-auto">
-                {{ form_diente.estado }}
-            </div>
-            <div class="col-md-4">
-                {{ form_diente.notas }}
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Guardar Diente</button>
-            </div>
-        </form>
-
-        <!-- Lista de notas de los dientes -->
-        {% if dientes_detalle %}
-        <div class="mt-3">
-            <h6>📝 Notas de Piezas Dentales:</h6>
-            <ul class="list-group list-group-flush text-sm">
-                {% for d in dientes_detalle %}
-                    {% if d.notas and d.estado != 'Sano' %}
-                    <li class="list-group-item py-1 text-muted"><strong>Pieza {{ d.diente }}:</strong> {{ d.estado }} - {{ d.notas }}</li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-    </div>
-</div>
-        <!-- Columna de Historial de Citas -->
-        <div class="col-md-8">
+        <!-- SECCIÓN 2: ODONTOGRAMA -->
+        <div class="tab-pane fade" id="odontograma" role="tabpanel">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    Historial de Consultas
-                    <a href="{% url 'nueva_cita' %}" class="btn btn-sm btn-light">+ Nueva Cita</a>
+                <div class="card-body">
+                    <!-- SVG de la Dentadura -->
+                    <svg viewBox="0 0 530 240" class="odontograma-svg">
+                        <!-- Superior -->
+                        <g transform="translate(30, 40)">
+                            <text x="-20" y="15" class="diente-label">SUP.</text>
+                            <circle id="diente-18" class="diente" cx="20" cy="20" r="12" onclick="abrirModalDiente(18)"/><text x="15" y="45" class="diente-label">18</text>
+                            <circle id="diente-17" class="diente" cx="50" cy="20" r="12" onclick="abrirModalDiente(17)"/><text x="45" y="45" class="diente-label">17</text>
+                            <circle id="diente-16" class="diente" cx="80" cy="20" r="12" onclick="abrirModalDiente(16)"/><text x="75" y="45" class="diente-label">16</text>
+                            <circle id="diente-15" class="diente" cx="110" cy="20" r="12" onclick="abrirModalDiente(15)"/><text x="105" y="45" class="diente-label">15</text>
+                            <circle id="diente-14" class="diente" cx="140" cy="20" r="12" onclick="abrirModalDiente(14)"/><text x="135" y="45" class="diente-label">14</text>
+                            <circle id="diente-13" class="diente" cx="170" cy="20" r="12" onclick="abrirModalDiente(13)"/><text x="165" y="45" class="diente-label">13</text>
+                            <circle id="diente-12" class="diente" cx="200" cy="20" r="12" onclick="abrirModalDiente(12)"/><text x="195" y="45" class="diente-label">12</text>
+                            <circle id="diente-11" class="diente" cx="230" cy="20" r="12" onclick="abrirModalDiente(11)"/><text x="225" y="45" class="diente-label">11</text>
+                            <circle id="diente-21" class="diente" cx="270" cy="20" r="12" onclick="abrirModalDiente(21)"/><text x="265" y="45" class="diente-label">21</text>
+                            <circle id="diente-22" class="diente" cx="300" cy="20" r="12" onclick="abrirModalDiente(22)"/><text x="295" y="45" class="diente-label">22</text>
+                            <circle id="diente-23" class="diente" cx="330" cy="20" r="12" onclick="abrirModalDiente(23)"/><text x="325" y="45" class="diente-label">23</text>
+                            <circle id="diente-24" class="diente" cx="360" cy="20" r="12" onclick="abrirModalDiente(24)"/><text x="355" y="45" class="diente-label">24</text>
+                            <circle id="diente-25" class="diente" cx="390" cy="20" r="12" onclick="abrirModalDiente(25)"/><text x="385" y="45" class="diente-label">25</text>
+                            <circle id="diente-26" class="diente" cx="420" cy="20" r="12" onclick="abrirModalDiente(26)"/><text x="415" y="45" class="diente-label">26</text>
+                            <circle id="diente-27" class="diente" cx="450" cy="20" r="12" onclick="abrirModalDiente(27)"/><text x="445" y="45" class="diente-label">27</text>
+                            <circle id="diente-28" class="diente" cx="480" cy="20" r="12" onclick="abrirModalDiente(28)"/><text x="475" y="45" class="diente-label">28</text>
+                        </g>
+                        <!-- Inferior -->
+                        <g transform="translate(30, 140)">
+                            <text x="-20" y="15" class="diente-label">INF.</text>
+                            <circle id="diente-48" class="diente" cx="20" cy="20" r="12" onclick="abrirModalDiente(48)"/><text x="15" y="45" class="diente-label">48</text>
+                            <circle id="diente-47" class="diente" cx="50" cy="20" r="12" onclick="abrirModalDiente(47)"/><text x="45" y="45" class="diente-label">47</text>
+                            <circle id="diente-46" class="diente" cx="80" cy="20" r="12" onclick="abrirModalDiente(46)"/><text x="75" y="45" class="diente-label">46</text>
+                            <circle id="diente-45" class="diente" cx="110" cy="20" r="12" onclick="abrirModalDiente(45)"/><text x="105" y="45" class="diente-label">45</text>
+                            <circle id="diente-44" class="diente" cx="140" cy="20" r="12" onclick="abrirModalDiente(44)"/><text x="135" y="45" class="diente-label">44</text>
+                            <circle id="diente-43" class="diente" cx="170" cy="20" r="12" onclick="abrirModalDiente(43)"/><text x="165" y="45" class="diente-label">43</text>
+                            <circle id="diente-42" class="diente" cx="200" cy="20" r="12" onclick="abrirModalDiente(42)"/><text x="195" y="45" class="diente-label">42</text>
+                            <circle id="diente-41" class="diente" cx="230" cy="20" r="12" onclick="abrirModalDiente(41)"/><text x="225" y="45" class="diente-label">41</text>
+                            <circle id="diente-31" class="diente" cx="270" cy="20" r="12" onclick="abrirModalDiente(31)"/><text x="265" y="45" class="diente-label">31</text>
+                            <circle id="diente-32" class="diente" cx="300" cy="20" r="12" onclick="abrirModalDiente(32)"/><text x="295" y="45" class="diente-label">32</text>
+                            <circle id="diente-33" class="diente" cx="330" cy="20" r="12" onclick="abrirModalDiente(33)"/><text x="325" y="45" class="diente-label">33</text>
+                            <circle id="diente-34" class="diente" cx="360" cy="20" r="12" onclick="abrirModalDiente(34)"/><text x="355" y="45" class="diente-label">34</text>
+                            <circle id="diente-35" class="diente" cx="390" cy="20" r="12" onclick="abrirModalDiente(35)"/><text x="385" y="45" class="diente-label">35</text>
+                            <circle id="diente-36" class="diente" cx="420" cy="20" r="12" onclick="abrirModalDiente(36)"/><text x="415" y="45" class="diente-label">36</text>
+                            <circle id="diente-37" class="diente" cx="450" cy="20" r="12" onclick="abrirModalDiente(37)"/><text x="445" y="45" class="diente-label">37</text>
+                            <circle id="diente-38" class="diente" cx="480" cy="20" r="12" onclick="abrirModalDiente(38)"/><text x="475" y="45" class="diente-label">38</text>
+                        </g>
+                    </svg>
+                    <div class="d-flex justify-content-center gap-3 mt-4 small border-top pt-3 text-muted">
+                        <span><i class="fas fa-circle text-danger me-1"></i> Caries</span>
+                        <span><i class="fas fa-circle text-warning me-1"></i> Corona</span>
+                        <span><i class="fas fa-circle text-primary me-1"></i> Tratado</span>
+                        <span><i class="fas fa-circle text-secondary opacity-50 me-1"></i> Ausente</span>
+                    </div>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: HISTORIAL -->
+        <div class="tab-pane fade" id="historial" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between">
+                    <h6 class="m-0 fw-bold">Historial de Consultas</h6>
+                    <a href="{% url 'nueva_cita' %}" class="btn btn-sm btn-primary">+ Nueva Cita</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
                                 <th>Fecha</th>
                                 <th>Tratamiento</th>
                                 <th>Observaciones</th>
+                                <th>Estado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for cita in citas %}
                             <tr>
-                                <td>{{ cita.fecha }}</td>
-                                <td>{{ cita.tratamiento.nombre }}</td>
-                                <td>{{ cita.observaciones_doctor|truncatechars:50 }}</td>
+                                <td class="fw-bold">{{ cita.fecha|date:"d M Y" }}</td>
+                                <td>{{ cita.tratamiento.nombre|default:"---" }}</td>
+                                <td>{{ cita.observaciones_doctor|truncatechars:80|default:"---" }}</td>
+                                <td>
+                                    {% if cita.completada %}
+                                    <span class="badge bg-light-success">Completada</span>
+                                    {% else %}
+                                    <span class="badge bg-light-primary">Pendiente</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-center p-4 text-muted">Este paciente aún no tiene citas registradas.</td>
-                            </tr>
+                            <tr><td colspan="4" class="text-center p-4">No hay consultas registradas.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <!-- SECCIÓN 4: GALERÍA -->
+        <div class="tab-pane fade" id="archivos" role="tabpanel">
+            <div class="row">
+                {% for registro in paciente.archivos.all %}
+                <div class="col-md-3 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-image fa-3x text-muted mb-3"></i>
+                            <h6 class="fw-bold">{{ registro.titulo }}</h6>
+                            <p class="small text-muted mb-3">Subido: {{ registro.fecha_subida|date:"d/m/Y" }}</p>
+                            {% if registro.archivo %}
+                            <a href="{{ registro.archivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver Archivo</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center p-5 text-muted">
+                    <i class="fas fa-images fa-3x mb-3"></i>
+                    <p>No hay radiografías registradas para este paciente.</p>
+                    <a href="{% url 'subir_archivo' paciente.pk %}" class="btn btn-primary">+ Subir Primer Archivo</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+  // 1. Carga inicial de datos
+const estadosDientes = {{ estados_dientes_json|safe|default:"{}" }};
+
+// 2. Definir el Modal de forma global (FUERA de las funciones)
+let modalInstancia;
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializamos el modal cuando el documento esté listo
+    modalInstancia = new bootstrap.Modal(document.getElementById('modalDiente'));
+    cargarColoresOdontograma();
+});
+
+// 3. Función para pintar los colores
+function cargarColoresOdontograma() {
+    for (const [numero, estado] of Object.entries(estadosDientes)) {
+        const circuloDiente = document.getElementById(`diente-${numero}`);
+        if (circuloDiente) {
+            circuloDiente.classList.remove('caries', 'corona', 'ausente', 'tratado', 'sano');
+            circuloDiente.classList.add(estado.toLowerCase());
+        }
+    }
+}
+
+// 4. Función para abrir el modal al hacer clic
+function abrirModalDiente(numero) {
+    document.getElementById('modal_numero_diente').value = numero;
+    document.getElementById('tituloModalDiente').innerText = "Diente " + numero;
+
+    let estadoActual = estadosDientes[numero] || "SANO";
+    document.getElementById('modal_estado').value = estadoActual;
+
+    modalInstancia.show();
+}
+
+// 5. Función para guardar vía AJAX
+function guardarCambioDiente() {
+    const numero = document.getElementById('modal_numero_diente').value;
+    const estado = document.getElementById('modal_estado').value;
+    const notas = document.getElementById('modal_notas').value;
+
+    fetch("{% url 'actualizar_diente' paciente.id %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            "numero_diente": numero,
+            "estado": estado,
+            "notas": notas
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            estadosDientes[numero] = estado; // Actualizamos el dato local
+            cargarColoresOdontograma();      // Repintamos el diente
+            modalInstancia.hide();           // Cerramos el modal
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
+</script>
+
+<!-- MODAL PARA ACTUALIZAR DIENTE -->
+<div class="modal fade" id="modalDiente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tituloModalDiente">Actualizar Diente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formDiente">
+                    <input type="hidden" id="modal_numero_diente">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Estado del Diente</label>
+                        <select id="modal_estado" class="form-select form-select-lg">
+                            <option value="SANO">Sano (Blanco)</option>
+                            <option value="CARIES">Caries (Rojo)</option>
+                            <option value="CORONA">Corona (Amarillo)</option>
+                            <option value="TRATADO">Tratado (Azul)</option>
+                            <option value="AUSENTE">Ausente (Gris)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Notas/Observaciones</label>
+                        <textarea id="modal_notas" class="form-control" rows="2" placeholder="Opcional..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCambioDiente()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

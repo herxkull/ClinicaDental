@@ -13,6 +13,7 @@ from django.urls import reverse
 import openpyxl
 from django.utils import timezone
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 @login_required
 def dashboard(request):
     # Usamos timezone.now() para asegurar la hora local configurada
@@ -142,41 +143,51 @@ def nueva_cita(request):
 
 def detalle_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
+    # Usamos prefetch_related o select_related para que sea más rápido
     citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
 
-    # --- LÓGICA DEL ODONTOGRAMA (Mantén tu código anterior del request.POST aquí) ---
+    # --- LÓGICA DEL ODONTOGRAMA ---
     if request.method == 'POST':
         form_diente = DienteEstadoForm(request.POST)
         if form_diente.is_valid():
             num_diente = form_diente.cleaned_data['diente']
             DienteEstado.objects.update_or_create(
-                paciente=paciente, diente=num_diente,
-                defaults={'estado': form_diente.cleaned_data['estado'], 'notas': form_diente.cleaned_data['notas']}
+                paciente=paciente,
+                numero_diente=num_diente,
+                defaults={
+                    'estado': form_diente.cleaned_data['estado'],
+                    'notas': form_diente.cleaned_data['notas']
+                }
             )
             return redirect('detalle_paciente', pk=paciente.pk)
     else:
         form_diente = DienteEstadoForm()
 
     dientes_registrados = paciente.odontograma.all()
-    diccionario_dientes = {d.diente: d.estado for d in dientes_registrados}
-    # ----------------------------------------------------------------------------------
 
-    # --- NUEVA LÓGICA FINANCIERA ---
-    # Sumamos el costo de todos los tratamientos de sus citas
-    total_tratamientos = citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    # Traemos todos sus pagos y los sumamos
+    # 1. Aseguramos que el número de diente no sea None
+    # 2. Aseguramos que el estado no sea None para que .lower() no falle en JS
+    diccionario_dientes = {
+        str(d.numero_diente): (d.estado or "SANO")
+        for d in dientes_registrados
+        if d.numero_diente is not None
+    }
+
+    # --- LÓGICA FINANCIERA ---
+    # Usamos filter(tratamiento__isnull=False) para evitar errores si una cita no tiene tratamiento
+    total_tratamientos = citas.filter(tratamiento__isnull=False).aggregate(total=Sum('tratamiento__costo_base')
+    )['total'] or 0
+
     pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
     total_pagos = pagos.aggregate(total=Sum('monto'))['total'] or 0
-    # Calculamos cuánto debe
     saldo_pendiente = total_tratamientos - total_pagos
 
     return render(request, 'gestion/detalle_paciente.html', {
         'paciente': paciente,
         'citas': citas,
         'form_diente': form_diente,
-        'estados_dientes': diccionario_dientes,
         'dientes_detalle': dientes_registrados,
-        # Pasamos las nuevas variables al HTML
+        'estados_dientes_json': json.dumps(diccionario_dientes),
         'total_tratamientos': total_tratamientos,
         'total_pagos': total_pagos,
         'saldo_pendiente': saldo_pendiente,
@@ -401,4 +412,32 @@ def finalizar_cita(request, pk):
                 messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
 
     return redirect('dashboard')
+
+
+@login_required
+@require_POST
+def actualizar_diente(request, paciente_id):
+    try:
+        data = json.loads(request.body)  # Leemos los datos enviados por JavaScript (AJAX)
+        numero_diente = data.get('numero_diente')
+        nuevo_estado = data.get('estado')
+        notas = data.get('notas', '')
+
+        paciente = get_object_or_404(Paciente, pk=paciente_id)
+
+        # update_or_create: Si existe lo actualiza, si no, lo crea. ¡Súper útil!
+        diente, created = DienteEstado.objects.update_or_create(
+            paciente=paciente,
+            numero_diente=numero_diente,
+            defaults={'estado': nuevo_estado, 'notas': notas}
+        )
+
+        return JsonResponse({
+            'status': 'ok',
+            'message': f'Diente {numero_diente} actualizado a {diente.get_estado_display()}',
+            'nuevo_estado': nuevo_estado
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 # Create your views here.

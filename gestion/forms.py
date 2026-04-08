@@ -28,11 +28,10 @@ class CitaForm(forms.ModelForm):
 class DienteEstadoForm(forms.ModelForm):
     class Meta:
         model = DienteEstado
-        fields = ['diente', 'estado', 'notas']
+        fields = ['estado', 'notas']
         widgets = {
-            'diente': forms.NumberInput(attrs={'class': 'form-control', 'min': 11, 'max': 85}),
             'estado': forms.Select(attrs={'class': 'form-select'}),
-            'notas': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Cara vestibular'}),
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Opcional...'}),
         }
 
 class TratamientoForm(forms.ModelForm):

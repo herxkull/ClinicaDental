@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # Create your models here.
 class Paciente(models.Model):
     # Datos Personales
@@ -18,6 +19,29 @@ class Paciente(models.Model):
     def __str__(self):
         return f"{self.nombre} - {self.cedula}"
 
+class DienteEstado(models.Model):
+    # Opciones de estado (puedes añadir más luego)
+    ESTADOS_CHOICES = [
+        ('SANO', 'Sano'),
+        ('CARIES', 'Caries'),
+        ('CORONA', 'Corona'),
+        ('AUSENTE', 'Ausente'),
+        ('TRATADO', 'Tratado Endodoncia'),
+        ('IMPLANTE', 'Implante'),
+    ]
+
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='odontograma')
+    numero_diente = models.IntegerField(help_text="Número internacional del diente (11-48)")
+    estado = models.CharField(max_length=20, choices=ESTADOS_CHOICES, default='SANO')
+    notas = models.TextField(blank=True, null=True)
+    fecha_registro = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('paciente', 'numero_diente') # Un paciente solo puede tener un registro por diente
+        ordering = ['numero_diente']
+
+    def __str__(self):
+        return f"Diente {self.numero_diente} - {self.get_estado_display()} ({self.paciente.nombre})"
 
 class Tratamiento(models.Model):
     nombre = models.CharField(max_length=100)
@@ -41,27 +65,7 @@ class Cita(models.Model):
         return f"{self.paciente.nombre} - {self.fecha}"
 
 
-class DienteEstado(models.Model):
-        paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='odontograma')
-        diente = models.IntegerField()  # Usaremos los números FDI (11-18, 21-28, etc.)
 
-        ESTADOS = [
-            ('Sano', 'Sano'),
-            ('Caries', 'Caries (Rojo)'),
-            ('Resina', 'Resina/Empaste (Azul)'),
-            ('Extraccion', 'Para Extracción (Naranja)'),
-            ('Ausente', 'Ausente (Negro)'),
-            ('Corona', 'Corona (Amarillo)')
-        ]
-        estado = models.CharField(max_length=20, choices=ESTADOS, default='Sano')
-        notas = models.CharField(max_length=100, blank=True, null=True, help_text="Ej: Cara oclusal, dolor agudo...")
-
-        class Meta:
-            # Esto evita que guardemos dos veces el estado del mismo diente para el mismo paciente
-            unique_together = ('paciente', 'diente')
-
-        def __str__(self):
-            return f"Diente {self.diente} - {self.estado}"
 
 class Pago(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='pagos')
@@ -71,7 +75,6 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"{self.paciente.nombre} - ${self.monto} ({self.fecha.strftime('%d/%m/%Y')})"
-
 
 
 class ArchivoPaciente(models.Model):
