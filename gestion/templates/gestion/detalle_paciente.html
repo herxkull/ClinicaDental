@@ -90,7 +90,7 @@
         </li>
         <li class="nav-item">
             <button class="nav-link" id="archivos-tab" data-bs-toggle="tab" data-bs-target="#archivos" type="button">
-                <i class="fas fa-images me-2"></i>Galería ({{ paciente.archivos.count }})
+                <i class="fas fa-images me-2"></i>Galería ({{ paciente.archivos.count}})
             </button>
         </li>
     </ul>
@@ -237,23 +237,33 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for cita in citas %}
-                            <tr>
-                                <td class="fw-bold">{{ cita.fecha|date:"d M Y" }}</td>
-                                <td>{{ cita.tratamiento.nombre|default:"---" }}</td>
-                                <td>{{ cita.observaciones_doctor|truncatechars:80|default:"---" }}</td>
-                                <td>
-                                    {% if cita.completada %}
-                                    <span class="badge bg-light-success">Completada</span>
-                                    {% else %}
-                                    <span class="badge bg-light-primary">Pendiente</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4" class="text-center p-4">No hay consultas registradas.</td></tr>
-                            {% endfor %}
-                        </tbody>
+                                {% for cita in citas %}
+                                <tr>
+                                    <td class="fw-bold">{{ cita.fecha|date:"d M Y" }}</td>
+
+                                    <!-- CAMBIO AQUÍ: Protegemos el nombre del tratamiento -->
+                                    <td>
+                                        {% if cita.tratamiento %}
+                                            {{ cita.tratamiento.nombre }}
+                                        {% else %}
+                                            <span class="text-muted">Consulta General</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>{{ cita.observaciones_doctor|truncatechars:80|default:"---" }}</td>
+
+                                    <td>
+                                        {% if cita.completada %}
+                                        <span class="badge bg-light-success">Completada</span>
+                                        {% else %}
+                                        <span class="badge bg-light-primary">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center p-4">No hay consultas registradas.</td></tr>
+                                {% endfor %}
+                         </tbody>
                     </table>
                 </div>
             </div>

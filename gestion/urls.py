@@ -19,6 +19,7 @@ urlpatterns = [
     path('pacientes/<int:pk>/archivos/subir/', views.subir_archivo, name='subir_archivo'),
     path('calendario/', views.calendario, name='calendario'),
     path('api/citas/', views.citas_json, name='citas_json'),
+    path('calendario/guardar/', views.guardar_cita_calendario, name='guardar_cita_calendario'),
     path('pacientes/<int:pk>/receta/nueva/', views.nueva_receta, name='nueva_receta'),
     path('recetas/<int:pk>/imprimir/', views.imprimir_receta, name='imprimir_receta'),
     path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
@@ -29,5 +30,5 @@ urlpatterns = [
     path('citas/finalizar/<int:pk>/', views.finalizar_cita, name='finalizar_cita'),
     path('paciente/<int:pk>/', views.detalle_paciente, name='detalle_paciente'),
     path('api/paciente/<int:paciente_id>/actualizar-diente/', views.actualizar_diente, name='actualizar_diente'),
-    path('inventario/crear/', views.crear_producto, name='crear_producto'),
+     path('inventario/crear/', views.crear_producto, name='crear_producto'),
 ]

@@ -1,7 +1,6 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from datetime import date
-from django.shortcuts import redirect
 from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
 from django.db.models import Sum, Q, Count, F
 from django.contrib.auth.decorators import login_required
@@ -142,49 +141,30 @@ def nueva_cita(request):
 
 def detalle_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
-    # Usamos prefetch_related o select_related para que sea más rápido
     citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
 
     # --- LÓGICA DEL ODONTOGRAMA ---
-    if request.method == 'POST':
-        form_diente = DienteEstadoForm(request.POST)
-        if form_diente.is_valid():
-            num_diente = form_diente.cleaned_data['diente']
-            DienteEstado.objects.update_or_create(
-                paciente=paciente,
-                numero_diente=num_diente,
-                defaults={
-                    'estado': form_diente.cleaned_data['estado'],
-                    'notas': form_diente.cleaned_data['notas']
-                }
-            )
-            return redirect('detalle_paciente', pk=paciente.pk)
-    else:
-        form_diente = DienteEstadoForm()
-
     dientes_registrados = paciente.odontograma.all()
-
-    # 1. Aseguramos que el número de diente no sea None
-    # 2. Aseguramos que el estado no sea None para que .lower() no falle en JS
     diccionario_dientes = {
         str(d.numero_diente): (d.estado or "SANO")
         for d in dientes_registrados
         if d.numero_diente is not None
     }
 
-    # --- LÓGICA FINANCIERA ---
-    # Usamos filter(tratamiento__isnull=False) para evitar errores si una cita no tiene tratamiento
-    total_tratamientos = citas.filter(tratamiento__isnull=False).aggregate(total=Sum('tratamiento__costo_base')
-    )['total'] or 0
+    # --- LÓGICA FINANCIERA (CORREGIDA) ---
+    # Calculamos el total recorriendo las citas para evitar errores de agregación con Nulos
+    total_tratamientos = 0
+    for cita in citas:
+        if cita.tratamiento and cita.tratamiento.costo_base:
+            total_tratamientos += cita.tratamiento.costo_base
 
     pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
     total_pagos = pagos.aggregate(total=Sum('monto'))['total'] or 0
-    saldo_pendiente = total_tratamientos - total_pagos
+    saldo_pendiente = float(total_tratamientos) - float(total_pagos)
 
     return render(request, 'gestion/detalle_paciente.html', {
         'paciente': paciente,
         'citas': citas,
-        'form_diente': form_diente,
         'dientes_detalle': dientes_registrados,
         'estados_dientes_json': json.dumps(diccionario_dientes),
         'total_tratamientos': total_tratamientos,
@@ -299,33 +279,62 @@ def subir_archivo(request, pk):
 
 @login_required
 def calendario(request):
-    return render(request, 'gestion/calendario.html')
+    # Traemos los pacientes y tratamientos para llenar los desplegables del modal
+    pacientes = Paciente.objects.all().order_by('nombre')
+    tratamientos = Tratamiento.objects.all().order_by('nombre')
+
+    return render(request, 'gestion/calendario.html', {
+        'pacientes': pacientes,
+        'tratamientos': tratamientos
+    })
 
 
 @login_required
+@require_POST
+def guardar_cita_calendario(request):
+    paciente_id = request.POST.get('paciente')
+    tratamiento_id = request.POST.get('tratamiento')
+    fecha = request.POST.get('fecha')
+    hora = request.POST.get('hora')
+    motivo = request.POST.get('motivo')
+
+    paciente = get_object_or_404(Paciente, pk=paciente_id)
+    tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id) if tratamiento_id else None
+
+    # Creamos la cita
+    Cita.objects.create(
+        paciente=paciente,
+        tratamiento=tratamiento,
+        fecha=fecha,
+        hora=hora,
+        motivo=motivo
+    )
+
+    # Recargamos el calendario para ver la nueva cita inmediatamente
+    return redirect('calendario')
+
+@login_required
 def citas_json(request):
-    # Traemos todas las citas
     citas = Cita.objects.all()
     eventos = []
 
     for cita in citas:
         # FullCalendar necesita un formato ISO (YYYY-MM-DDTHH:MM:SS)
-        # Combinamos la fecha y la hora de tu modelo
         start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
 
+        # LA MAGIA ESTÁ AQUÍ: Si no hay tratamiento, ponemos un texto por defecto
+        nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
+
         eventos.append({
-            'title': f"{cita.paciente.nombre} ({cita.tratamiento.nombre})",
+            'title': f"{cita.paciente.nombre} ({nombre_tratamiento})",
             'start': start_dt,
-            # Al hacer clic, nos llevará directo a la ficha del paciente
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
-            # Color dinámico: si está completada es verde, si no, azul
+            # Color dinámico: verde si está completada, azul si está pendiente
             'backgroundColor': '#198754' if cita.completada else '#0d6efd',
             'borderColor': '#198754' if cita.completada else '#0d6efd',
         })
 
     return JsonResponse(eventos, safe=False)
-
-
 @login_required
 def nueva_receta(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)

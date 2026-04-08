@@ -3,13 +3,78 @@
 {% block title %}Agenda Dental - Hersan Dental{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm border-0 p-4">
+<div class="card shadow-sm border-0 p-4 mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📅 Agenda de Citas</h2>
-        <a href="{% url 'nueva_cita' %}" class="btn btn-primary">+ Agendar Nueva</a>
+        <div>
+            <h2 class="h3 fw-bold mb-0 text-gray-800">📅 Agenda de Citas</h2>
+            <p class="text-muted">Haz clic en cualquier día vacío para agendar</p>
+        </div>
+        <!-- Botón que ahora abre el modal directamente -->
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCita" onclick="limpiarFecha()">
+            <i class="fas fa-plus me-2"></i> Agendar Nueva
+        </button>
     </div>
 
     <div id='calendar' class="bg-white p-2"></div>
+</div>
+
+<!-- MODAL CITA RÁPIDA -->
+<div class="modal fade" id="modalNuevaCita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-calendar-plus me-2"></i>Agendar Cita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{% url 'guardar_cita_calendario' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Paciente <span class="text-danger">*</span></label>
+                        <select name="paciente" class="form-select" required>
+                            <option value="">Seleccione un paciente...</option>
+                            {% for p in pacientes %}
+                                <option value="{{ p.id }}">{{ p.nombre }} - {{ p.cedula }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tratamiento / Servicio</label>
+                        <select name="tratamiento" class="form-select">
+                            <option value="">Seleccione un tratamiento...</option>
+                            {% for t in tratamientos %}
+                                <option value="{{ t.id }}">{{ t.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Fecha <span class="text-danger">*</span></label>
+                            <!-- Este ID es clave para que JavaScript le ponga la fecha al hacer clic -->
+                            <input type="date" name="fecha" id="inputFechaCita" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Hora <span class="text-danger">*</span></label>
+                            <input type="time" name="hora" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Motivo de la Cita <span class="text-danger">*</span></label>
+                        <textarea name="motivo" class="form-control" rows="2" required placeholder="Ej: Dolor de muela, revisión general..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Cita</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -18,37 +83,50 @@
   document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth', // Vista inicial: Mes
-      locale: 'es',               // Idioma: Español
+      initialView: 'dayGridMonth',
+      locale: 'es',
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay' // Botones para cambiar vista
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
       buttonText: {
-        today: 'Hoy',
-        month: 'Mes',
-        week: 'Semana',
-        day: 'Día'
+        today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día'
       },
-      // AQUÍ ES DONDE CONECTAMOS CON TU BASE DE DATOS
-      events: '/api/citas/',
-      
+      events: '{% url "citas_json" %}',
+
+      // Magia 1: Hacer que se vean como bloques sólidos de color
+      eventDisplay: 'block',
+
+      // Magia 2: Detectar el clic en el día
+      dateClick: function(info) {
+        // Ponemos la fecha clickeada en el input del formulario
+        document.getElementById('inputFechaCita').value = info.dateStr;
+        // Abrimos el modal con Bootstrap
+        var myModal = new bootstrap.Modal(document.getElementById('modalNuevaCita'));
+        myModal.show();
+      },
+
       eventClick: function(info) {
         if (info.event.url) {
-          // Evita que el navegador abra el link antes de procesar
-          // (Aunque en este caso queremos que vaya al detalle del paciente)
-          return true;
+          return true; // Navega al perfil del paciente
         }
       }
     });
     calendar.render();
   });
+
+  // Limpia la fecha si se presiona el botón principal "+ Agendar Nueva"
+  function limpiarFecha() {
+      document.getElementById('inputFechaCita').value = '';
+  }
 </script>
 
 <style>
-    /* Ajuste para que el calendario no se vea gigante */
-    .fc { max-height: 80vh; }
-    .fc-event { cursor: pointer; }
+    .fc { max-height: 85vh; }
+    .fc-event { cursor: pointer; border-radius: 4px; padding: 2px 4px; border: none !important; }
+    /* Mejoramos el texto dentro de los bloques para que resalte */
+    .fc-event-title, .fc-event-time { color: white !important; font-weight: 500; }
+    .fc-daygrid-day:hover { background-color: #f8f9fc; cursor: pointer; } /* Efecto hover en los días vacíos */
 </style>
 {% endblock %}
