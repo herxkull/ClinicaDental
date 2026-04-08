@@ -194,9 +194,54 @@ def detalle_paciente(request, pk):
     })
 
 def lista_tratamientos(request):
-    tratamientos = Tratamiento.objects.all().order_by('nombre')
-    return render(request, 'gestion/lista_tratamientos.html', {'tratamientos': tratamientos})
+    # prefetch_related hace que cargue los materiales rápido y sin sobrecargar la base de datos
+    tratamientos = Tratamiento.objects.prefetch_related('materiales__producto').all().order_by('nombre')
+    productos = Producto.objects.all().order_by('nombre')
 
+    return render(request, 'gestion/lista_tratamientos.html', {
+        'tratamientos': tratamientos,
+        'productos': productos
+    })
+
+@login_required
+@require_POST
+def guardar_tratamiento(request):
+    tratamiento_id = request.POST.get('tratamiento_id')
+    nombre = request.POST.get('nombre')
+    descripcion = request.POST.get('descripcion', '')
+    costo_base = request.POST.get('costo_base', 0)
+
+    # 1. Crear o Editar el Tratamiento
+    if tratamiento_id: # Si tiene ID, estamos editando
+        tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
+        tratamiento.nombre = nombre
+        tratamiento.descripcion = descripcion
+        tratamiento.costo_base = costo_base
+        tratamiento.save()
+        # Borramos los materiales viejos para reemplazarlos por los nuevos que vengan en el form
+        MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
+    else: # Si no tiene ID, es uno nuevo
+        tratamiento = Tratamiento.objects.create(
+            nombre=nombre,
+            descripcion=descripcion,
+            costo_base=costo_base
+        )
+
+    # 2. Procesar la lista de Materiales (Vienen en forma de listas desde el HTML)
+    productos_ids = request.POST.getlist('producto_id[]')
+    cantidades = request.POST.getlist('cantidad[]')
+
+    # Usamos zip para emparejar el ID del producto con su cantidad
+    for p_id, cant in zip(productos_ids, cantidades):
+        if p_id and cant and int(cant) > 0:
+            producto = get_object_or_404(Producto, pk=p_id)
+            MaterialTratamiento.objects.create(
+                tratamiento=tratamiento,
+                producto=producto,
+                cantidad_usada=int(cant)
+            )
+
+    return redirect('lista_tratamientos')
 def gestionar_tratamiento(request, pk=None):
     # Si recibimos un 'pk' (ID), buscamos el tratamiento para editarlo. Si no, creamos uno en blanco.
     if pk:
