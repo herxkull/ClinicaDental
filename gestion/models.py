@@ -119,12 +119,3 @@ class MaterialTratamiento(models.Model):
     def __str__(self):
         return f"{self.cantidad_usada} de {self.producto.nombre} para {self.tratamiento.nombre}"
 
-class ArchivoPaciente(models.Model):
-    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='archivos')
-    titulo = models.CharField(max_length=100)
-    imagen = models.ImageField(upload_to='pacientes/evidencia/', null=True, blank=True)
-    fecha_subida = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.titulo} - {self.paciente.nombre}"
-

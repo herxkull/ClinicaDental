@@ -22,10 +22,11 @@ urlpatterns = [
     path('recetas/<int:pk>/imprimir/', views.imprimir_receta, name='imprimir_receta'),
     path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
     path('pacientes/<int:pk>/estado-cuenta/', views.estado_cuenta_pdf, name='estado_cuenta'),
-    path('inventario/', views.lista_inventario, name='inventario'),
+    path('inventario/', views.inventario, name='inventario'),
     path('inventario/subir/<int:pk>/', views.aumentar_stock, name='aumentar_stock'),
     path('inventario/bajar/<int:pk>/', views.disminuir_stock, name='disminuir_stock'),
     path('citas/finalizar/<int:pk>/', views.finalizar_cita, name='finalizar_cita'),
     path('paciente/<int:pk>/', views.detalle_paciente, name='detalle_paciente'),
     path('api/paciente/<int:paciente_id>/actualizar-diente/', views.actualizar_diente, name='actualizar_diente'),
+    path('inventario/crear/', views.crear_producto, name='crear_producto'),
 ]

@@ -56,7 +56,7 @@ class PagoForm(forms.ModelForm):
 class ArchivoPacienteForm(forms.ModelForm):
     class Meta:
         model = ArchivoPaciente
-        fields = ['titulo', 'imagen']
+        fields = ['titulo', 'archivo']
         widgets = {
             'titulo': forms.TextInput(attrs={'class': 'form-control'}),
             'archivo': forms.FileInput(attrs={'class': 'form-control'}),

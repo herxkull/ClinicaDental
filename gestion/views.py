@@ -1,10 +1,9 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Paciente, Cita
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from datetime import date
 from django.shortcuts import redirect
 from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
 from django.db.models import Sum, Q, Count, F
-from .models import Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 import json
@@ -364,16 +363,48 @@ def estado_cuenta_pdf(request, pk):
 
 
 @login_required
-def lista_inventario(request):
+def inventario(request):
     productos = Producto.objects.all().order_by('nombre')
-    # Productos con stock bajo
-    alertas = [p for p in productos if p.necesita_reabastecimiento]
 
-    return render(request, 'gestion/inventario.html', {
+    # Estadísticas para las tarjetas superiores
+    total_productos = productos.count()
+    productos_bajos = productos.filter(cantidad_actual__lte=F('stock_minimo')).count()
+
+    # Calcular el valor total del inventario actual
+    valor_inventario = sum(p.cantidad_actual * p.precio_compra for p in productos)
+
+    context = {
         'productos': productos,
-        'alertas': alertas
-    })
+        'total_productos': total_productos,
+        'productos_bajos': productos_bajos,
+        'valor_inventario': valor_inventario,
+        'alertas': productos_bajos > 0, # ¡Clave para que aparezca la alerta roja!
+    }
+    # Apuntamos al HTML correcto
+    return render(request, 'gestion/inventario.html', context)
 
+
+@login_required
+@require_POST
+def crear_producto(request):
+    # Recibimos los datos del formulario HTML
+    nombre = request.POST.get('nombre')
+    descripcion = request.POST.get('descripcion', '')
+    cantidad = request.POST.get('cantidad_actual', 0)
+    minimo = request.POST.get('stock_minimo', 5)
+    precio = request.POST.get('precio_compra', 0.00)
+
+    # Creamos el registro en la base de datos
+    Producto.objects.create(
+        nombre=nombre,
+        descripcion=descripcion,
+        cantidad_actual=cantidad,
+        stock_minimo=minimo,
+        precio_compra=precio
+    )
+
+    # Redirigimos de vuelta a la página del inventario
+    return redirect('inventario')
 @login_required
 def aumentar_stock(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
