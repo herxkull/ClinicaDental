@@ -1,0 +1,84 @@
+{% extends 'gestion/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Gestión Financiera</h2>
+        <button class="btn btn-success" onclick="window.print()">
+            <i class="fas fa-file-download me-2"></i>Exportar Reporte
+        </button>
+    </div>
+
+    <!-- TARJETAS DE RESUMEN -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase opacity-75 small">Total Facturado</h6>
+                    <h2 class="display-6 fw-bold">${{ total_cargos|floatformat:2 }}</h2>
+                    <i class="fas fa-file-invoice-dollar float-end fa-2x opacity-25" style="margin-top: -40px;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase opacity-75 small">Ingresos Reales (Caja)</h6>
+                    <h2 class="display-6 fw-bold">${{ ingresos_totales|floatformat:2 }}</h2>
+                    <i class="fas fa-cash-register float-end fa-2x opacity-25" style="margin-top: -40px;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-danger text-white">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase opacity-75 small">Cuentas por Cobrar</h6>
+                    <h2 class="display-6 fw-bold">${{ deuda_total|floatformat:2 }}</h2>
+                    <i class="fas fa-hand-holding-usd float-end fa-2x opacity-25" style="margin-top: -40px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE MOVIMIENTOS -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-exchange-alt me-2 text-primary"></i>Últimos Movimientos de Caja</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Paciente</th>
+                            <th>Concepto / Notas</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in ultimos_pagos %}
+                        <tr>
+                            <td>{{ pago.fecha|date:"d/m/Y" }}</td>
+                            <td class="fw-bold">{{ pago.paciente.nombre }}</td>
+                            <td class="text-muted">{{ pago.notas|default:"Pago de tratamiento" }}</td>
+                            <td class="text-end text-success fw-bold">+ ${{ pago.monto|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'detalle_paciente' pago.paciente.pk %}" class="btn btn-sm btn-outline-primary">
+                                    Ver Ficha
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No hay registros de pagos todavía.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

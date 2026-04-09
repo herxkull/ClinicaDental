@@ -15,12 +15,16 @@ from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 @login_required
 def dashboard(request):
-    # Usamos timezone.now() para asegurar la hora local configurada
-    hoy = timezone.now().date()
+    # Obtenemos la fecha local actual
+    hoy = timezone.localtime(timezone.now()).date()
 
     # --- 1. Datos de Citas y Pacientes ---
     total_pacientes = Paciente.objects.count()
-    citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('hora')
+
+    # Simplemente usamos fecha=hoy porque tu campo ya es DateField
+    # Quitamos __date y ordenamos por hora (o por fecha si incluiste la hora ahí)
+    citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('fecha')
+
     citas_hoy_count = citas_hoy_lista.count()
     alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
 
@@ -531,4 +535,52 @@ def actualizar_diente(request, paciente_id):
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+def reporte_finanzas(request):
+    # 1. Ingresos Totales (Suma de todos los pagos)
+    ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+
+    # 2. Total en tratamientos realizados (Lo que se debería haber cobrado)
+    total_cargos = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+
+    # 3. Cuentas por cobrar
+    deuda_total = total_cargos - ingresos_totales
+
+    # 4. Listado de los últimos 50 pagos
+    ultimos_pagos = Pago.objects.select_related('paciente').all().order_by('-fecha')[:50]
+
+    # 5. Pacientes con mayor deuda (Top 10)
+    # Aquí podrías hacer una lógica más compleja, por ahora listaremos los pagos
+
+    context = {
+        'ingresos_totales': ingresos_totales,
+        'deuda_total': deuda_total,
+        'ultimos_pagos': ultimos_pagos,
+        'total_cargos': total_cargos,
+    }
+    return render(request, 'gestion/finanzas.html', context)
+
+
+def completar_cita_con_pago(request, cita_id):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        cita = get_object_or_404(Cita, id=cita_id)
+
+        # 1. Marcar cita como completada
+        cita.completada = True
+        cita.save()
+
+        # 2. Si se ingresó un monto, registrar el pago
+        monto = data.get('monto')
+        if monto and float(monto) > 0:
+            Pago.objects.create(
+                paciente=cita.paciente,
+                monto=monto,
+                notas=f"Pago por cita: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}",
+                # metodo_pago=data.get('metodo') # Si añadiste el campo
+            )
+
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=400)
 # Create your views here.

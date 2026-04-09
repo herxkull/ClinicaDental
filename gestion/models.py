@@ -65,7 +65,11 @@ class Cita(models.Model):
         return f"{self.paciente.nombre} - {self.fecha}"
 
 
-
+METODOS_PAGO = [
+    ('EFECTIVO', 'Efectivo'),
+    ('TRANSFERENCIA', 'Transferencia'),
+    ('TARJETA', 'Tarjeta'),
+]
 
 class Pago(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='pagos')
