@@ -16,14 +16,13 @@ class PacienteForm(forms.ModelForm):
 class CitaForm(forms.ModelForm):
     class Meta:
         model = Cita
-        fields = ['paciente', 'tratamiento', 'fecha', 'hora', 'motivo', 'observaciones_doctor']
+        fields = ['tratamiento', 'fecha', 'hora', 'observaciones_doctor', 'motivo']
         widgets = {
-            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'hora': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'paciente': forms.Select(attrs={'class': 'form-select'}),
             'tratamiento': forms.Select(attrs={'class': 'form-select'}),
-            'motivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'observaciones_doctor': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'hora': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'observaciones_doctor': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'motivo': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 class DienteEstadoForm(forms.ModelForm):

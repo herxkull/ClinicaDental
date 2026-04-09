@@ -33,4 +33,5 @@ urlpatterns = [
      path('inventario/crear/', views.crear_producto, name='crear_producto'),
     path('finanzas/', views.reporte_finanzas, name='reporte_finanzas'),
     path('cita/completar/<int:cita_id>/', views.completar_cita_con_pago, name='completar_cita_pago'),
+    path('paciente/<int:paciente_id>/nueva-cita-modal/', views.modal_nueva_cita, name='modal_nueva_cita'),
 ]

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
-from datetime import date
+from datetime import date, datetime, time
 from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
 from django.db.models import Sum, Q, Count, F
 from django.contrib.auth.decorators import login_required
@@ -138,12 +138,58 @@ def lista_citas(request):
     citas = Cita.objects.all().order_by('fecha', 'hora')
     return render(request, 'gestion/lista_citas.html', {'citas': citas})
 
+
+# 1. FUNCIÓN PARA EL MODAL (Desde la ficha del paciente)
+def modal_nueva_cita(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+
+    if request.method == "POST":
+        # Creamos una copia de los datos para poder manipularlos
+        data = request.POST.copy()
+
+        # Si por alguna razón el motivo no llega, lo forzamos aquí
+        if not data.get('motivo'):
+            data['motivo'] = "Consulta programada"
+
+        form = CitaForm(data)
+
+        # Quitamos el error de paciente (que ya resolvimos antes)
+        if 'paciente' in form.errors:
+            del form.errors['paciente']
+
+        # Quitamos el error de motivo manualmente si llegara a aparecer
+        if 'motivo' in form.errors:
+            del form.errors['motivo']
+
+        if form.is_valid():
+            cita = form.save(commit=False)
+            cita.paciente = paciente
+            if not cita.motivo:  # Doble seguridad
+                cita.motivo = "Consulta programada"
+            cita.save()
+            return JsonResponse({'status': 'ok'})
+
+        # Si hay otros errores, regresamos el form
+        html_form = render_to_string('gestion/includes/form_cita_modal.html',
+                                     {'form': form, 'paciente': paciente},
+                                     request=request)
+        return JsonResponse({'status': 'error', 'html_form': html_form})
+
+    # Lógica del GET igual...
+    form = CitaForm(initial={'paciente': paciente})
+    html_form = render_to_string('gestion/includes/form_cita_modal.html',
+                                 {'form': form, 'paciente': paciente}, request=request)
+    return JsonResponse({'html_form': html_form})
+
+# 2. FUNCIÓN GLOBAL (Desde la Agenda o Dashboard)
 def nueva_cita(request):
+    # Si quieres que esta también sea modal, puedes borrar esta función
+    # y crear una similar a la de arriba pero sin paciente_id.
     if request.method == "POST":
         form = CitaForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('lista_citas')
+            return redirect('dashboard')  # O a la agenda
     else:
         form = CitaForm()
     return render(request, 'gestion/cita_form.html', {'form': form})
@@ -538,26 +584,41 @@ def actualizar_diente(request, paciente_id):
 
 
 def reporte_finanzas(request):
-    # 1. Ingresos Totales (Suma de todos los pagos)
-    ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+    # 1. Obtener fechas del GET
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
 
-    # 2. Total en tratamientos realizados (Lo que se debería haber cobrado)
-    total_cargos = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    # Filtros base
+    pagos = Pago.objects.all()
+    citas = Cita.objects.all()
 
-    # 3. Cuentas por cobrar
+    # 2. Aplicar filtros si existen fechas
+    if fecha_inicio_str and fecha_fin_str:
+        try:
+            # Convertimos strings a objetos datetime
+            f_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+            # Para el fin del día, usamos el máximo tiempo (23:59:59)
+            f_fin = datetime.combine(datetime.strptime(fecha_fin_str, '%Y-%m-%d'), time.max)
+
+            # Filtramos (DateField no necesita aware datetime, pero por seguridad si es DateTimeField lo maneja bien)
+            pagos = pagos.filter(fecha__range=(f_inicio, f_fin))
+            citas = citas.filter(fecha__range=(f_inicio, f_fin))
+        except ValueError:
+            # En caso de formato de fecha inválido, no filtramos nada
+            pass
+
+    # 3. Recalcular totales basados en el queryset filtrado
+    ingresos_totales = pagos.aggregate(total=Sum('monto'))['total'] or 0
+    total_cargos = citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
     deuda_total = total_cargos - ingresos_totales
-
-    # 4. Listado de los últimos 50 pagos
-    ultimos_pagos = Pago.objects.select_related('paciente').all().order_by('-fecha')[:50]
-
-    # 5. Pacientes con mayor deuda (Top 10)
-    # Aquí podrías hacer una lógica más compleja, por ahora listaremos los pagos
 
     context = {
         'ingresos_totales': ingresos_totales,
         'deuda_total': deuda_total,
-        'ultimos_pagos': ultimos_pagos,
+        'ultimos_pagos': pagos.select_related('paciente').order_by('-fecha')[:50],
         'total_cargos': total_cargos,
+        'fecha_inicio': fecha_inicio_str,
+        'fecha_fin': fecha_fin_str,
     }
     return render(request, 'gestion/finanzas.html', context)
 

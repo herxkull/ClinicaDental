@@ -1,65 +1,82 @@
 <div class="modal-header bg-primary text-white">
-    <h5 class="modal-title fw-bold">
-        <i class="fas fa-user-medical me-2"></i>{{ titulo }}
+    <h5 class="modal-title">
+        <i class="fas fa-calendar-plus me-2"></i>Agendar Nueva Cita
     </h5>
     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
-<form id="formPacienteModal"
-      action="{% if paciente %}{% url 'modal_paciente_editar' paciente.id %}{% else %}{% url 'modal_paciente_crear' %}{% endif %}"
-      method="POST">
+<form id="formNuevaCita" action="{% url 'modal_nueva_cita' paciente.id %}" onsubmit="guardarCitaModal(event)">
     {% csrf_token %}
+    <input type="hidden" name="motivo" value="Consulta programada">
+
     <div class="modal-body">
+
+        <!-- Alertas de Errores de Validación -->
+        {% if form.errors %}
+            <div class="alert alert-danger py-2 shadow-sm">
+                <p class="small fw-bold mb-1"><i class="fas fa-exclamation-circle me-1"></i> Por favor corrige lo siguiente:</p>
+                <ul class="mb-0 small">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <!-- Campo Tratamiento -->
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-uppercase text-muted">Tratamiento</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fas fa-tooth text-primary"></i></span>
+                {{ form.tratamiento }}
+            </div>
+        </div>
+
         <div class="row">
-            {% for field in form %}
-                <div class="{% if field.name == 'alergias' or field.name == 'notas' %}col-12{% else %}col-md-6{% endif %} mb-3">
-                    <label class="form-label fw-bold small text-uppercase text-muted">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small mt-1">
-                            <i class="fas fa-exclamation-circle me-1"></i>{{ field.errors|striptags }}
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+            <!-- Campo Fecha -->
+            <div class="col-6 mb-3">
+                <label class="form-label small fw-bold text-uppercase text-muted">Fecha</label>
+                {{ form.fecha }}
+            </div>
+            <!-- Campo Hora -->
+            <div class="col-6 mb-3">
+                <label class="form-label small fw-bold text-uppercase text-muted">Hora</label>
+                {{ form.hora }}
+            </div>
+        </div>
+
+        <!-- Campo Observaciones -->
+        <div class="mb-0">
+            <label class="form-label small fw-bold text-uppercase text-muted">Observaciones del Doctor</label>
+            {{ form.observaciones_doctor }}
+            <div class="form-text x-small">Notas internas sobre el procedimiento o estado inicial.</div>
         </div>
     </div>
-    <div class="modal-footer bg-light">
-        <button type="button" class="btn btn-white border" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary px-4">
-            <i class="fas fa-save me-2"></i>Guardar Paciente
+
+    <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary px-4 fw-bold">
+            <i class="fas fa-save me-1"></i> Agendar Cita
         </button>
     </div>
 </form>
 
-<script>
-    document.getElementById('formPacienteModal').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const btnGuardar = this.querySelector('button[type="submit"]');
-        btnGuardar.disabled = true;
-        btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-
-        const formData = new FormData(this);
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                location.reload();
-            } else {
-                // Si hay error, recargamos el contenido del modal con los errores de validación
-                document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Ocurrió un error al procesar la solicitud.');
-            btnGuardar.disabled = false;
-            btnGuardar.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Paciente';
-        });
-    });
-</script>
+<style>
+    /* Ajustes visuales para que el form se adapte bien al modal */
+    #formNuevaCita .form-control,
+    #formNuevaCita .form-select {
+        border-radius: 8px;
+        border: 1px solid #dce1e7;
+    }
+    #formNuevaCita .form-control:focus,
+    #formNuevaCita .form-select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15);
+    }
+    .x-small { font-size: 0.75rem; }
+</style>

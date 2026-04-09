@@ -10,9 +10,18 @@
             <p class="text-muted">Haz clic en cualquier día vacío para agendar</p>
         </div>
         <!-- Botón que ahora abre el modal directamente -->
-        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaCita" onclick="limpiarFecha()">
-            <i class="fas fa-plus me-2"></i> Agendar Nueva
-        </button>
+        <div class="d-flex justify-content-end gap-2 mb-3">
+    <!-- Botón para ir a la lista de citas (Tabla) -->
+            <a href="{% url 'lista_citas' %}" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-list me-1"></i> Ver en Tabla
+            </a>
+
+            <!-- Tu botón actual de Agendar -->
+            <button onclick="abrirModalNuevaCita()" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> Agendar Nueva
+            </button>
+        </div>
+
     </div>
 
     <div id='calendar' class="bg-white p-2"></div>

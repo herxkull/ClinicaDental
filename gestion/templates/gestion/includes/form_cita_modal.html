@@ -1,0 +1,44 @@
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">Agendar Nueva Cita</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<form id="formNuevaCita" action="{% url 'modal_nueva_cita' paciente.id %}" onsubmit="guardarCitaModal(event)">
+    {% csrf_token %}
+    <div class="modal-body">
+
+        <!-- ESTO ES VITAL PARA VER QUÉ FALLA -->
+        {% if form.errors %}
+            <div class="alert alert-danger py-2 small">
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label small fw-bold">Tratamiento</label>
+            {{ form.tratamiento }}
+        </div>
+        <div class="row">
+            <div class="col-6 mb-3">
+                <label class="form-label small fw-bold">Fecha</label>
+                {{ form.fecha }}
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label small fw-bold">Hora</label>
+                {{ form.hora }}
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small fw-bold">Observaciones</label>
+            {{ form.observaciones_doctor }}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-primary w-100">Agendar Cita</button>
+    </div>
+</form>
