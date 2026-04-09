@@ -12,6 +12,7 @@ import openpyxl
 from django.utils import timezone
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
 @login_required
 def dashboard(request):
     # Usamos timezone.now() para asegurar la hora local configurada
@@ -97,32 +98,37 @@ def lista_pacientes(request):
         'query': query
     })
 # Vista para registrar paciente
-def nuevo_paciente(request):
-    if request.method == "POST":
-        form = PacienteForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('lista_pacientes')
+def modal_paciente(request, pk=None):
+    if pk:
+        paciente = get_object_or_404(Paciente, pk=pk)
+        titulo = "Editar Paciente"
     else:
-        form = PacienteForm()
-    return render(request, 'gestion/paciente_form.html', {'form': form})
+        paciente = None
+        titulo = "Nuevo Paciente"
 
-
-def editar_paciente(request, pk):
-    paciente = get_object_or_404(Paciente, pk=pk)
     if request.method == "POST":
-        # 'instance' es el truco para que Django sepa que es una edición
         form = PacienteForm(request.POST, instance=paciente)
         if form.is_valid():
             form.save()
-            return redirect('detalle_paciente', pk=paciente.pk)
-    else:
-        form = PacienteForm(instance=paciente)
+            return JsonResponse({'status': 'ok'})
+        else:
+            # Si hay errores (ej: cédula duplicada), devolvemos el formulario con errores
+            html_form = render_to_string('gestion/includes/form_paciente_modal.html', {
+                'form': form,
+                'paciente': paciente,
+                'titulo': titulo
+            }, request=request)
+            return JsonResponse({'status': 'error', 'html_form': html_form})
 
-    return render(request, 'gestion/paciente_form.html', {
+    # Si es GET, cargamos el formulario limpio o con datos
+    form = PacienteForm(instance=paciente)
+    html_form = render_to_string('gestion/includes/form_paciente_modal.html', {
         'form': form,
-        'editando': True  # Pasamos esta variable para cambiar el título en el HTML
-    })
+        'paciente': paciente,
+        'titulo': titulo
+    }, request=request)
+
+    return JsonResponse({'html_form': html_form})
 
 def lista_citas(request):
     citas = Cita.objects.all().order_by('fecha', 'hora')

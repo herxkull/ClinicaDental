@@ -3,7 +3,7 @@
 
 {% block content %}
 <style>
- /* Odontograma */
+    /* Odontograma */
     .odontograma-svg {
         width: 100%;
         height: auto;
@@ -18,7 +18,7 @@
         stroke-width: 1.5;
         cursor: pointer;
         transition: all 0.2s ease-in-out;
-        transform-box: fill-box; /* Importante para que rote/escale sobre su propio centro */
+        transform-box: fill-box;
         transform-origin: center;
     }
 
@@ -26,10 +26,10 @@
         fill: #e3f2fd;
         stroke: #0d6efd;
         stroke-width: 2.5;
-        transform: scale(1.15); /* Efecto de aumento */
+        transform: scale(1.15);
     }
 
-/* Estados (con !important para asegurar que ganen al color base) */
+    /* Estados del Diente */
     .caries { fill: #e74c3c !important; opacity: 1 !important; }
     .corona { fill: #f1c40f !important; opacity: 1 !important; }
     .ausente { fill: #dee2e6 !important; opacity: 0.3 !important; }
@@ -39,8 +39,11 @@
         font-size: 9px;
         font-weight: bold;
         fill: #666;
-        pointer-events: none; /* Evita que el texto interfiera con el clic en el diente */
+        pointer-events: none;
     }
+
+    .bg-light-primary { background-color: #e3f2fd; color: #0d6efd; }
+    .bg-light-success { background-color: #d1e7dd; color: #0f5132; }
 </style>
 
 <div class="container-fluid pb-5">
@@ -58,13 +61,14 @@
         </div>
         <div class="col-md-5 text-md-end">
             <div class="btn-group shadow-sm">
-                <a href="{% url 'editar_paciente' paciente.pk %}" class="btn btn-white text-primary">
+                <!-- MODIFICADO: Abre modal de edición -->
+                <button onclick="abrirModalPaciente({{ paciente.pk }})" class="btn btn-white text-primary border">
                     <i class="fas fa-edit me-1"></i> Editar
-                </a>
-                <a href="{% url 'nueva_receta' paciente.pk %}" class="btn btn-white text-info">
+                </button>
+                <a href="{% url 'nueva_receta' paciente.pk %}" class="btn btn-white text-info border">
                     <i class="fas fa-file-prescription me-1"></i> Receta
                 </a>
-                <a href="{% url 'estado_cuenta' paciente.pk %}" class="btn btn-primary">
+                <a href="{% url 'estado_cuenta' paciente.pk %}" class="btn btn-primary border">
                     <i class="fas fa-print me-1"></i> Estado Cuenta
                 </a>
             </div>
@@ -90,7 +94,7 @@
         </li>
         <li class="nav-item">
             <button class="nav-link" id="archivos-tab" data-bs-toggle="tab" data-bs-target="#archivos" type="button">
-                <i class="fas fa-images me-2"></i>Galería ({{ paciente.archivos.count}})
+                <i class="fas fa-images me-2"></i>Galería ({{ paciente.archivos.count }})
             </button>
         </li>
     </ul>
@@ -100,12 +104,12 @@
         <!-- SECCIÓN 1: RESUMEN -->
         <div class="tab-pane fade show active" id="resumen" role="tabpanel">
             <div class="row">
-                <!-- Tarjeta Info Médica -->
+                <!-- Info Médica -->
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold">Información de Contacto</h6></div>
                         <div class="card-body">
-                            <div class="mb-3 d-flex">
+                            <div class="mb-3 d-flex align-items-center">
                                 <div class="bg-light-primary p-3 rounded me-3"><i class="fas fa-phone"></i></div>
                                 <div><small class="text-muted d-block">Teléfono</small><strong>{{ paciente.telefono|default:"---" }}</strong></div>
                             </div>
@@ -119,10 +123,10 @@
                     </div>
                 </div>
 
-                <!-- Tarjeta Financiera -->
+                <!-- Info Financiera -->
                 <div class="col-md-8 mb-4">
                     <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-white py-3 d-flex justify-content-between">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                             <h6 class="m-0 fw-bold">Resumen Financiero</h6>
                             <a href="{% url 'registrar_pago' paciente.pk %}" class="btn btn-sm btn-success">+ Registrar Pago</a>
                         </div>
@@ -166,7 +170,6 @@
         <div class="tab-pane fade" id="odontograma" role="tabpanel">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <!-- SVG de la Dentadura -->
                     <svg viewBox="0 0 530 240" class="odontograma-svg">
                         <!-- Superior -->
                         <g transform="translate(30, 40)">
@@ -237,33 +240,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                                {% for cita in citas %}
-                                <tr>
-                                    <td class="fw-bold">{{ cita.fecha|date:"d M Y" }}</td>
-
-                                    <!-- CAMBIO AQUÍ: Protegemos el nombre del tratamiento -->
-                                    <td>
-                                        {% if cita.tratamiento %}
-                                            {{ cita.tratamiento.nombre }}
-                                        {% else %}
-                                            <span class="text-muted">Consulta General</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <td>{{ cita.observaciones_doctor|truncatechars:80|default:"---" }}</td>
-
-                                    <td>
-                                        {% if cita.completada %}
-                                        <span class="badge bg-light-success">Completada</span>
-                                        {% else %}
-                                        <span class="badge bg-light-primary">Pendiente</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="4" class="text-center p-4">No hay consultas registradas.</td></tr>
-                                {% endfor %}
-                         </tbody>
+                            {% for cita in citas %}
+                            <tr>
+                                <td class="fw-bold">{{ cita.fecha|date:"d M Y" }}</td>
+                                <td>
+                                    {% if cita.tratamiento %}
+                                        {{ cita.tratamiento.nombre }}
+                                    {% else %}
+                                        <span class="text-muted small">Consulta General</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ cita.observaciones_doctor|truncatechars:80|default:"---" }}</td>
+                                <td>
+                                    {% if cita.completada %}
+                                    <span class="badge bg-light-success">Completada</span>
+                                    {% else %}
+                                    <span class="badge bg-light-primary">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center p-4">No hay consultas registradas.</td></tr>
+                            {% endfor %}
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -297,71 +296,12 @@
     </div>
 </div>
 
-<script>
-  // 1. Carga inicial de datos
-const estadosDientes = {{ estados_dientes_json|safe|default:"{}" }};
-
-// 2. Definir el Modal de forma global (FUERA de las funciones)
-let modalInstancia;
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializamos el modal cuando el documento esté listo
-    modalInstancia = new bootstrap.Modal(document.getElementById('modalDiente'));
-    cargarColoresOdontograma();
-});
-
-// 3. Función para pintar los colores
-function cargarColoresOdontograma() {
-    for (const [numero, estado] of Object.entries(estadosDientes)) {
-        const circuloDiente = document.getElementById(`diente-${numero}`);
-        if (circuloDiente) {
-            circuloDiente.classList.remove('caries', 'corona', 'ausente', 'tratado', 'sano');
-            circuloDiente.classList.add(estado.toLowerCase());
-        }
-    }
-}
-
-// 4. Función para abrir el modal al hacer clic
-function abrirModalDiente(numero) {
-    document.getElementById('modal_numero_diente').value = numero;
-    document.getElementById('tituloModalDiente').innerText = "Diente " + numero;
-
-    let estadoActual = estadosDientes[numero] || "SANO";
-    document.getElementById('modal_estado').value = estadoActual;
-
-    modalInstancia.show();
-}
-
-// 5. Función para guardar vía AJAX
-function guardarCambioDiente() {
-    const numero = document.getElementById('modal_numero_diente').value;
-    const estado = document.getElementById('modal_estado').value;
-    const notas = document.getElementById('modal_notas').value;
-
-    fetch("{% url 'actualizar_diente' paciente.id %}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-            "numero_diente": numero,
-            "estado": estado,
-            "notas": notas
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            estadosDientes[numero] = estado; // Actualizamos el dato local
-            cargarColoresOdontograma();      // Repintamos el diente
-            modalInstancia.hide();           // Cerramos el modal
-        } else {
-            alert("Error: " + data.message);
-        }
-    })
-    .catch(error => console.error("Error:", error));
-}
-</script>
+<!-- MODAL PARA EDITAR PACIENTE -->
+<div class="modal fade" id="modalPaciente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="contenidoModalPaciente"></div>
+    </div>
+</div>
 
 <!-- MODAL PARA ACTUALIZAR DIENTE -->
 <div class="modal fade" id="modalDiente" tabindex="-1" aria-hidden="true">
@@ -397,5 +337,65 @@ function guardarCambioDiente() {
         </div>
     </div>
 </div>
+
+<script>
+// --- Lógica de Modales de Paciente ---
+function abrirModalPaciente(id) {
+    fetch(`/paciente/modal/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
+            var myModal = new bootstrap.Modal(document.getElementById('modalPaciente'));
+            myModal.show();
+        });
+}
+
+// --- Lógica del Odontograma ---
+const estadosDientes = {{ estados_dientes_json|safe|default:"{}" }};
+let modalDienteInstancia;
+
+document.addEventListener('DOMContentLoaded', function() {
+    modalDienteInstancia = new bootstrap.Modal(document.getElementById('modalDiente'));
+    cargarColoresOdontograma();
+});
+
+function cargarColoresOdontograma() {
+    for (const [numero, estado] of Object.entries(estadosDientes)) {
+        const circuloDiente = document.getElementById(`diente-${numero}`);
+        if (circuloDiente) {
+            circuloDiente.classList.remove('caries', 'corona', 'ausente', 'tratado', 'sano');
+            circuloDiente.classList.add(estado.toLowerCase());
+        }
+    }
+}
+
+function abrirModalDiente(numero) {
+    document.getElementById('modal_numero_diente').value = numero;
+    document.getElementById('tituloModalDiente').innerText = "Diente " + numero;
+    let estadoActual = estadosDientes[numero] || "SANO";
+    document.getElementById('modal_estado').value = estadoActual;
+    modalDienteInstancia.show();
+}
+
+function guardarCambioDiente() {
+    const numero = document.getElementById('modal_numero_diente').value;
+    const estado = document.getElementById('modal_estado').value;
+    const notas = document.getElementById('modal_notas').value;
+
+    fetch("{% url 'actualizar_diente' paciente.id %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
+        body: JSON.stringify({ "numero_diente": numero, "estado": estado, "notas": notas })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            estadosDientes[numero] = estado;
+            cargarColoresOdontograma();
+            modalDienteInstancia.hide();
+        }
+    });
+}
+</script>
 
 {% endblock %}

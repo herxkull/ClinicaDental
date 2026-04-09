@@ -4,12 +4,13 @@ from .models import Paciente, Cita, DienteEstado, Tratamiento, Pago, ArchivoPaci
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = ['nombre', 'cedula', 'fecha_nacimiento', 'telefono', 'email', 'alergias', 'diabetes', 'hipertension', 'notas_medicas']
+        fields = '__all__' # o tus campos específicos
         widgets = {
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'cedula': forms.TextInput(attrs={'class': 'form-control'}),
-            # Puedes añadir más clases de Bootstrap aquí
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'alergias': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            # ... haz lo mismo para los checks de diabetes/hipertension si usas CheckboxInput
         }
 
 class CitaForm(forms.ModelForm):

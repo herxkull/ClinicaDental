@@ -1,0 +1,65 @@
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title fw-bold">
+        <i class="fas fa-user-medical me-2"></i>{{ titulo }}
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<form id="formPacienteModal"
+      action="{% if paciente %}{% url 'modal_paciente_editar' paciente.id %}{% else %}{% url 'modal_paciente_crear' %}{% endif %}"
+      method="POST">
+    {% csrf_token %}
+    <div class="modal-body">
+        <div class="row">
+            {% for field in form %}
+                <div class="{% if field.name == 'alergias' or field.name == 'notas' %}col-12{% else %}col-md-6{% endif %} mb-3">
+                    <label class="form-label fw-bold small text-uppercase text-muted">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-white border" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-save me-2"></i>Guardar Paciente
+        </button>
+    </div>
+</form>
+
+<script>
+    document.getElementById('formPacienteModal').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btnGuardar = this.querySelector('button[type="submit"]');
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                location.reload();
+            } else {
+                // Si hay error, recargamos el contenido del modal con los errores de validación
+                document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ocurrió un error al procesar la solicitud.');
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Paciente';
+        });
+    });
+</script>
