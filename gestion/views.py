@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime, time
 import openpyxl
-
+from .utils import render_to_pdf
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
@@ -185,17 +185,25 @@ def estado_cuenta_pdf(request, pk):
     cargos = Cita.objects.filter(paciente=paciente).order_by('fecha')
     abonos = Pago.objects.filter(paciente=paciente).order_by('fecha')
 
-    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    total_abonos = abonos.aggregate(total=Sum('monto'))['total'] or 0
-    saldo_pendiente = total_cargos - total_abonos
+    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base')).get('total') or 0
+    total_abonos = abonos.aggregate(total=Sum('monto')).get('total') or 0
+    saldo_pendiente = float(total_cargos) - float(total_abonos)
 
     context = {
         'paciente': paciente, 'cargos': cargos, 'abonos': abonos,
         'total_cargos': total_cargos, 'total_abonos': total_abonos,
         'saldo_pendiente': saldo_pendiente, 'fecha_emision': date.today(),
     }
-    return render(request, 'gestion/estado_cuenta_imprimir.html', context)
 
+    pdf_response = render_to_pdf('gestion/estado_cuenta_imprimir.html', context)
+
+    if pdf_response:
+        nombre_archivo = f"Estado_Cuenta_{paciente.nombre.replace(' ', '_')}.pdf"
+        # ¡ASÍ SÍ! Modificamos el header correctamente
+        pdf_response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
+        return pdf_response
+
+    return HttpResponse("Error al generar el PDF del estado de cuenta.")
 
 # ==========================================
 # 3. ODONTOGRAMA Y RECETAS
@@ -259,9 +267,16 @@ def nueva_receta(request, pk):
 @login_required
 def imprimir_receta(request, pk):
     receta = get_object_or_404(Receta, pk=pk)
-    return render(request, 'gestion/receta_imprimir.html', {'receta': receta})
 
+    pdf_response = render_to_pdf('gestion/receta_imprimir.html', {'receta': receta})
 
+    if pdf_response:
+        nombre_archivo = f"Receta_{receta.paciente.nombre.replace(' ', '_')}.pdf"
+        # ¡ASÍ SÍ! Modificamos el header correctamente
+        pdf_response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
+        return pdf_response
+
+    return HttpResponse("Error al generar el PDF de la receta.")
 # ==========================================
 # 4. MÓDULO DE CITAS Y CALENDARIO
 # ==========================================
