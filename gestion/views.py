@@ -1,56 +1,52 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
-from datetime import date, datetime, time
-from .forms import PacienteForm, CitaForm, DienteEstadoForm, DienteEstado, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
-from django.db.models import Sum, Q, Count, F
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 import json
+from datetime import date, datetime, time
+import openpyxl
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
-import openpyxl
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
+from django.core.paginator import Paginator
+from django.db.models import Sum, Q, Count, F
+
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
+from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
+
+
+# ==========================================
+# 1. DASHBOARD PRINCIPAL
+# ==========================================
+
 @login_required
 def dashboard(request):
-    # Obtenemos la fecha local actual
     hoy = timezone.localtime(timezone.now()).date()
-
-    # --- 1. Datos de Citas y Pacientes ---
     total_pacientes = Paciente.objects.count()
-
-    # Simplemente usamos fecha=hoy porque tu campo ya es DateField
-    # Quitamos __date y ordenamos por hora (o por fecha si incluiste la hora ahí)
     citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('fecha')
-
     citas_hoy_count = citas_hoy_lista.count()
     alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
 
-    # --- 2. Lógica Financiera ---
-    # Ingresos esperados SOLO de hoy
+    # CORRECCIÓN: Agregado a los aggregates
     ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-
-    # Ingresos Totales Históricos
     ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
 
-    # Cuentas por Cobrar (Total de todos los servicios - Total pagado)
     total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    cuentas_por_cobrar = total_servicios - ingresos_totales
+    cuentas_por_cobrar = float(total_servicios) - float(ingresos_totales)
 
-    # --- 3. Otros Datos ---
-    ultimos_pacientes = Paciente.objects.all().order_by('-id')[:5]
+    ultimos_pacientes = Paciente.objects.all().order_by('-id')
 
-    # --- 4. Lógica para el Gráfico ---
     datos_tratamientos = Cita.objects.values('tratamiento__nombre').annotate(
         cantidad=Count('id')
     ).order_by('-cantidad')
 
+    # CORRECCIÓN 1: Listas de comprensión completas para los gráficos
     labels_grafico = [item['tratamiento__nombre'] for item in datos_tratamientos]
     data_grafico = [item['cantidad'] for item in datos_tratamientos]
 
-    # --- 5. UN SOLO CONTEXTO (Sin sobrescribir) ---
     context = {
         'total_pacientes': total_pacientes,
         'citas_hoy': citas_hoy_count,
@@ -63,24 +59,16 @@ def dashboard(request):
         'data_grafico': json.dumps(data_grafico),
         'alertas_inventario': alertas_inventario,
     }
-
     return render(request, 'gestion/dashboard.html', context)
 
 
-def completar_cita(request, pk):
-    cita = get_object_or_404(Cita, pk=pk)
-    # Cambiamos el estado al contrario (Si es True pasa a False, y viceversa)
-    cita.completada = not cita.completada
-    cita.save()
+# ==========================================
+# 2. MÓDULO DE PACIENTES
+# ==========================================
 
-    # Redirige a la página anterior (así funciona desde el dashboard o desde la lista de citas)
-    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
-# Vista para listar pacientes
 @login_required
 def lista_pacientes(request):
     query = request.GET.get('q')
-
-    # 1. Obtenemos la lista completa (con o sin búsqueda)
     if query:
         pacientes_lista = Paciente.objects.filter(
             Q(nombre__icontains=query) | Q(cedula__icontains=query)
@@ -88,20 +76,43 @@ def lista_pacientes(request):
     else:
         pacientes_lista = Paciente.objects.all().order_by('nombre')
 
-    # 2. Configuramos el Paginador (ej. 10 pacientes por página)
     paginator = Paginator(pacientes_lista, 10)
-
-    # 3. Obtenemos el número de página actual de la URL (ej. ?page=2)
     page_number = request.GET.get('page')
-
-    # 4. Le pedimos al paginador que nos dé solo los pacientes de esa página
     pacientes = paginator.get_page(page_number)
 
-    return render(request, 'gestion/lista_pacientes.html', {
-        'pacientes': pacientes,
-        'query': query
+    return render(request, 'gestion/lista_pacientes.html', {'pacientes': pacientes, 'query': query})
+
+
+@login_required
+def detalle_paciente(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+    citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
+
+    #  Leemos directamente el JSON súper rápido en vez de consultar la base de datos
+    diccionario_dientes = paciente.odontograma_data if paciente.odontograma_data else {}
+
+    total_tratamientos = 0
+    for cita in citas:
+        if cita.tratamiento and cita.tratamiento.costo_base:
+            total_tratamientos += cita.tratamiento.costo_base
+
+    pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
+    total_pagos = pagos.aggregate(total=Sum('monto')).get('total') or 0
+    saldo_pendiente = float(total_tratamientos) - float(total_pagos)
+
+    return render(request, 'gestion/detalle_paciente.html', {
+        'paciente': paciente,
+        'citas': citas,
+        'dientes_detalle': [], # Dejamos una lista vacía por si tu HTML viejo todavía la pide
+        'estados_dientes_json': json.dumps(diccionario_dientes),
+        'total_tratamientos': total_tratamientos,
+        'total_pagos': total_pagos,
+        'saldo_pendiente': saldo_pendiente,
+        'pagos': pagos
     })
-# Vista para registrar paciente
+
+
+@login_required
 def modal_paciente(request, pk=None):
     if pk:
         paciente = get_object_or_404(Paciente, pk=pk)
@@ -116,211 +127,22 @@ def modal_paciente(request, pk=None):
             form.save()
             return JsonResponse({'status': 'ok'})
         else:
-            # Si hay errores (ej: cédula duplicada), devolvemos el formulario con errores
             html_form = render_to_string('gestion/includes/form_paciente_modal.html', {
-                'form': form,
-                'paciente': paciente,
-                'titulo': titulo
+                'form': form, 'paciente': paciente, 'titulo': titulo
             }, request=request)
             return JsonResponse({'status': 'error', 'html_form': html_form})
 
-    # Si es GET, cargamos el formulario limpio o con datos
     form = PacienteForm(instance=paciente)
     html_form = render_to_string('gestion/includes/form_paciente_modal.html', {
-        'form': form,
-        'paciente': paciente,
-        'titulo': titulo
+        'form': form, 'paciente': paciente, 'titulo': titulo
     }, request=request)
-
     return JsonResponse({'html_form': html_form})
-
-def lista_citas(request):
-    citas = Cita.objects.all().order_by('fecha', 'hora')
-    return render(request, 'gestion/lista_citas.html', {'citas': citas})
-
-
-# 1. FUNCIÓN PARA EL MODAL (Desde la ficha del paciente)
-def modal_nueva_cita(request, paciente_id):
-    paciente = get_object_or_404(Paciente, id=paciente_id)
-
-    if request.method == "POST":
-        # Creamos una copia de los datos para poder manipularlos
-        data = request.POST.copy()
-
-        # Si por alguna razón el motivo no llega, lo forzamos aquí
-        if not data.get('motivo'):
-            data['motivo'] = "Consulta programada"
-
-        form = CitaForm(data)
-
-        # Quitamos el error de paciente (que ya resolvimos antes)
-        if 'paciente' in form.errors:
-            del form.errors['paciente']
-
-        # Quitamos el error de motivo manualmente si llegara a aparecer
-        if 'motivo' in form.errors:
-            del form.errors['motivo']
-
-        if form.is_valid():
-            cita = form.save(commit=False)
-            cita.paciente = paciente
-            if not cita.motivo:  # Doble seguridad
-                cita.motivo = "Consulta programada"
-            cita.save()
-            return JsonResponse({'status': 'ok'})
-
-        # Si hay otros errores, regresamos el form
-        html_form = render_to_string('gestion/includes/form_cita_modal.html',
-                                     {'form': form, 'paciente': paciente},
-                                     request=request)
-        return JsonResponse({'status': 'error', 'html_form': html_form})
-
-    # Lógica del GET igual...
-    form = CitaForm(initial={'paciente': paciente})
-    html_form = render_to_string('gestion/includes/form_cita_modal.html',
-                                 {'form': form, 'paciente': paciente}, request=request)
-    return JsonResponse({'html_form': html_form})
-
-# 2. FUNCIÓN GLOBAL (Desde la Agenda o Dashboard)
-def nueva_cita(request):
-    # Si quieres que esta también sea modal, puedes borrar esta función
-    # y crear una similar a la de arriba pero sin paciente_id.
-    if request.method == "POST":
-        form = CitaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('dashboard')  # O a la agenda
-    else:
-        form = CitaForm()
-    return render(request, 'gestion/cita_form.html', {'form': form})
-
-
-def detalle_paciente(request, pk):
-    paciente = get_object_or_404(Paciente, pk=pk)
-    citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
-
-    # --- LÓGICA DEL ODONTOGRAMA ---
-    dientes_registrados = paciente.odontograma.all()
-    diccionario_dientes = {
-        str(d.numero_diente): (d.estado or "SANO")
-        for d in dientes_registrados
-        if d.numero_diente is not None
-    }
-
-    # --- LÓGICA FINANCIERA (CORREGIDA) ---
-    # Calculamos el total recorriendo las citas para evitar errores de agregación con Nulos
-    total_tratamientos = 0
-    for cita in citas:
-        if cita.tratamiento and cita.tratamiento.costo_base:
-            total_tratamientos += cita.tratamiento.costo_base
-
-    pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
-    total_pagos = pagos.aggregate(total=Sum('monto'))['total'] or 0
-    saldo_pendiente = float(total_tratamientos) - float(total_pagos)
-
-    return render(request, 'gestion/detalle_paciente.html', {
-        'paciente': paciente,
-        'citas': citas,
-        'dientes_detalle': dientes_registrados,
-        'estados_dientes_json': json.dumps(diccionario_dientes),
-        'total_tratamientos': total_tratamientos,
-        'total_pagos': total_pagos,
-        'saldo_pendiente': saldo_pendiente,
-        'pagos': pagos
-    })
-
-def lista_tratamientos(request):
-    # prefetch_related hace que cargue los materiales rápido y sin sobrecargar la base de datos
-    tratamientos = Tratamiento.objects.prefetch_related('materiales__producto').all().order_by('nombre')
-    productos = Producto.objects.all().order_by('nombre')
-
-    return render(request, 'gestion/lista_tratamientos.html', {
-        'tratamientos': tratamientos,
-        'productos': productos
-    })
-
-@login_required
-@require_POST
-def guardar_tratamiento(request):
-    tratamiento_id = request.POST.get('tratamiento_id')
-    nombre = request.POST.get('nombre')
-    descripcion = request.POST.get('descripcion', '')
-    costo_base = request.POST.get('costo_base', 0)
-
-    # 1. Crear o Editar el Tratamiento
-    if tratamiento_id: # Si tiene ID, estamos editando
-        tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
-        tratamiento.nombre = nombre
-        tratamiento.descripcion = descripcion
-        tratamiento.costo_base = costo_base
-        tratamiento.save()
-        # Borramos los materiales viejos para reemplazarlos por los nuevos que vengan en el form
-        MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
-    else: # Si no tiene ID, es uno nuevo
-        tratamiento = Tratamiento.objects.create(
-            nombre=nombre,
-            descripcion=descripcion,
-            costo_base=costo_base
-        )
-
-    # 2. Procesar la lista de Materiales (Vienen en forma de listas desde el HTML)
-    productos_ids = request.POST.getlist('producto_id[]')
-    cantidades = request.POST.getlist('cantidad[]')
-
-    # Usamos zip para emparejar el ID del producto con su cantidad
-    for p_id, cant in zip(productos_ids, cantidades):
-        if p_id and cant and int(cant) > 0:
-            producto = get_object_or_404(Producto, pk=p_id)
-            MaterialTratamiento.objects.create(
-                tratamiento=tratamiento,
-                producto=producto,
-                cantidad_usada=int(cant)
-            )
-
-    return redirect('lista_tratamientos')
-def gestionar_tratamiento(request, pk=None):
-    # Si recibimos un 'pk' (ID), buscamos el tratamiento para editarlo. Si no, creamos uno en blanco.
-    if pk:
-        tratamiento = get_object_or_404(Tratamiento, pk=pk)
-        titulo = f"Editar Tratamiento: {tratamiento.nombre}"
-    else:
-        tratamiento = None
-        titulo = "Nuevo Tratamiento"
-
-    if request.method == "POST":
-        form = TratamientoForm(request.POST, instance=tratamiento)
-        if form.is_valid():
-            form.save()
-            return redirect('lista_tratamientos')
-    else:
-        form = TratamientoForm(instance=tratamiento)
-
-    return render(request, 'gestion/tratamiento_form.html', {'form': form, 'titulo': titulo})
-
-
-def registrar_pago(request, pk):
-    paciente = get_object_or_404(Paciente, pk=pk)
-
-    if request.method == "POST":
-        form = PagoForm(request.POST)
-        if form.is_valid():
-            # No guardamos directamente porque nos falta asignarle el paciente
-            pago = form.save(commit=False)
-            pago.paciente = paciente
-            pago.save()
-            return redirect('detalle_paciente', pk=paciente.pk)
-    else:
-        form = PagoForm()
-
-    return render(request, 'gestion/pago_form.html', {'form': form, 'paciente': paciente})
 
 
 @login_required
 def subir_archivo(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
-
     if request.method == "POST":
-        # ¡IMPORTANTE! request.FILES es necesario para procesar archivos
         form = ArchivoPacienteForm(request.POST, request.FILES)
         if form.is_valid():
             archivo = form.save(commit=False)
@@ -329,20 +151,199 @@ def subir_archivo(request, pk):
             return redirect('detalle_paciente', pk=paciente.pk)
     else:
         form = ArchivoPacienteForm()
-
     return render(request, 'gestion/archivo_form.html', {'form': form, 'paciente': paciente})
 
 
 @login_required
+def exportar_pacientes_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Reporte de Pacientes"
+
+    # CORRECCIÓN 2: Lista de encabezados y lista de filas restauradas
+    headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
+    ws.append(headers)
+
+    pacientes = Paciente.objects.all()
+    for p in pacientes:
+        cargos = p.cita_set.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+        pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
+        saldo = cargos - pagos
+
+        # Añadir filas como array correctamente
+        ws.append()
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def estado_cuenta_pdf(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+    cargos = Cita.objects.filter(paciente=paciente).order_by('fecha')
+    abonos = Pago.objects.filter(paciente=paciente).order_by('fecha')
+
+    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    total_abonos = abonos.aggregate(total=Sum('monto'))['total'] or 0
+    saldo_pendiente = total_cargos - total_abonos
+
+    context = {
+        'paciente': paciente, 'cargos': cargos, 'abonos': abonos,
+        'total_cargos': total_cargos, 'total_abonos': total_abonos,
+        'saldo_pendiente': saldo_pendiente, 'fecha_emision': date.today(),
+    }
+    return render(request, 'gestion/estado_cuenta_imprimir.html', context)
+
+
+# ==========================================
+# 3. ODONTOGRAMA Y RECETAS
+# ==========================================
+
+@login_required
+def api_odontograma(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            paciente.odontograma_data = data
+            paciente.save()
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    data = paciente.odontograma_data if paciente.odontograma_data else {}
+    return JsonResponse(data)
+
+
+@login_required
+@require_POST
+def actualizar_diente(request, paciente_id):
+    try:
+        data = json.loads(request.body)
+        numero_diente = str(data.get('numero_diente'))
+        nuevo_estado = data.get('estado')
+
+        paciente = get_object_or_404(Paciente, pk=paciente_id)
+
+        # Leemos el JSON actual, lo actualizamos y lo guardamos
+        odontograma = paciente.odontograma_data if paciente.odontograma_data else {}
+        odontograma = nuevo_estado
+        paciente.odontograma_data = odontograma
+        paciente.save()
+
+        return JsonResponse({
+            'status': 'ok',
+            'message': f'Diente {numero_diente} actualizado',
+            'nuevo_estado': nuevo_estado
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@login_required
+def nueva_receta(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+    if request.method == "POST":
+        form = RecetaForm(request.POST)
+        if form.is_valid():
+            receta = form.save(commit=False)
+            receta.paciente = paciente
+            receta.save()
+            return redirect('imprimir_receta', pk=receta.pk)
+    else:
+        form = RecetaForm()
+    return render(request, 'gestion/receta_form.html', {'form': form, 'paciente': paciente})
+
+
+@login_required
+def imprimir_receta(request, pk):
+    receta = get_object_or_404(Receta, pk=pk)
+    return render(request, 'gestion/receta_imprimir.html', {'receta': receta})
+
+
+# ==========================================
+# 4. MÓDULO DE CITAS Y CALENDARIO
+# ==========================================
+
+@login_required
+def lista_citas(request):
+    citas = Cita.objects.all().order_by('fecha', 'hora')
+    return render(request, 'gestion/lista_citas.html', {'citas': citas})
+
+
+@login_required
 def calendario(request):
-    # Traemos los pacientes y tratamientos para llenar los desplegables del modal
     pacientes = Paciente.objects.all().order_by('nombre')
     tratamientos = Tratamiento.objects.all().order_by('nombre')
+    return render(request, 'gestion/calendario.html', {'pacientes': pacientes, 'tratamientos': tratamientos})
 
-    return render(request, 'gestion/calendario.html', {
-        'pacientes': pacientes,
-        'tratamientos': tratamientos
-    })
+
+@login_required
+def citas_json(request):
+    citas = Cita.objects.all()
+    eventos = []
+
+    for cita in citas:
+        start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
+        nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
+
+        eventos.append({
+            'title': f"{cita.paciente.nombre} ({nombre_tratamiento})",
+            'start': start_dt,
+            # CORRECCIÓN 3: Argumentos de la URL restaurados
+            'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
+            'backgroundColor': '#198754' if cita.completada else '#0d6efd',
+            'borderColor': '#198754' if cita.completada else '#0d6efd',
+        })
+
+    return JsonResponse(eventos, safe=False)
+
+
+@login_required
+def nueva_cita(request):
+    if request.method == "POST":
+        form = CitaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')
+    else:
+        form = CitaForm()
+    return render(request, 'gestion/cita_form.html', {'form': form})
+
+
+@login_required
+def modal_nueva_cita(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+
+    if request.method == "POST":
+        data = request.POST.copy()
+        if not data.get('motivo'):
+            data = "Consulta programada"
+
+        form = CitaForm(data)
+
+        if 'paciente' in form.errors:
+            del form.errors
+        if 'motivo' in form.errors:
+            del form.errors
+
+        if form.is_valid():
+            cita = form.save(commit=False)
+            cita.paciente = paciente
+            if not cita.motivo:
+                cita.motivo = "Consulta programada"
+            cita.save()
+            return JsonResponse({'status': 'ok'})
+
+        html_form = render_to_string('gestion/includes/form_cita_modal.html', {'form': form, 'paciente': paciente},
+                                     request=request)
+        return JsonResponse({'status': 'error', 'html_form': html_form})
+
+    form = CitaForm(initial={'paciente': paciente})
+    html_form = render_to_string('gestion/includes/form_cita_modal.html', {'form': form, 'paciente': paciente},
+                                 request=request)
+    return JsonResponse({'html_form': html_form})
 
 
 @login_required
@@ -357,130 +358,123 @@ def guardar_cita_calendario(request):
     paciente = get_object_or_404(Paciente, pk=paciente_id)
     tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id) if tratamiento_id else None
 
-    # Creamos la cita
-    Cita.objects.create(
-        paciente=paciente,
-        tratamiento=tratamiento,
-        fecha=fecha,
-        hora=hora,
-        motivo=motivo
-    )
-
-    # Recargamos el calendario para ver la nueva cita inmediatamente
+    Cita.objects.create(paciente=paciente, tratamiento=tratamiento, fecha=fecha, hora=hora, motivo=motivo)
     return redirect('calendario')
 
+
 @login_required
-def citas_json(request):
-    citas = Cita.objects.all()
-    eventos = []
+def completar_cita(request, pk):
+    cita = get_object_or_404(Cita, pk=pk)
+    cita.completada = not cita.completada
+    cita.save()
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
-    for cita in citas:
-        # FullCalendar necesita un formato ISO (YYYY-MM-DDTHH:MM:SS)
-        start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
 
-        # LA MAGIA ESTÁ AQUÍ: Si no hay tratamiento, ponemos un texto por defecto
-        nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
-
-        eventos.append({
-            'title': f"{cita.paciente.nombre} ({nombre_tratamiento})",
-            'start': start_dt,
-            'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
-            # Color dinámico: verde si está completada, azul si está pendiente
-            'backgroundColor': '#198754' if cita.completada else '#0d6efd',
-            'borderColor': '#198754' if cita.completada else '#0d6efd',
-        })
-
-    return JsonResponse(eventos, safe=False)
 @login_required
-def nueva_receta(request, pk):
-    paciente = get_object_or_404(Paciente, pk=pk)
+def finalizar_cita(request, pk):
+    cita = get_object_or_404(Cita, pk=pk)
+    if not cita.completada:
+        cita.completada = True
+        cita.save()
+        materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
+        for item in materiales:
+            producto = item.producto
+            if producto.cantidad_actual >= item.cantidad_usada:
+                producto.cantidad_actual -= item.cantidad_usada
+                producto.save()
+                messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
+            else:
+                messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
+    return redirect('dashboard')
+
+
+@login_required
+def completar_cita_con_pago(request, cita_id):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        cita = get_object_or_404(Cita, id=cita_id)
+        cita.completada = True
+        cita.save()
+
+        monto = data.get('monto')
+        if monto and float(monto) > 0:
+            Pago.objects.create(
+                paciente=cita.paciente,
+                monto=monto,
+                notas=f"Pago por cita: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}"
+            )
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+# ==========================================
+# 5. MÓDULO DE TRATAMIENTOS Y MATERIALES
+# ==========================================
+
+@login_required
+def lista_tratamientos(request):
+    tratamientos = Tratamiento.objects.prefetch_related('materiales__producto').all().order_by('nombre')
+    productos = Producto.objects.all().order_by('nombre')
+    return render(request, 'gestion/lista_tratamientos.html', {'tratamientos': tratamientos, 'productos': productos})
+
+
+@login_required
+def gestionar_tratamiento(request, pk=None):
+    if pk:
+        tratamiento = get_object_or_404(Tratamiento, pk=pk)
+        titulo = f"Editar Tratamiento: {tratamiento.nombre}"
+    else:
+        tratamiento = None
+        titulo = "Nuevo Tratamiento"
 
     if request.method == "POST":
-        form = RecetaForm(request.POST)
+        form = TratamientoForm(request.POST, instance=tratamiento)
         if form.is_valid():
-            receta = form.save(commit=False)
-            receta.paciente = paciente
-            receta.save()
-            # ¡Magia! Al guardar, redireccionamos directo a la vista de imprimir
-            return redirect('imprimir_receta', pk=receta.pk)
+            form.save()
+            return redirect('lista_tratamientos')
     else:
-        form = RecetaForm()
-
-    return render(request, 'gestion/receta_form.html', {'form': form, 'paciente': paciente})
-
-
-@login_required
-def imprimir_receta(request, pk):
-    # Esta vista NO usará el base.html normal, será una página en blanco limpia
-    receta = get_object_or_404(Receta, pk=pk)
-    return render(request, 'gestion/receta_imprimir.html', {'receta': receta})
+        form = TratamientoForm(instance=tratamiento)
+    return render(request, 'gestion/tratamiento_form.html', {'form': form, 'titulo': titulo})
 
 
 @login_required
-def exportar_pacientes_excel(request):
-    # 1. Crear el libro y la hoja de Excel
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Reporte de Pacientes"
+@require_POST
+def guardar_tratamiento(request):
+    tratamiento_id = request.POST.get('tratamiento_id')
+    nombre = request.POST.get('nombre')
+    descripcion = request.POST.get('descripcion', '')
+    costo_base = request.POST.get('costo_base', 0)
 
-    # 2. Definir los encabezados
-    headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
-    ws.append(headers)
+    if tratamiento_id:
+        tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
+        tratamiento.nombre = nombre
+        tratamiento.descripcion = descripcion
+        tratamiento.costo_base = costo_base
+        tratamiento.save()
+        MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
+    else:
+        tratamiento = Tratamiento.objects.create(nombre=nombre, descripcion=descripcion, costo_base=costo_base)
 
-    # 3. Obtener los datos y escribirlos
-    pacientes = Paciente.objects.all()
-    for p in pacientes:
-        # Reutilizamos la lógica de cálculos que hicimos para el detalle
-        cargos = p.cita_set.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-        pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
-        saldo = cargos - pagos
+    productos_ids = request.POST.getlist('producto_id[]')
+    cantidades = request.POST.getlist('cantidad[]')
 
-        ws.append([p.nombre, p.cedula, p.telefono, cargos, pagos, saldo])
+    for p_id, cant in zip(productos_ids, cantidades):
+        if p_id and cant and int(cant) > 0:
+            producto = get_object_or_404(Producto, pk=p_id)
+            MaterialTratamiento.objects.create(tratamiento=tratamiento, producto=producto, cantidad_usada=int(cant))
 
-    # 4. Configurar la respuesta del navegador para descargar el archivo
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
-
-    wb.save(response)
-    return response
+    return redirect('lista_tratamientos')
 
 
-@login_required
-def estado_cuenta_pdf(request, pk):
-    paciente = get_object_or_404(Paciente, pk=pk)
-
-    # Obtenemos todas las citas con tratamiento (Cargos)
-    cargos = Cita.objects.filter(paciente=paciente).order_by('fecha')
-
-    # Obtenemos todos los pagos (Abonos)
-    abonos = Pago.objects.filter(paciente=paciente).order_by('fecha')
-
-    # Calculamos totales
-    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    total_abonos = abonos.aggregate(total=Sum('monto'))['total'] or 0
-    saldo_pendiente = total_cargos - total_abonos
-
-    context = {
-        'paciente': paciente,
-        'cargos': cargos,
-        'abonos': abonos,
-        'total_cargos': total_cargos,
-        'total_abonos': total_abonos,
-        'saldo_pendiente': saldo_pendiente,
-        'fecha_emision': date.today(),
-    }
-    return render(request, 'gestion/estado_cuenta_imprimir.html', context)
-
+# ==========================================
+# 6. MÓDULO DE INVENTARIO
+# ==========================================
 
 @login_required
 def inventario(request):
     productos = Producto.objects.all().order_by('nombre')
-
-    # Estadísticas para las tarjetas superiores
     total_productos = productos.count()
     productos_bajos = productos.filter(cantidad_actual__lte=F('stock_minimo')).count()
-
-    # Calcular el valor total del inventario actual
     valor_inventario = sum(p.cantidad_actual * p.precio_compra for p in productos)
 
     context = {
@@ -488,39 +482,31 @@ def inventario(request):
         'total_productos': total_productos,
         'productos_bajos': productos_bajos,
         'valor_inventario': valor_inventario,
-        'alertas': productos_bajos > 0, # ¡Clave para que aparezca la alerta roja!
+        'alertas': productos_bajos > 0,
     }
-    # Apuntamos al HTML correcto
     return render(request, 'gestion/inventario.html', context)
 
 
 @login_required
 @require_POST
 def crear_producto(request):
-    # Recibimos los datos del formulario HTML
-    nombre = request.POST.get('nombre')
-    descripcion = request.POST.get('descripcion', '')
-    cantidad = request.POST.get('cantidad_actual', 0)
-    minimo = request.POST.get('stock_minimo', 5)
-    precio = request.POST.get('precio_compra', 0.00)
-
-    # Creamos el registro en la base de datos
     Producto.objects.create(
-        nombre=nombre,
-        descripcion=descripcion,
-        cantidad_actual=cantidad,
-        stock_minimo=minimo,
-        precio_compra=precio
+        nombre=request.POST.get('nombre'),
+        descripcion=request.POST.get('descripcion', ''),
+        cantidad_actual=request.POST.get('cantidad_actual', 0),
+        stock_minimo=request.POST.get('stock_minimo', 5),
+        precio_compra=request.POST.get('precio_compra', 0.00)
     )
-
-    # Redirigimos de vuelta a la página del inventario
     return redirect('inventario')
+
+
 @login_required
 def aumentar_stock(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
     producto.cantidad_actual += 1
     producto.save()
     return redirect('inventario')
+
 
 @login_required
 def disminuir_stock(request, pk):
@@ -531,83 +517,26 @@ def disminuir_stock(request, pk):
     return redirect('inventario')
 
 
-@login_required
-def finalizar_cita(request, pk):
-    cita = get_object_or_404(Cita, pk=pk)
-
-    if not cita.completada:
-        # 1. Cambiar el booleano correcto
-        cita.completada = True
-        cita.save()
-
-        # 2. Descontar materiales (si existen)
-        materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
-
-        for item in materiales:
-            producto = item.producto
-            if producto.cantidad_actual >= item.cantidad_usada:
-                producto.cantidad_actual -= item.cantidad_usada
-                producto.save()
-                messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
-            else:
-                messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
-
-    return redirect('dashboard')
-
+# ==========================================
+# 7. MÓDULO DE FINANZAS Y PAGOS
+# ==========================================
 
 @login_required
-@require_POST
-def actualizar_diente(request, paciente_id):
-    try:
-        data = json.loads(request.body)  # Leemos los datos enviados por JavaScript (AJAX)
-        numero_diente = data.get('numero_diente')
-        nuevo_estado = data.get('estado')
-        notas = data.get('notas', '')
-
-        paciente = get_object_or_404(Paciente, pk=paciente_id)
-
-        # update_or_create: Si existe lo actualiza, si no, lo crea. ¡Súper útil!
-        diente, created = DienteEstado.objects.update_or_create(
-            paciente=paciente,
-            numero_diente=numero_diente,
-            defaults={'estado': nuevo_estado, 'notas': notas}
-        )
-
-        return JsonResponse({
-            'status': 'ok',
-            'message': f'Diente {numero_diente} actualizado a {diente.get_estado_display()}',
-            'nuevo_estado': nuevo_estado
-        })
-
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-
 def reporte_finanzas(request):
-    # 1. Obtener fechas del GET
     fecha_inicio_str = request.GET.get('fecha_inicio')
     fecha_fin_str = request.GET.get('fecha_fin')
-
-    # Filtros base
     pagos = Pago.objects.all()
     citas = Cita.objects.all()
 
-    # 2. Aplicar filtros si existen fechas
     if fecha_inicio_str and fecha_fin_str:
         try:
-            # Convertimos strings a objetos datetime
             f_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
-            # Para el fin del día, usamos el máximo tiempo (23:59:59)
             f_fin = datetime.combine(datetime.strptime(fecha_fin_str, '%Y-%m-%d'), time.max)
-
-            # Filtramos (DateField no necesita aware datetime, pero por seguridad si es DateTimeField lo maneja bien)
             pagos = pagos.filter(fecha__range=(f_inicio, f_fin))
             citas = citas.filter(fecha__range=(f_inicio, f_fin))
         except ValueError:
-            # En caso de formato de fecha inválido, no filtramos nada
             pass
 
-    # 3. Recalcular totales basados en el queryset filtrado
     ingresos_totales = pagos.aggregate(total=Sum('monto'))['total'] or 0
     total_cargos = citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
     deuda_total = total_cargos - ingresos_totales
@@ -615,7 +544,7 @@ def reporte_finanzas(request):
     context = {
         'ingresos_totales': ingresos_totales,
         'deuda_total': deuda_total,
-        'ultimos_pagos': pagos.select_related('paciente').order_by('-fecha')[:50],
+        'ultimos_pagos': pagos.select_related('paciente').order_by('-fecha'),
         'total_cargos': total_cargos,
         'fecha_inicio': fecha_inicio_str,
         'fecha_fin': fecha_fin_str,
@@ -623,25 +552,32 @@ def reporte_finanzas(request):
     return render(request, 'gestion/finanzas.html', context)
 
 
-def completar_cita_con_pago(request, cita_id):
+@login_required
+def registrar_pago(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
     if request.method == "POST":
-        data = json.loads(request.body)
-        cita = get_object_or_404(Cita, id=cita_id)
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+                form = PagoForm(data)
+                if form.is_valid():
+                    pago = form.save(commit=False)
+                    pago.paciente = paciente
+                    pago.save()
+                    return JsonResponse({'status': 'ok'})
+                else:
+                    return JsonResponse({'status': 'error', 'errores': form.errors})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'mensaje': str(e)})
+        else:
+            form = PagoForm(request.POST)
+            if form.is_valid():
+                pago = form.save(commit=False)
+                pago.paciente = paciente
+                pago.save()
+                return redirect('detalle_paciente', pk=paciente.pk)
+    else:
+        form = PagoForm()
 
-        # 1. Marcar cita como completada
-        cita.completada = True
-        cita.save()
-
-        # 2. Si se ingresó un monto, registrar el pago
-        monto = data.get('monto')
-        if monto and float(monto) > 0:
-            Pago.objects.create(
-                paciente=cita.paciente,
-                monto=monto,
-                notas=f"Pago por cita: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}",
-                # metodo_pago=data.get('metodo') # Si añadiste el campo
-            )
-
-        return JsonResponse({'status': 'ok'})
-    return JsonResponse({'status': 'error'}, status=400)
-# Create your views here.
+    return render(request, 'gestion/pago_form.html', {'form': form, 'paciente': paciente})

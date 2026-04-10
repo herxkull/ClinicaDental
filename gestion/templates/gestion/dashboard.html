@@ -204,85 +204,19 @@
     </div>
 </div>
 
-<!-- SCRIPTS -->
+<!-- SCRIPTS (Al final de dashboard.html) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Puente de variables de Django a JS -->
 <script>
-    let citaIdActual = null;
-    let modalCobroInstancia = null;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- 1. Inicializar Gráfico ---
-        const etiquetas = {{ labels_grafico|safe|default:"[]" }};
-        const datos = {{ data_grafico|safe|default:"[]" }};
-
-        if (etiquetas.length > 0) {
-            const ctx = document.getElementById('graficoTratamientos').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: etiquetas,
-                    datasets: [{
-                        label: 'Citas',
-                        data: datos,
-                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                        borderColor: 'rgba(52, 152, 219, 1)',
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
-
-        // --- 2. Inicializar Modal ---
-        modalCobroInstancia = new bootstrap.Modal(document.getElementById('modalCobroCita'));
-    });
-
-    // --- 3. Funciones de Cobro ---
-    function prepararCobro(id, nombre, costo) {
-        citaIdActual = id;
-        document.getElementById('nombrePacienteCobro').innerText = nombre;
-        document.getElementById('montoCobro').value = costo;
-        modalCobroInstancia.show();
-    }
-
-    function confirmarCompletarCita() {
-        const monto = document.getElementById('montoCobro').value;
-        const metodo = document.getElementById('metodoCobro').value;
-
-        if (!monto || monto < 0) {
-            alert("Por favor ingresa un monto válido.");
-            return;
-        }
-
-        fetch(`/cita/completar/${citaIdActual}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ monto: monto, metodo: metodo })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                location.reload();
-            } else {
-                alert("Error al procesar el cobro.");
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Error de conexión al procesar el pago.");
-        });
-    }
+    const DASHBOARD_CONFIG = {
+        csrfToken: "{{ csrf_token }}",
+        etiquetas: {{ labels_grafico|safe|default:"[]" }},
+        datos: {{ data_grafico|safe|default:"[]" }}
+    };
 </script>
+
+<!-- Tu archivo limpio -->
+<script src="{% static 'gestion/js/dashboard.js' %}?v=1"></script>
+
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-
+{% load static %}
 {% block title %}Agenda Dental - Hersan Dental{% endblock %}
 
 {% block content %}
@@ -86,50 +86,19 @@
     </div>
 </div>
 
+<!-- SCRIPTS (Al final de calendario.html) -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
+<!-- Puente de variables -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      locale: 'es',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      buttonText: {
-        today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día'
-      },
-      events: '{% url "citas_json" %}',
-
-      // Magia 1: Hacer que se vean como bloques sólidos de color
-      eventDisplay: 'block',
-
-      // Magia 2: Detectar el clic en el día
-      dateClick: function(info) {
-        // Ponemos la fecha clickeada en el input del formulario
-        document.getElementById('inputFechaCita').value = info.dateStr;
-        // Abrimos el modal con Bootstrap
-        var myModal = new bootstrap.Modal(document.getElementById('modalNuevaCita'));
-        myModal.show();
-      },
-
-      eventClick: function(info) {
-        if (info.event.url) {
-          return true; // Navega al perfil del paciente
-        }
-      }
-    });
-    calendar.render();
-  });
-
-  // Limpia la fecha si se presiona el botón principal "+ Agendar Nueva"
-  function limpiarFecha() {
-      document.getElementById('inputFechaCita').value = '';
-  }
+    const CALENDARIO_CONFIG = {
+        urlEventos: "{% url 'citas_json' %}"
+    };
 </script>
+
+<!-- Tu archivo limpio -->
+<script src="{% static 'gestion/js/calendario.js' %}?v=1"></script>
+
 
 <style>
     .fc { max-height: 85vh; }

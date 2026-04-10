@@ -1,7 +1,6 @@
 from django.db import models
 
 
-# Create your models here.
 class Paciente(models.Model):
     # Datos Personales
     nombre = models.CharField(max_length=100)
@@ -10,38 +9,18 @@ class Paciente(models.Model):
     telefono = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
 
-    # Antecedentes Médicos (Lo que el dentista DEBE saber)
+    # Antecedentes Médicos
     alergias = models.TextField(help_text="Ej: Penicilina, Anestesia", blank=True)
     diabetes = models.BooleanField(default=False)
     hipertension = models.BooleanField(default=False)
     notas_medicas = models.TextField(verbose_name="Antecedentes generales", blank=True)
 
+    # Odontograma Moderno (Guarda todo el estado visual de los dientes en formato JSON)
+    odontograma_data = models.JSONField(default=dict, blank=True, null=True)
+
     def __str__(self):
         return f"{self.nombre} - {self.cedula}"
 
-class DienteEstado(models.Model):
-    # Opciones de estado (puedes añadir más luego)
-    ESTADOS_CHOICES = [
-        ('SANO', 'Sano'),
-        ('CARIES', 'Caries'),
-        ('CORONA', 'Corona'),
-        ('AUSENTE', 'Ausente'),
-        ('TRATADO', 'Tratado Endodoncia'),
-        ('IMPLANTE', 'Implante'),
-    ]
-
-    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='odontograma')
-    numero_diente = models.IntegerField(help_text="Número internacional del diente (11-48)")
-    estado = models.CharField(max_length=20, choices=ESTADOS_CHOICES, default='SANO')
-    notas = models.TextField(blank=True, null=True)
-    fecha_registro = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('paciente', 'numero_diente') # Un paciente solo puede tener un registro por diente
-        ordering = ['numero_diente']
-
-    def __str__(self):
-        return f"Diente {self.numero_diente} - {self.get_estado_display()} ({self.paciente.nombre})"
 
 class Tratamiento(models.Model):
     nombre = models.CharField(max_length=100)
@@ -53,7 +32,8 @@ class Tratamiento(models.Model):
 
 
 class Cita(models.Model):
-    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    # Agregamos related_name='citas' para búsquedas más rápidas
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='citas')
     tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True)
     fecha = models.DateField()
     hora = models.TimeField()
@@ -62,23 +42,25 @@ class Cita(models.Model):
     completada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.paciente.nombre} - {self.fecha}"
+        return f"{self.paciente.nombre} - {self.fecha.strftime('%d/%m/%Y')}"
 
-
-METODOS_PAGO = [
-    ('EFECTIVO', 'Efectivo'),
-    ('TRANSFERENCIA', 'Transferencia'),
-    ('TARJETA', 'Tarjeta'),
-]
 
 class Pago(models.Model):
+    METODOS_PAGO = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('TARJETA', 'Tarjeta'),
+    ]
+
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='pagos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
-    fecha = models.DateTimeField(auto_now_add=True) # Guarda la fecha y hora automáticamente
-    notas = models.CharField(max_length=200, blank=True, null=True, help_text="Ej. Efectivo, Transferencia, Tarjeta...")
+    # ¡AQUÍ ESTÁ LA MAGIA! Agregamos el método de pago correctamente
+    metodo = models.CharField(max_length=20, choices=METODOS_PAGO, default='EFECTIVO')
+    fecha = models.DateTimeField(auto_now_add=True)
+    notas = models.CharField(max_length=200, blank=True, null=True, help_text="Referencia o detalle extra")
 
     def __str__(self):
-        return f"{self.paciente.nombre} - ${self.monto} ({self.fecha.strftime('%d/%m/%Y')})"
+        return f"{self.paciente.nombre} - ${self.monto} ({self.get_metodo_display()})"
 
 
 class ArchivoPaciente(models.Model):
@@ -89,6 +71,7 @@ class ArchivoPaciente(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.paciente.nombre}"
+
 
 class Receta(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='recetas')
@@ -104,22 +87,22 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
     cantidad_actual = models.IntegerField(default=0)
-    stock_minimo = models.IntegerField(default=5)  # Para alertas
+    stock_minimo = models.IntegerField(default=5)
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.nombre} ({self.cantidad_actual})"
+        return f"{self.nombre} (Stock: {self.cantidad_actual})"
 
     @property
     def necesita_reabastecimiento(self):
         return self.cantidad_actual <= self.stock_minimo
 
+
 class MaterialTratamiento(models.Model):
-    tratamiento = models.ForeignKey('Tratamiento', on_delete=models.CASCADE, related_name='materiales')
-    producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    tratamiento = models.ForeignKey(Tratamiento, on_delete=models.CASCADE, related_name='materiales')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad_usada = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"{self.cantidad_usada} de {self.producto.nombre} para {self.tratamiento.nombre}"
-
+        return f"{self.cantidad_usada}x {self.producto.nombre} para {self.tratamiento.nombre}"

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Paciente, Cita, DienteEstado, Tratamiento, Pago, ArchivoPaciente, Receta
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta
 
 class PacienteForm(forms.ModelForm):
     class Meta:
@@ -25,14 +25,6 @@ class CitaForm(forms.ModelForm):
             'motivo': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-class DienteEstadoForm(forms.ModelForm):
-    class Meta:
-        model = DienteEstado
-        fields = ['estado', 'notas']
-        widgets = {
-            'estado': forms.Select(attrs={'class': 'form-select'}),
-            'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Opcional...'}),
-        }
 
 class TratamientoForm(forms.ModelForm):
     class Meta:

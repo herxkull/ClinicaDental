@@ -2,20 +2,6 @@
 {% load static %}
 
 {% block content %}
-<style>
-    /* Odontograma */
-    .odontograma-svg { width: 100%; height: auto; max-width: 800px; display: block; margin: auto; }
-    .diente { fill: white; stroke: #333; stroke-width: 1.5; cursor: pointer; transition: all 0.2s ease-in-out; transform-box: fill-box; transform-origin: center; }
-    .diente:hover { fill: #e3f2fd; stroke: #0d6efd; stroke-width: 2.5; transform: scale(1.15); }
-    .caries { fill: #e74c3c !important; opacity: 1 !important; }
-    .corona { fill: #f1c40f !important; opacity: 1 !important; }
-    .ausente { fill: #dee2e6 !important; opacity: 0.3 !important; }
-    .tratado { fill: #3498db !important; opacity: 1 !important; }
-    .diente-label { font-size: 9px; font-weight: bold; fill: #666; pointer-events: none; }
-    .bg-light-primary { background-color: #e3f2fd; color: #0d6efd; }
-    .bg-light-success { background-color: #d1e7dd; color: #0f5132; }
-</style>
-
 <div class="container-fluid pb-5">
     <!-- HEADER DE PACIENTE -->
     <div class="row align-items-center mb-4">
@@ -136,56 +122,10 @@
 
         <!-- SECCIÓN 2: ODONTOGRAMA -->
         <div class="tab-pane fade" id="odontograma" role="tabpanel">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <svg viewBox="0 0 530 240" class="odontograma-svg">
-                        <g transform="translate(30, 40)">
-                            <text x="-20" y="15" class="diente-label">SUP.</text>
-                            <circle id="diente-18" class="diente" cx="20" cy="20" r="12" onclick="abrirModalDiente(18)"/><text x="15" y="45" class="diente-label">18</text>
-                            <circle id="diente-17" class="diente" cx="50" cy="20" r="12" onclick="abrirModalDiente(17)"/><text x="45" y="45" class="diente-label">17</text>
-                            <circle id="diente-16" class="diente" cx="80" cy="20" r="12" onclick="abrirModalDiente(16)"/><text x="75" y="45" class="diente-label">16</text>
-                            <circle id="diente-15" class="diente" cx="110" cy="20" r="12" onclick="abrirModalDiente(15)"/><text x="105" y="45" class="diente-label">15</text>
-                            <circle id="diente-14" class="diente" cx="140" cy="20" r="12" onclick="abrirModalDiente(14)"/><text x="135" y="45" class="diente-label">14</text>
-                            <circle id="diente-13" class="diente" cx="170" cy="20" r="12" onclick="abrirModalDiente(13)"/><text x="165" y="45" class="diente-label">13</text>
-                            <circle id="diente-12" class="diente" cx="200" cy="20" r="12" onclick="abrirModalDiente(12)"/><text x="195" y="45" class="diente-label">12</text>
-                            <circle id="diente-11" class="diente" cx="230" cy="20" r="12" onclick="abrirModalDiente(11)"/><text x="225" y="45" class="diente-label">11</text>
-                            <circle id="diente-21" class="diente" cx="270" cy="20" r="12" onclick="abrirModalDiente(21)"/><text x="265" y="45" class="diente-label">21</text>
-                            <circle id="diente-22" class="diente" cx="300" cy="20" r="12" onclick="abrirModalDiente(22)"/><text x="295" y="45" class="diente-label">22</text>
-                            <circle id="diente-23" class="diente" cx="330" cy="20" r="12" onclick="abrirModalDiente(23)"/><text x="325" y="45" class="diente-label">23</text>
-                            <circle id="diente-24" class="diente" cx="360" cy="20" r="12" onclick="abrirModalDiente(24)"/><text x="355" y="45" class="diente-label">24</text>
-                            <circle id="diente-25" class="diente" cx="390" cy="20" r="12" onclick="abrirModalDiente(25)"/><text x="385" y="45" class="diente-label">25</text>
-                            <circle id="diente-26" class="diente" cx="420" cy="20" r="12" onclick="abrirModalDiente(26)"/><text x="415" y="45" class="diente-label">26</text>
-                            <circle id="diente-27" class="diente" cx="450" cy="20" r="12" onclick="abrirModalDiente(27)"/><text x="445" y="45" class="diente-label">27</text>
-                            <circle id="diente-28" class="diente" cx="480" cy="20" r="12" onclick="abrirModalDiente(28)"/><text x="475" y="45" class="diente-label">28</text>
-                        </g>
-                        <g transform="translate(30, 140)">
-                            <text x="-20" y="15" class="diente-label">INF.</text>
-                            <circle id="diente-48" class="diente" cx="20" cy="20" r="12" onclick="abrirModalDiente(48)"/><text x="15" y="45" class="diente-label">48</text>
-                            <circle id="diente-47" class="diente" cx="50" cy="20" r="12" onclick="abrirModalDiente(47)"/><text x="45" y="45" class="diente-label">47</text>
-                            <circle id="diente-46" class="diente" cx="80" cy="20" r="12" onclick="abrirModalDiente(46)"/><text x="75" y="45" class="diente-label">46</text>
-                            <circle id="diente-45" class="diente" cx="110" cy="20" r="12" onclick="abrirModalDiente(45)"/><text x="105" y="45" class="diente-label">45</text>
-                            <circle id="diente-44" class="diente" cx="140" cy="20" r="12" onclick="abrirModalDiente(44)"/><text x="135" y="45" class="diente-label">44</text>
-                            <circle id="diente-43" class="diente" cx="170" cy="20" r="12" onclick="abrirModalDiente(43)"/><text x="165" y="45" class="diente-label">43</text>
-                            <circle id="diente-42" class="diente" cx="200" cy="20" r="12" onclick="abrirModalDiente(42)"/><text x="195" y="45" class="diente-label">42</text>
-                            <circle id="diente-41" class="diente" cx="230" cy="20" r="12" onclick="abrirModalDiente(41)"/><text x="225" y="45" class="diente-label">41</text>
-                            <circle id="diente-31" class="diente" cx="270" cy="20" r="12" onclick="abrirModalDiente(31)"/><text x="265" y="45" class="diente-label">31</text>
-                            <circle id="diente-32" class="diente" cx="300" cy="20" r="12" onclick="abrirModalDiente(32)"/><text x="295" y="45" class="diente-label">32</text>
-                            <circle id="diente-33" class="diente" cx="330" cy="20" r="12" onclick="abrirModalDiente(33)"/><text x="325" y="45" class="diente-label">33</text>
-                            <circle id="diente-34" class="diente" cx="360" cy="20" r="12" onclick="abrirModalDiente(34)"/><text x="355" y="45" class="diente-label">34</text>
-                            <circle id="diente-35" class="diente" cx="390" cy="20" r="12" onclick="abrirModalDiente(35)"/><text x="385" y="45" class="diente-label">35</text>
-                            <circle id="diente-36" class="diente" cx="420" cy="20" r="12" onclick="abrirModalDiente(36)"/><text x="415" y="45" class="diente-label">36</text>
-                            <circle id="diente-37" class="diente" cx="450" cy="20" r="12" onclick="abrirModalDiente(37)"/><text x="445" y="45" class="diente-label">37</text>
-                            <circle id="diente-38" class="diente" cx="480" cy="20" r="12" onclick="abrirModalDiente(38)"/><text x="475" y="45" class="diente-label">38</text>
-                        </g>
-                    </svg>
-                    <div class="d-flex justify-content-center gap-3 mt-4 small border-top pt-3 text-muted">
-                        <span><i class="fas fa-circle text-danger me-1"></i> Caries</span>
-                        <span><i class="fas fa-circle text-warning me-1"></i> Corona</span>
-                        <span><i class="fas fa-circle text-primary me-1"></i> Tratado</span>
-                        <span><i class="fas fa-circle text-secondary opacity-50 me-1"></i> Ausente</span>
-                    </div>
-                </div>
-            </div>
+
+    <!-- Esta línea "jala" todo el código del nuevo archivo que creamos -->
+            {% include 'gestion/includes/odontograma.html' %}
+
         </div>
 
         <!-- SECCIÓN 3: HISTORIAL (CORREGIDO: Ahora dentro de tab-pane) -->
@@ -305,135 +245,16 @@
         </div>
     </div>
 </div>
-
 <!-- SCRIPTS -->
+<!-- 1. Variables Puente de Django a JS -->
 <script>
-    let modalDienteInstancia, modalCobroFicha, modalPaciente;
-    const estadosDientes = {{ estados_dientes_json|safe|default:"{}" }};
-
-    document.addEventListener('DOMContentLoaded', function() {
-        modalDienteInstancia = new bootstrap.Modal(document.getElementById('modalDiente'));
-        modalCobroFicha = new bootstrap.Modal(document.getElementById('modalCobroFicha'));
-        cargarColoresOdontograma();
-    });
-
-    function abrirModalPaciente(id) {
-        fetch(`/paciente/modal/${id}/`).then(r => r.json()).then(data => {
-            document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
-            new bootstrap.Modal(document.getElementById('modalPaciente')).show();
-        });
-    }
-
-    function cargarColoresOdontograma() {
-        for (const [num, est] of Object.entries(estadosDientes)) {
-            const el = document.getElementById(`diente-${num}`);
-            if (el) { el.classList.remove('caries','corona','ausente','tratado','sano'); el.classList.add(est.toLowerCase()); }
-        }
-    }
-
-    function abrirModalDiente(num) {
-        document.getElementById('modal_numero_diente').value = num;
-        document.getElementById('tituloModalDiente').innerText = "Diente " + num;
-        document.getElementById('modal_estado').value = estadosDientes[num] || "SANO";
-        modalDienteInstancia.show();
-    }
-
-    function guardarCambioDiente() {
-        const num = document.getElementById('modal_numero_diente').value;
-        const est = document.getElementById('modal_estado').value;
-        fetch("{% url 'actualizar_diente' paciente.id %}", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
-            body: JSON.stringify({ "numero_diente": num, "estado": est, "notas": document.getElementById('modal_notas').value })
-        }).then(r => r.json()).then(d => { if(d.status==='ok'){ estadosDientes[num]=est; cargarColoresOdontograma(); modalDienteInstancia.hide(); }});
-    }
-
-    function prepararCobroCita(id, nom, mon) {
-        document.getElementById('tituloModalCobro').innerText = "Completar Cita";
-        document.getElementById('cobroCitaId').value = id;
-        document.getElementById('montoCobroFicha').value = mon;
-        modalCobroFicha.show();
-    }
-
-    function prepararCobroGeneral(id, nom, sal) {
-        document.getElementById('tituloModalCobro').innerText = "Registrar Abono";
-        document.getElementById('cobroCitaId').value = "";
-        document.getElementById('montoCobroFicha').value = sal;
-        modalCobroFicha.show();
-    }
-
-    function ejecutarCobroFicha() {
-        const id = document.getElementById('cobroCitaId').value;
-        const url = id ? `/cita/completar/${id}/` : `/paciente/abono/{{ paciente.id }}/`;
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-            body: JSON.stringify({ monto: document.getElementById('montoCobroFicha').value, metodo: document.getElementById('metodoCobroFicha').value })
-        }).then(r => r.json()).then(d => { if(d.status==='ok') location.reload(); });
-    }
-
-    function abrirModalCita(pacienteId) {
-    fetch(`/paciente/${pacienteId}/nueva-cita-modal/`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
-            var myModal = new bootstrap.Modal(document.getElementById('modalCita'));
-            myModal.show();
-        });
-    }
-
-// Función para guardar la cita desde el modal (se llama desde el botón guardar del modal cargado)
-function guardarCitaModal(event) {
-    event.preventDefault();
-    const form = document.getElementById('formNuevaCita');
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            location.reload(); // Recarga para ver la cita en la tabla
-        } else {
-            // Si hay errores de validación, recargar solo el formulario
-            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
-        }
-    });
-}
-
-function abrirModalCita(pacienteId) {
-    fetch(`/paciente/${pacienteId}/nueva-cita-modal/`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
-            var myModal = new bootstrap.Modal(document.getElementById('modalCita'));
-            myModal.show();
-        });
-}
-
-// Función para guardar la cita desde el modal (se llama desde el botón guardar del modal cargado)
-function guardarCitaModal(event) {
-    event.preventDefault();
-    const form = document.getElementById('formNuevaCita');
-    const formData = new FormData(form);
-
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            location.reload(); // Recarga para ver la cita en la tabla
-        } else {
-            // Si hay errores de validación, recargar solo el formulario
-            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
-        }
-    });
-}
+    var CONFIG_PACIENTE = {
+        id: "{{ paciente.id }}",
+        csrfToken: "{{ csrf_token }}"
+    };
 </script>
+
+<!-- 2. Archivo Externo Refactorizado -->
+<script src="{% static 'gestion/js/paciente_operaciones.js' %}?v=2"></script>
+
 {% endblock %}

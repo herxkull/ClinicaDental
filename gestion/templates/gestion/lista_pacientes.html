@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-
+{% load static %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Listado de Pacientes</h2>
@@ -72,27 +72,13 @@
     </div>
 </div>
 
-<!-- 2. AGREGAMOS LA FUNCIÓN JAVASCRIPT -->
+<!-- 2. PUENTE DE VARIABLES Y ARCHIVO EXTERNO -->
 <script>
-function abrirModalPaciente(id = null) {
-    // Definimos la URL dependiendo de si es crear o editar
-    let url = id ? `/paciente/modal/${id}/` : '/paciente/modal/';
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            // Insertamos el HTML que nos mandó la vista
-            document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
-
-            // Mostramos el modal usando la librería de Bootstrap
-            var myModal = new bootstrap.Modal(document.getElementById('modalPaciente'));
-            myModal.show();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('No se pudo cargar el formulario');
-        });
-}
+    // Aquí solo necesitamos el token para guardar (no hay ID fijo porque es una lista)
+    var CONFIG_PACIENTE = {
+        csrfToken: "{{ csrf_token }}"
+    };
 </script>
+<script src="{% static 'gestion/js/paciente_operaciones.js' %}?v=2"></script>
 
 {% endblock %}

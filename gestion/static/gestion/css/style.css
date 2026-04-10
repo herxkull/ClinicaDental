@@ -74,3 +74,24 @@ body {
     padding: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
+
+/* ========================================= */
+/* ESTILOS DEL MENÚ LATERAL (SIDEBAR)        */
+/* ========================================= */
+.sidebar {
+    min-height: 100vh;
+    background-color: #212529;
+    color: white;
+}
+.sidebar a {
+    color: #adb5bd;
+    text-decoration: none;
+    padding: 10px;
+    display: block;
+    border-radius: 5px;
+    transition: all 0.3s ease; /* Le damos un efecto suave al pasar el mouse */
+}
+.sidebar a:hover {
+    background-color: #343a40;
+    color: white;
+}

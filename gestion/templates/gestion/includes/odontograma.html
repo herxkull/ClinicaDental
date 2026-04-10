@@ -1,0 +1,79 @@
+{% load static %}
+
+<!-- ========================================== -->
+<!-- 1. VARIABLES PUENTE (DE DJANGO A JS) -->
+<!-- ========================================== -->
+<script>
+    const CONFIG_ODONTOGRAMA = {
+        pacienteId: "{{ paciente.id }}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+
+<!-- ========================================== -->
+<!-- 2. ARCHIVO JAVASCRIPT EXTERNO -->
+<!-- ========================================== -->
+<script src="{% static 'js/odontograma.js' %}"></script>
+
+<!-- Contenedor del Odontograma -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-tooth me-2"></i> Odontograma Interactivo</h5>
+        <span class="badge bg-light text-dark" id="estado-guardado">Guardado</span>
+    </div>
+    <div class="card-body bg-light overflow-auto text-center">
+        <div class="d-flex justify-content-center flex-nowrap mb-4 gap-2" id="arcada-superior"></div>
+        <hr>
+        <div class="d-flex justify-content-center flex-nowrap gap-2" id="arcada-inferior"></div>
+    </div>
+    <div class="card-footer bg-white">
+        <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Haz clic en la cara de cualquier diente para cambiar su estado. Los cambios se guardan automáticamente.</small>
+    </div>
+</div>
+
+<!-- Modal para seleccionar el estado clínico -->
+<div class="modal fade" id="modalEstadoDiente" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h6 class="modal-title">Diente <span id="modal-diente-id"></span> - <span id="modal-cara-nombre"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body d-grid gap-2">
+                <button class="btn btn-outline-success btn-estado" data-estado="sano">Sano (Limpiar)</button>
+                <button class="btn btn-danger text-white btn-estado" data-estado="caries">Caries (Rojo)</button>
+                <button class="btn btn-primary text-white btn-estado" data-estado="obturacion">Obturación (Azul)</button>
+                <button class="btn btn-warning text-dark btn-estado" data-estado="corona">Corona (Amarillo)</button>
+                <hr>
+                <button class="btn btn-secondary btn-estado" data-estado="ausente">Diente Ausente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .diente-svg { width: 45px; height: 45px; cursor: pointer; transition: transform 0.2s; }
+    .diente-svg:hover { transform: scale(1.1); }
+    .cara { fill: #ffffff; stroke: #34495e; stroke-width: 1.5; transition: fill 0.2s; }
+    .cara:hover { opacity: 0.8; }
+    .estado-sano { fill: #ffffff; }
+    .estado-caries { fill: #e74c3c; }
+    .estado-obturacion { fill: #3498db; }
+    .estado-corona { fill: #f1c40f; }
+    .diente-ausente { opacity: 0.3; filter: grayscale(100%); }
+    .diente-numero { font-size: 12px; font-weight: bold; margin-top: 5px; color: #2c3e50; }
+    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 45px; }
+</style>
+
+<script>
+    var CONFIG_ODONTOGRAMA = {
+        pacienteId: "{{ paciente.id }}",
+        csrfToken: "{{ csrf_token }}"
+    };
+</script>
+
+<!-- ========================================== -->
+<!-- 2. ARCHIVO JAVASCRIPT EXTERNO -->
+<!-- ========================================== -->
+<script src="{% static 'gestion/js/odontograma.js' %}"></script>
+

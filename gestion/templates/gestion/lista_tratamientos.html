@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-
+{% load static %}
 {% block content %}
 <div class="container-fluid mt-4">
 
@@ -191,31 +191,11 @@
 
 <!-- SCRIPT MAGICO PARA LAS FILAS -->
 <script>
-    // Esta función inserta un select y un input de cantidad dentro del contenedor que le digamos
-    function agregarMaterial(containerId) {
-        const container = document.getElementById(containerId);
-        const div = document.createElement('div');
-        div.className = 'row mb-2';
-        // Usamos el poder de Django para pre-renderizar las opciones
-        div.innerHTML = `
-            <div class="col-7">
-                <select name="producto_id[]" class="form-select" required>
-                    <option value="">Seleccione un producto del inventario...</option>
-                    {% for p in productos %}
-                    <option value="{{ p.id }}">{{ p.nombre }} (Stock: {{ p.cantidad_actual }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-3">
-                <input type="number" name="cantidad[]" class="form-control" placeholder="Cant." min="1" required>
-            </div>
-            <div class="col-2">
-                <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()" title="Eliminar fila">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
-        container.appendChild(div);
-    }
+    // Puente de variables: Convertimos los productos de Django en un Array de JavaScript
+    const TRATAMIENTOS_CONFIG = {
+        productos:
+    };
 </script>
+
+<script src="{% static 'gestion/js/tratamientos.js' %}?v=1"></script>
 {% endblock %}

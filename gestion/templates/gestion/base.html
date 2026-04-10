@@ -5,40 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hersan Dental{% endblock %}</title>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome (Asegúrate de tenerlo para los iconos de las cards) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <!-- TU NUEVO ARCHIVO CSS EXTERNO -->
+    <!-- CSS EXTERNO LIMPIO -->
     <link rel="stylesheet" href="{% static 'gestion/css/style.css' %}">
 
     {% block extra_css %}{% endblock %}
-    <style>
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-        .sidebar a {
-            color: #adb5bd;
-            text-decoration: none;
-            padding: 10px;
-            display: block;
-            border-radius: 5px;
-        }
-        .sidebar a:hover {
-            background-color: #343a40;
-            color: white;
-        }
-    </style>
 </head>
 <body class="bg-light">
     <div class="container-fluid">
         <div class="row">
 
             {% if user.is_authenticated %}
-            <!-- MENÚ LATERAL (SOLO UNO) -->
+            <!-- MENÚ LATERAL -->
             <nav class="col-md-2 d-none d-md-block sidebar p-3 shadow">
                 <h4 class="text-center mb-4 mt-2">🦷 Hersan Dental</h4>
                 <ul class="nav flex-column">
@@ -54,15 +37,12 @@
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="{% url 'lista_tratamientos' %}">💉 Tratamientos</a>
                     </li>
-                    <!-- Enlace a Inventario -->
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{% url 'inventario' %}"><i class="fas fa-boxes me-2"></i> Inventario</a>
-
                     </li>
-                    <li> <a href="{% url 'reporte_finanzas' %}" class="nav-link text-white">
-                            <i class="fas fa-chart-line me-2"></i> Finanzas</a>
+                    <li>
+                        <a href="{% url 'reporte_finanzas' %}" class="nav-link text-white"><i class="fas fa-chart-line me-2"></i> Finanzas</a>
                     </li>
-
                 </ul>
 
                 <hr class="text-secondary mt-5">
@@ -75,14 +55,34 @@
             {% endif %}
 
             <!-- CONTENIDO PRINCIPAL -->
-            <main class="{% if user.is_authenticated %}col-md-10 ms-sm-auto{% else %}col-12{% endif %} p-4" style="min-height: 100vh;">
+            <main class="{% if user.is_authenticated %}col-md-10 ms-sm-auto{% else %}col-12{% endif %} p-4" style="min-height: 100vh; position: relative;">
+
+                <!-- SISTEMA GLOBAL DE ALERTAS FLOTANTES -->
+                {% if messages %}
+                <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm alert-auto-dismiss" role="alert">
+                            <strong>{{ message }}</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- CONTENIDO INYECTADO -->
                 {% block content %}
-                <!-- Aquí es donde Django inyecta tus otras pantallas -->
                 {% endblock %}
             </main>
 
         </div>
     </div>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SCRIPTS GLOBALES -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- TU NUEVO ARCHIVO JS MAESTRO -->
+    <script src="{% static 'gestion/js/main.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
