@@ -16,7 +16,7 @@ class PacienteForm(forms.ModelForm):
 class CitaForm(forms.ModelForm):
     class Meta:
         model = Cita
-        fields = ['tratamiento', 'fecha', 'hora', 'observaciones_doctor', 'motivo']
+        fields = ['paciente','tratamiento', 'fecha', 'hora', 'observaciones_doctor', 'motivo']
         widgets = {
             'tratamiento': forms.Select(attrs={'class': 'form-select'}),
             'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),

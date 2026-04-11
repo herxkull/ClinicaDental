@@ -377,8 +377,28 @@ def guardar_cita_calendario(request):
 @login_required
 def completar_cita(request, pk):
     cita = get_object_or_404(Cita, pk=pk)
-    cita.completada = not cita.completada
-    cita.save()
+
+    # Si la cita estaba pendiente y ahora se marca como completada
+    if not cita.completada:
+        cita.completada = True
+        cita.save()
+
+        # Descontar del inventario
+        if cita.tratamiento:
+            materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
+            for item in materiales:
+                producto = item.producto
+                if producto.cantidad_actual >= item.cantidad_usada:
+                    producto.cantidad_actual -= item.cantidad_usada
+                    producto.save()
+                    messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
+                else:
+                    messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
+    else:
+        # Si por error el usuario la vuelve a marcar como "Pendiente"
+        cita.completada = False
+        cita.save()
+
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
 
@@ -405,9 +425,21 @@ def completar_cita_con_pago(request, cita_id):
     if request.method == "POST":
         data = json.loads(request.body)
         cita = get_object_or_404(Cita, id=cita_id)
-        cita.completada = True
-        cita.save()
 
+        if not cita.completada:
+            cita.completada = True
+            cita.save()
+
+            # Descontar del inventario silenciosamente (sin messages porque es AJAX)
+            if cita.tratamiento:
+                materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
+                for item in materiales:
+                    producto = item.producto
+                    if producto.cantidad_actual >= item.cantidad_usada:
+                        producto.cantidad_actual -= item.cantidad_usada
+                        producto.save()
+
+        # Procesar el pago
         monto = data.get('monto')
         if monto and float(monto) > 0:
             Pago.objects.create(
@@ -451,7 +483,7 @@ def gestionar_tratamiento(request, pk=None):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO
+@grupo_requerido('Doctor')
 @require_POST
 def guardar_tratamiento(request):
     tratamiento_id = request.POST.get('tratamiento_id')
@@ -469,8 +501,9 @@ def guardar_tratamiento(request):
     else:
         tratamiento = Tratamiento.objects.create(nombre=nombre, descripcion=descripcion, costo_base=costo_base)
 
-    productos_ids = request.POST.getlist('producto_id[]')
-    cantidades = request.POST.getlist('cantidad[]')
+    # ¡AQUÍ ESTÁ LA MAGIA! Sin corchetes []
+    productos_ids = request.POST.getlist('producto_id')
+    cantidades = request.POST.getlist('cantidad')
 
     for p_id, cant in zip(productos_ids, cantidades):
         if p_id and cant and int(cant) > 0:

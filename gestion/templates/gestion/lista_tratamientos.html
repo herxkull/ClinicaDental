@@ -3,21 +3,18 @@
 {% block content %}
 <div class="container-fluid mt-4">
 
-    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 fw-bold mb-0 text-gray-800">⚕️ Catálogo de Tratamientos</h1>
             <p class="text-muted">Gestiona los servicios y el uso de materiales automáticos</p>
         </div>
         <div>
-            <!-- Botón para abrir el Modal de Nuevo Tratamiento -->
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoTratamiento">
                 <i class="fas fa-plus me-2"></i>Agregar Tratamiento
             </button>
         </div>
     </div>
 
-    <!-- Tabla de Tratamientos -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 bg-dark text-white">
             <h6 class="m-0 font-weight-bold">Listado de Servicios</h6>
@@ -37,8 +34,7 @@
                         {% for tratamiento in tratamientos %}
                         <tr>
                             <td class="ps-4">
-                                <span class="fw-bold text-gray-800">{{ tratamiento.nombre }}</span>
-                                <br>
+                                <span class="fw-bold text-gray-800">{{ tratamiento.nombre }}</span><br>
                                 <small class="text-muted">{{ tratamiento.descripcion|default:"Sin descripción" }}</small>
                             </td>
                             <td><span class="text-success fw-bold">${{ tratamiento.costo_base }}</span></td>
@@ -52,80 +48,11 @@
                                 {% endfor %}
                             </td>
                             <td class="text-end pe-4">
-                                <!-- Botón Editar abre el modal específico de este tratamiento -->
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar-{{ tratamiento.id }}">
                                     <i class="fas fa-edit me-1"></i> Editar
                                 </button>
                             </td>
                         </tr>
-
-                        <!-- MODAL EDITAR PARA ESTE TRATAMIENTO -->
-                        <div class="modal fade" id="modalEditar-{{ tratamiento.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-primary text-white">
-                                        <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Editar: {{ tratamiento.nombre }}</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <form action="{% url 'guardar_tratamiento' %}" method="POST">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="tratamiento_id" value="{{ tratamiento.id }}">
-
-                                        <div class="modal-body p-4">
-                                            <div class="row">
-                                                <div class="col-md-8 mb-3">
-                                                    <label class="form-label fw-bold">Nombre del Tratamiento <span class="text-danger">*</span></label>
-                                                    <input type="text" name="nombre" class="form-control" required value="{{ tratamiento.nombre }}">
-                                                </div>
-                                                <div class="col-md-4 mb-3">
-                                                    <label class="form-label fw-bold text-success">Costo Base ($) <span class="text-danger">*</span></label>
-                                                    <input type="number" step="0.01" name="costo_base" class="form-control" required value="{{ tratamiento.costo_base|stringformat:'f' }}">
-                                                </div>
-                                                <div class="col-md-12 mb-4">
-                                                    <label class="form-label fw-bold">Descripción</label>
-                                                    <textarea name="descripcion" class="form-control" rows="2">{{ tratamiento.descripcion }}</textarea>
-                                                </div>
-                                            </div>
-
-                                            <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar al finalizar cita</h6>
-                                            <div id="materiales-edit-{{ tratamiento.id }}">
-                                                <!-- Materiales ya guardados -->
-                                                {% for item in tratamiento.materiales.all %}
-                                                <div class="row mb-2">
-                                                    <div class="col-7">
-                                                        <select name="producto_id[]" class="form-select" required>
-                                                            <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }}</option>
-                                                            {% for p in productos %}
-                                                                {% if p.id != item.producto.id %}
-                                                                <option value="{{ p.id }}">{{ p.nombre }}</option>
-                                                                {% endif %}
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-3">
-                                                        <input type="number" name="cantidad[]" class="form-control" min="1" required value="{{ item.cantidad_usada }}">
-                                                    </div>
-                                                    <div class="col-2">
-                                                        <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-trash"></i></button>
-                                                    </div>
-                                                </div>
-                                                {% endfor %}
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="agregarMaterial('materiales-edit-{{ tratamiento.id }}')">
-                                                <i class="fas fa-plus me-1"></i> Agregar Insumo
-                                            </button>
-                                        </div>
-
-                                        <div class="modal-footer bg-light">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Cambios</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- FIN MODAL EDITAR -->
-
                         {% empty %}
                         <tr>
                             <td colspan="4" class="text-center py-5 text-muted">
@@ -141,13 +68,78 @@
     </div>
 </div>
 
-<!-- MODAL NUEVO TRATAMIENTO -->
+{% for tratamiento in tratamientos %}
+<div class="modal fade" id="modalEditar-{{ tratamiento.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Editar: {{ tratamiento.nombre }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'guardar_tratamiento' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="tratamiento_id" value="{{ tratamiento.id }}">
+
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Nombre del Tratamiento <span class="text-danger">*</span></label>
+                            <input type="text" name="nombre" class="form-control" required value="{{ tratamiento.nombre }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold text-success">Costo Base ($) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="costo_base" class="form-control" required value="{{ tratamiento.costo_base|stringformat:'f' }}">
+                        </div>
+                        <div class="col-md-12 mb-4">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="2">{{ tratamiento.descripcion }}</textarea>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar</h6>
+                    <div id="materiales-edit-{{ tratamiento.id }}">
+                        {% for item in tratamiento.materiales.all %}
+                        <div class="row mb-2">
+                            <div class="col-7">
+                                <select name="producto_id" class="form-select" required>
+                                    <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }}</option>
+                                    {% for p in productos %}
+                                        {% if p.id != item.producto.id %}
+                                        <option value="{{ p.id }}">{{ p.nombre }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <input type="number" name="cantidad" class="form-control" min="1" required value="{{ item.cantidad_usada }}">
+                            </div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="agregarMaterial('materiales-edit-{{ tratamiento.id }}')">
+                        <i class="fas fa-plus me-1"></i> Agregar Insumo
+                    </button>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 <div class="modal fade" id="modalNuevoTratamiento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Registrar Nuevo Tratamiento</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="{% url 'guardar_tratamiento' %}" method="POST">
                 {% csrf_token %}
@@ -155,7 +147,7 @@
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label class="form-label fw-bold">Nombre del Tratamiento <span class="text-danger">*</span></label>
-                            <input type="text" name="nombre" class="form-control" required placeholder="Ej: Extracción Simple">
+                            <input type="text" name="nombre" class="form-control" required placeholder="Ej: Extracción">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold text-success">Costo Base ($) <span class="text-danger">*</span></label>
@@ -163,21 +155,15 @@
                         </div>
                         <div class="col-md-12 mb-4">
                             <label class="form-label fw-bold">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles opcionales del procedimiento..."></textarea>
+                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles opcionales..."></textarea>
                         </div>
                     </div>
 
-                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar al finalizar cita</h6>
-
-                    <!-- Contenedor dinámico de filas de materiales -->
-                    <div id="materiales-nuevo">
-                        <!-- Las filas se agregan aquí con JS -->
-                    </div>
-
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar</h6>
+                    <div id="materiales-nuevo"></div>
                     <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="agregarMaterial('materiales-nuevo')">
                         <i class="fas fa-plus me-1"></i> Agregar Insumo
                     </button>
-                    <p class="text-muted small mt-2"><i class="fas fa-info-circle"></i> Opcional. Si el tratamiento usa materiales fijos, agrégalos aquí para descontarlos automáticamente del inventario.</p>
                 </div>
 
                 <div class="modal-footer bg-light">
@@ -189,13 +175,15 @@
     </div>
 </div>
 
-<!-- SCRIPT MAGICO PARA LAS FILAS -->
 <script>
-    // Puente de variables: Convertimos los productos de Django en un Array de JavaScript
     const TRATAMIENTOS_CONFIG = {
-        productos:
+        productos: [
+            {% for p in productos %}
+                { id: {{ p.id }}, nombre: "{{ p.nombre|escapejs }}", stock: {{ p.cantidad_actual|default:0 }} }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
     };
 </script>
 
-<script src="{% static 'gestion/js/tratamientos.js' %}?v=1"></script>
+<script src="{% static 'gestion/js/tratamiento.js' %}?v=2"></script>
 {% endblock %}
