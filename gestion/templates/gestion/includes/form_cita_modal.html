@@ -2,8 +2,7 @@
     <h5 class="modal-title">Agendar Nueva Cita</h5>
     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 </div>
-<form id="formNuevaCita" action="{% url 'modal_nueva_cita' paciente.id %}" onsubmit="guardarCitaModal(event)">
-    {% csrf_token %}
+<form id="form-cita-modal" method="post" action="{% url 'modal_nueva_cita' paciente.id %}">    {% csrf_token %}
     <div class="modal-body">
 
         <!-- ESTO ES VITAL PARA VER QUÉ FALLA -->

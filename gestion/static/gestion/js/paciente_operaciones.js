@@ -1,16 +1,15 @@
 // gestion/static/gestion/js/paciente_operaciones.js
 
-// 1. FUNCIÓN SEGURA PARA BUSCAR MODALES (Evita que el JS choque)
+// 1. FUNCIÓN SEGURA PARA BUSCAR MODALES
 function getModal(modalId) {
     const el = document.getElementById(modalId);
-    if (!el) return null; // Si no existe en esta pantalla, no hace nada
+    if (!el) return null;
     return bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
 }
 
-// 2. ABRIR MODAL (CREAR O EDITAR PACIENTE)
+// 2. ABRIR MODAL PACIENTE
 function abrirModalPaciente(id = null) {
     let url = id ? `/paciente/modal/${id}/` : '/paciente/modal/';
-
     fetch(url)
         .then(r => r.json())
         .then(data => {
@@ -21,17 +20,29 @@ function abrirModalPaciente(id = null) {
         .catch(err => console.error("Error al abrir modal paciente:", err));
 }
 
-// 3. VIGILANTE GLOBAL DE FORMULARIOS (A prueba de balas)
-document.addEventListener('submit', function(event) {
-    // Solo atrapamos el formulario si su ID es el de Editar/Crear Paciente
-    if (event.target && event.target.id === 'formEditarPaciente') {
+// 2.5 ABRIR MODAL CITA (¡NUEVO!)
+// Recibe la URL directamente desde el botón HTML para no fallar nunca
+function abrirModalCita(url_vista) {
+    fetch(url_vista)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
+            const modal = getModal('modalCita');
+            if (modal) modal.show();
+        })
+        .catch(err => console.error("Error al abrir modal cita:", err));
+}
 
-        event.preventDefault(); // 🛑 DETIENE LA PANTALLA BLANCA DE JSON
+// 3. VIGILANTE GLOBAL DE FORMULARIOS (Mejorado para atrapar múltiples modales)
+document.addEventListener('submit', function(event) {
+    // AHORA ATRAPA TANTO EL PACIENTE COMO LA CITA
+    if (event.target && (event.target.id === 'formEditarPaciente' || event.target.id === 'form-cita-modal')) {
+
+        event.preventDefault(); // 🛑 DETIENE LA PANTALLA BLANCA
 
         const form = event.target;
         const formData = new FormData(form);
 
-        // Cambiamos el botón para dar feedback visual
         const btnSubmit = form.querySelector('button[type="submit"]');
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -41,15 +52,18 @@ document.addEventListener('submit', function(event) {
         fetch(form.action, {
             method: 'POST',
             body: formData
-            // Nota: Ya no necesitamos el Token aquí porque viaja oculto en el FormData
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'ok') {
-                location.reload(); // Éxito: recargamos la página
+                location.reload();
             } else {
-                // Error: Pintamos las letras rojas
-                document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
+                // Inyecta los errores rojos en la caja correcta según el formulario
+                if (form.id === 'formEditarPaciente') {
+                    document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
+                } else if (form.id === 'form-cita-modal') {
+                    document.getElementById('contenidoModalCita').innerHTML = data.html_form;
+                }
             }
         })
         .catch(error => {
@@ -62,7 +76,7 @@ document.addEventListener('submit', function(event) {
     }
 });
 
-// 4. FUNCIONES DE COBROS (Protegidas por si no existen en la pantalla)
+// 4. FUNCIONES DE COBROS
 function prepararCobroCita(id, nom, mon) {
     const modal = getModal('modalCobroFicha');
     if (!modal) return;

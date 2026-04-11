@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q, Count, F
-
+from .decorators import grupo_requerido
 from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
 
@@ -30,7 +30,6 @@ def dashboard(request):
     citas_hoy_count = citas_hoy_lista.count()
     alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
 
-    # CORRECCIÓN: Agregado a los aggregates
     ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
     ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
 
@@ -43,7 +42,6 @@ def dashboard(request):
         cantidad=Count('id')
     ).order_by('-cantidad')
 
-    # CORRECCIÓN 1: Listas de comprensión completas para los gráficos
     labels_grafico = [item['tratamiento__nombre'] for item in datos_tratamientos]
     data_grafico = [item['cantidad'] for item in datos_tratamientos]
 
@@ -88,7 +86,6 @@ def detalle_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
 
-    #  Leemos directamente el JSON súper rápido en vez de consultar la base de datos
     diccionario_dientes = paciente.odontograma_data if paciente.odontograma_data else {}
 
     total_tratamientos = 0
@@ -103,7 +100,7 @@ def detalle_paciente(request, pk):
     return render(request, 'gestion/detalle_paciente.html', {
         'paciente': paciente,
         'citas': citas,
-        'dientes_detalle': [], # Dejamos una lista vacía por si tu HTML viejo todavía la pide
+        'dientes_detalle': [],
         'estados_dientes_json': json.dumps(diccionario_dientes),
         'total_tratamientos': total_tratamientos,
         'total_pagos': total_pagos,
@@ -155,12 +152,12 @@ def subir_archivo(request, pk):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO
 def exportar_pacientes_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Reporte de Pacientes"
 
-    # CORRECCIÓN 2: Lista de encabezados y lista de filas restauradas
     headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
     ws.append(headers)
 
@@ -169,12 +166,10 @@ def exportar_pacientes_excel(request):
         cargos = p.cita_set.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
         pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
         saldo = cargos - pagos
-
-        # Añadir filas como array correctamente
-        ws.append()
+        ws.append([p.nombre, p.cedula, p.telefono, cargos, pagos, saldo])
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
     wb.save(response)
     return response
 
@@ -199,17 +194,18 @@ def estado_cuenta_pdf(request, pk):
 
     if pdf_response:
         nombre_archivo = f"Estado_Cuenta_{paciente.nombre.replace(' ', '_')}.pdf"
-        # ¡ASÍ SÍ! Modificamos el header correctamente
         pdf_response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
         return pdf_response
 
     return HttpResponse("Error al generar el PDF del estado de cuenta.")
+
 
 # ==========================================
 # 3. ODONTOGRAMA Y RECETAS
 # ==========================================
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO (Sólo doctor escribe en el JSON masivo)
 def api_odontograma(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     if request.method == "POST":
@@ -225,6 +221,7 @@ def api_odontograma(request, paciente_id):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO (Clínico)
 @require_POST
 def actualizar_diente(request, paciente_id):
     try:
@@ -234,9 +231,8 @@ def actualizar_diente(request, paciente_id):
 
         paciente = get_object_or_404(Paciente, pk=paciente_id)
 
-        # Leemos el JSON actual, lo actualizamos y lo guardamos
         odontograma = paciente.odontograma_data if paciente.odontograma_data else {}
-        odontograma = nuevo_estado
+        odontograma[numero_diente] = nuevo_estado
         paciente.odontograma_data = odontograma
         paciente.save()
 
@@ -250,6 +246,7 @@ def actualizar_diente(request, paciente_id):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO (Médico)
 def nueva_receta(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     if request.method == "POST":
@@ -272,11 +269,12 @@ def imprimir_receta(request, pk):
 
     if pdf_response:
         nombre_archivo = f"Receta_{receta.paciente.nombre.replace(' ', '_')}.pdf"
-        # ¡ASÍ SÍ! Modificamos el header correctamente
         pdf_response['Content-Disposition'] = f'inline; filename="{nombre_archivo}"'
         return pdf_response
 
     return HttpResponse("Error al generar el PDF de la receta.")
+
+
 # ==========================================
 # 4. MÓDULO DE CITAS Y CALENDARIO
 # ==========================================
@@ -306,7 +304,6 @@ def citas_json(request):
         eventos.append({
             'title': f"{cita.paciente.nombre} ({nombre_tratamiento})",
             'start': start_dt,
-            # CORRECCIÓN 3: Argumentos de la URL restaurados
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
             'backgroundColor': '#198754' if cita.completada else '#0d6efd',
             'borderColor': '#198754' if cita.completada else '#0d6efd',
@@ -334,7 +331,7 @@ def modal_nueva_cita(request, paciente_id):
     if request.method == "POST":
         data = request.POST.copy()
         if not data.get('motivo'):
-            data = "Consulta programada"
+            data['motivo'] = "Consulta programada"
 
         form = CitaForm(data)
 
@@ -434,6 +431,7 @@ def lista_tratamientos(request):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO
 def gestionar_tratamiento(request, pk=None):
     if pk:
         tratamiento = get_object_or_404(Tratamiento, pk=pk)
@@ -453,6 +451,7 @@ def gestionar_tratamiento(request, pk=None):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO
 @require_POST
 def guardar_tratamiento(request):
     tratamiento_id = request.POST.get('tratamiento_id')
@@ -503,6 +502,7 @@ def inventario(request):
 
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO (Solo el admin crea nuevos productos)
 @require_POST
 def crear_producto(request):
     Producto.objects.create(
@@ -537,6 +537,7 @@ def disminuir_stock(request, pk):
 # ==========================================
 
 @login_required
+@grupo_requerido('Doctor') # <--- PROTEGIDO (Finanzas globales)
 def reporte_finanzas(request):
     fecha_inicio_str = request.GET.get('fecha_inicio')
     fecha_fin_str = request.GET.get('fecha_fin')

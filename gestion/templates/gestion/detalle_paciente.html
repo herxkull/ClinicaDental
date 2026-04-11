@@ -1,4 +1,5 @@
-{% extends 'gestion/base.html' %}
+ {% extends 'gestion/base.html' %}
+{% load auth_extras %}
 {% load static %}
 
 {% block content %}
@@ -20,9 +21,11 @@
                 <button onclick="abrirModalPaciente({{ paciente.pk }})" class="btn btn-white text-primary border">
                     <i class="fas fa-edit me-1"></i> Editar
                 </button>
+                {% if request.user|tiene_grupo:"Doctor" %}
                 <a href="{% url 'nueva_receta' paciente.pk %}" class="btn btn-white text-info border">
                     <i class="fas fa-file-prescription me-1"></i> Receta
                 </a>
+                {% endif %}
                 <a href="{% url 'estado_cuenta' paciente.pk %}" class="btn btn-primary border">
                     <i class="fas fa-print me-1"></i> Estado Cuenta
                 </a>
@@ -134,8 +137,8 @@
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold">Historial de Consultas</h6>
                     <!-- Botón actualizado -->
-                    <button onclick="abrirModalCita({{ paciente.id }})" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus me-1"></i> Nueva Cita
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalCita('{% url 'modal_nueva_cita' paciente.id %}')">
+                        <i class="fas fa-plus"></i> Nueva Cita
                     </button>
                 </div>
                 <div class="table-responsive">
