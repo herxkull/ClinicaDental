@@ -163,7 +163,7 @@ def exportar_pacientes_excel(request):
 
     pacientes = Paciente.objects.all()
     for p in pacientes:
-        cargos = p.cita_set.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+        cargos = p.citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
         pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
         saldo = cargos - pagos
         ws.append([p.nombre, p.cedula, p.telefono, cargos, pagos, saldo])
