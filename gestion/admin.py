@@ -21,7 +21,7 @@ class PacienteAdmin(admin.ModelAdmin):
 # --- Configuración del panel de PRODUCTOS (Inventario) ---
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'cantidad_actual', 'stock_minimo', 'precio_compra')
+    list_display = ('nombre', 'cantidad_actual', 'stock_minimo', 'costo_unitario', 'precio_venta_sugerido')
     list_filter = ('nombre',)
     search_fields = ('nombre',)
 
@@ -34,7 +34,7 @@ class MaterialInline(admin.TabularInline):
 @admin.register(Tratamiento)
 class TratamientoAdmin(admin.ModelAdmin):
     inlines = (MaterialInline,) # Esto permite agregar materiales dentro del tratamiento
-    list_display = ('nombre', 'costo_base')
+    list_display = ('nombre', 'precio_venta')
     search_fields = ('nombre',)
 
 # --- Configuración del panel de Citas ---

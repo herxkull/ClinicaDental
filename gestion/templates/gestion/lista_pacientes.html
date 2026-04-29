@@ -1,84 +1,159 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Listado de Pacientes</h2>
-    <!-- MODIFICADO: Ahora llama a la función JS -->
-    <button onclick="abrirModalPaciente()" class="btn btn-primary">+ Agregar</button>
-</div>
 
-<!-- BARRA DE BÚSQUEDA (Sin cambios) -->
-<form method="GET" class="mb-4">
-    <div class="input-group shadow-sm">
-        <input type="text" name="q" class="form-control border-primary"
-               placeholder="🔍 Buscar paciente por nombre o número de cédula..."
-               value="{{ query|default:'' }}">
-        <button class="btn btn-primary px-4" type="submit">Buscar</button>
-        {% if query %}
-            <a href="{% url 'lista_pacientes' %}" class="btn btn-outline-secondary">Limpiar</a>
+{% block title %}Pacientes - {{ request.tenant.nombre_clinica }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- ENCABEZADO Y BÚSQUEDA -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Gestión de Pacientes</h1>
+            <p class="text-sm text-gray-500">Administra el historial y la información de contacto.</p>
+        </div>
+        <button onclick="abrirModalPaciente()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-sm transition-all flex items-center justify-center">
+            <i class="fas fa-plus mr-2 text-xs"></i> Nuevo Paciente
+        </button>
+    </div>
+
+    <!-- BARRA DE FILTROS -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-8">
+        <form method="GET" class="flex flex-col md:flex-row gap-3">
+            <div class="relative flex-grow">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" name="q" value="{{ query|default:'' }}"
+                       class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+                       placeholder="Buscar por nombre o cédula...">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-gray-900 transition-colors">
+                    Filtrar
+                </button>
+                {% if query %}
+                    <a href="{% url 'lista_pacientes' %}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors">
+                        Limpiar
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- LISTADO DE PACIENTES -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if pacientes %}
+            <!-- TABLA (Escritorio) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Cédula</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Condiciones</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for paciente in pacientes %}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-gray-900">{{ paciente.nombre }}</div>
+                                <div class="text-xs text-gray-400">Paciente ID: #{{ paciente.pk }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ paciente.cedula }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ paciente.telefono }}</td>
+                            <td class="px-6 py-4">
+                                {% if paciente.condiciones_medicas %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        {{ paciente.condiciones_medicas }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-300 text-xs italic">Ninguna</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right space-x-2">
+                                <a href="{% url 'detalle_paciente' paciente.pk %}" class="text-blue-600 hover:text-blue-900 font-bold text-xs uppercase tracking-widest">Ficha</a>
+                                <button onclick="abrirModalPaciente('{{ paciente.pk }}')" class="text-amber-600 hover:text-amber-900 font-bold text-xs uppercase tracking-widest">Editar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CARDS (Móvil) -->
+            <div class="md:hidden divide-y divide-gray-100">
+                {% for paciente in pacientes %}
+                <div class="p-4 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-gray-900">{{ paciente.nombre }}</h4>
+                            <p class="text-xs text-gray-400">ID: #{{ paciente.pk }}</p>
+                        </div>
+                        <a href="{% url 'detalle_paciente' paciente.pk %}" class="bg-blue-50 text-blue-600 p-2 rounded-lg">
+                            <i class="fas fa-file-medical"></i>
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase font-bold">Cédula</p>
+                            <p class="text-gray-700">{{ paciente.cedula }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase font-bold">Teléfono</p>
+                            <p class="text-gray-700">{{ paciente.telefono }}</p>
+                        </div>
+                    </div>
+                    <button onclick="abrirModalPaciente('{{ paciente.pk }}')" class="w-full bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-bold border border-gray-100">
+                        EDITAR INFORMACIÓN
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- EMPTY STATE -->
+            <div class="text-center py-20">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 text-gray-300 mb-4">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">No se encontraron pacientes</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto mt-2">Comienza registrando a tu primer paciente para gestionar su historial médico.</p>
+                <button onclick="abrirModalPaciente()" class="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-blue-700 transition-all">
+                    Registrar Paciente
+                </button>
+            </div>
         {% endif %}
     </div>
-    <a href="{% url 'exportar_excel' %}" class="btn btn-outline-success mt-2">📊 Descargar Excel</a>
-</form>
 
-<div class="card shadow-sm border-0">
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Cédula</th>
-                    <th>Teléfono</th>
-                    <th>Condiciones</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for paciente in pacientes %}
-                <tr>
-                    <td>{{ paciente.nombre }}</td>
-                    <td>{{ paciente.cedula }}</td>
-                    <td>{{ paciente.telefono }}</td>
-                    <td>
-                        {% if paciente.condiciones_medicas %}
-                            <span class="badge bg-danger">{{ paciente.condiciones_medicas }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'detalle_paciente' paciente.pk %}" class="btn btn-sm btn-outline-primary">Ver Ficha</a>
-                            <!-- MODIFICADO: Ahora llama a la función JS con el ID -->
-                            <button onclick="abrirModalPaciente({{ paciente.pk }})" class="btn btn-sm btn-outline-warning">Editar</button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- PAGINACIÓN -->
+    {% if pacientes.has_other_pages %}
+    <div class="mt-8 flex justify-center">
+        <nav class="inline-flex rounded-md shadow-sm">
+            {% if pacientes.has_previous %}
+                <a href="?page={{ pacientes.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="px-4 py-2 border border-gray-200 bg-white text-sm font-medium text-gray-500 rounded-l-md hover:bg-gray-50">Anterior</a>
+            {% endif %}
+            <span class="px-4 py-2 border-t border-b border-gray-200 bg-blue-50 text-blue-600 text-sm font-medium">Página {{ pacientes.number }} de {{ pacientes.paginator.num_pages }}</span>
+            {% if pacientes.has_next %}
+                <a href="?page={{ pacientes.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="px-4 py-2 border border-gray-200 bg-white text-sm font-medium text-gray-500 rounded-r-md hover:bg-gray-50">Siguiente</a>
+            {% endif %}
+        </nav>
     </div>
+    {% endif %}
 </div>
 
-<!-- PAGINACIÓN (Sin cambios) -->
-{% if pacientes.has_other_pages %}
-    <!-- ... tu código de paginación ... -->
-{% endif %}
-
-<!-- 1. AGREGAMOS EL CONTENEDOR DEL MODAL -->
+<!-- MODAL CONTENEDOR -->
 <div class="modal fade" id="modalPaciente" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" id="contenidoModalPaciente">
-            <!-- El contenido se cargará aquí vía AJAX -->
+        <div class="modal-content rounded-2xl border-0 shadow-2xl" id="contenidoModalPaciente">
         </div>
     </div>
 </div>
 
-<!-- 2. PUENTE DE VARIABLES Y ARCHIVO EXTERNO -->
 <script>
-    // Aquí solo necesitamos el token para guardar (no hay ID fijo porque es una lista)
-    var CONFIG_PACIENTE = {
-        csrfToken: "{{ csrf_token }}"
-    };
+    var CONFIG_PACIENTE = { csrfToken: "{{ csrf_token }}" };
 </script>
 <script src="{% static 'gestion/js/paciente_operaciones.js' %}?v=2"></script>
-
-{% endblock %}
+{% endblock %}

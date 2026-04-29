@@ -131,7 +131,7 @@
             <tr>
                 <td>{{ cargo.fecha|date:"d/m/Y" }}</td>
                 <td>{{ cargo.tratamiento.nombre|default:"Consulta General" }}</td>
-                <td style="text-align: right;">${{ cargo.tratamiento.costo_base|floatformat:2 }}</td>
+                <td style="text-align: right;">${{ cargo.tratamiento.precio_venta|floatformat:2 }}</td>
             </tr>
             {% empty %}
             <tr>

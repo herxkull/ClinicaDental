@@ -1,43 +1,98 @@
-<div class="modal-header bg-primary text-white">
-    <h5 class="modal-title">Agendar Nueva Cita</h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- CABECERA PREMIUM -->
+<div class="bg-gray-900 px-8 py-6 flex justify-between items-center text-white relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+    <div class="relative z-10">
+        <h3 class="text-xl font-bold tracking-tight flex items-center">
+            <span class="w-2 h-8 bg-blue-500 rounded-full mr-3"></span>
+            Agendar Nueva Cita
+        </h3>
+        <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-medium">Paciente: {{ paciente.nombre }}</p>
+    </div>
+    <button type="button" class="relative z-10 text-gray-400 hover:text-white transition-colors p-2" data-bs-dismiss="modal">
+        <i class="fas fa-times text-xl"></i>
+    </button>
 </div>
-<form id="form-cita-modal" method="post" action="{% url 'modal_nueva_cita' paciente.id %}">    {% csrf_token %}
-    <div class="modal-body">
 
-        <!-- ESTO ES VITAL PARA VER QUÉ FALLA -->
+<!-- FORMULARIO ESTILIZADO -->
+<form id="form-cita-modal" method="post" action="{% url 'modal_nueva_cita' paciente.id %}" class="bg-white">
+    {% csrf_token %}
+    <div class="p-8">
         {% if form.errors %}
-            <div class="alert alert-danger py-2 small">
-                <ul class="mb-0">
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <li>{{ field.label }}: {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                    <p class="text-xs font-bold text-red-800">Hay errores en el formulario.</p>
+                </div>
             </div>
         {% endif %}
 
-        <div class="mb-3">
-            <label class="form-label small fw-bold">Tratamiento</label>
-            {{ form.tratamiento }}
-        </div>
-        <div class="row">
-            <div class="col-6 mb-3">
-                <label class="form-label small fw-bold">Fecha</label>
-                {{ form.fecha }}
+        <div class="space-y-6">
+            <!-- Tratamiento -->
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tratamiento / Servicio</label>
+                <div class="relative">
+                    {{ form.tratamiento }}
+                </div>
             </div>
-            <div class="col-6 mb-3">
-                <label class="form-label small fw-bold">Hora</label>
-                {{ form.hora }}
+
+            <!-- Fecha y Hora -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fecha</label>
+                    {{ form.fecha }}
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Hora</label>
+                    {{ form.hora }}
+                </div>
             </div>
-        </div>
-        <div class="mb-3">
-            <label class="form-label small fw-bold">Observaciones</label>
-            {{ form.observaciones_doctor }}
+
+            <!-- Motivo/Notas -->
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Motivo o Notas</label>
+                {{ form.motivo }}
+            </div>
+
+            <!-- Observaciones del Doctor -->
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Observaciones Internas</label>
+                {{ form.observaciones_doctor }}
+            </div>
         </div>
     </div>
-    <div class="modal-footer">
-        <button type="submit" class="btn btn-primary w-100">Agendar Cita</button>
+
+    <!-- FOOTER -->
+    <div class="px-8 py-6 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-end">
+        <button type="button" class="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-200 transition-all order-2 sm:order-1" data-bs-dismiss="modal">
+            Cancelar
+        </button>
+        <button type="submit" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center order-1 sm:order-2">
+            <i class="fas fa-calendar-check mr-2 text-xs opacity-70"></i>
+            Confirmar Cita
+        </button>
     </div>
 </form>
+
+<style>
+    #form-cita-modal input, 
+    #form-cita-modal select, 
+    #form-cita-modal textarea {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        background-color: #f9fafb;
+        border: 1px solid #f3f4f6;
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        color: #111827;
+        transition: all 0.2s ease;
+    }
+    
+    #form-cita-modal input:focus, 
+    #form-cita-modal select:focus, 
+    #form-cita-modal textarea:focus {
+        background-color: #ffffff;
+        border-color: #3b82f6;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+</style>

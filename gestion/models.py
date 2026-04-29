@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Paciente(models.Model):
@@ -25,21 +26,40 @@ class Paciente(models.Model):
 class Tratamiento(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
-    costo_base = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio cobrado al paciente")
+    color = models.CharField(max_length=7, default="#3b82f6", help_text="Color en formato HEX")
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def costo_materiales(self):
+        total = sum(item.producto.costo_unitario * item.cantidad_usada for item in self.materiales.all())
+        return total
+
+    @property
+    def margen_ganancia(self):
+        return self.precio_venta - self.costo_materiales
+
+    @property
+    def margen_porcentaje(self):
+        if self.precio_venta > 0:
+            return (self.margen_ganancia / self.precio_venta) * 100
+        return 0
 
 
 class Cita(models.Model):
     # Agregamos related_name='citas' para búsquedas más rápidas
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='citas')
     tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True)
-    fecha = models.DateField()
+    fecha = models.DateField(db_index=True)
     hora = models.TimeField()
     motivo = models.TextField()
     observaciones_doctor = models.TextField(blank=True)
-    completada = models.BooleanField(default=False)
+    completada = models.BooleanField(default=False, db_index=True)
+    
+    # Campo para sincronización con Google Calendar
+    google_event_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
     def __str__(self):
         return f"{self.paciente.nombre} - {self.fecha.strftime('%d/%m/%Y')}"
@@ -54,9 +74,9 @@ class Pago(models.Model):
 
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='pagos')
     monto = models.DecimalField(max_digits=10, decimal_places=2)
-    # ¡AQUÍ ESTÁ LA MAGIA! Agregamos el método de pago correctamente
     metodo = models.CharField(max_length=20, choices=METODOS_PAGO, default='EFECTIVO')
-    fecha = models.DateTimeField(auto_now_add=True)
+    cita = models.ForeignKey('Cita', on_delete=models.SET_NULL, null=True, blank=True, related_name='pagos_detalle')
+    fecha = models.DateTimeField(auto_now_add=True, db_index=True)
     notas = models.CharField(max_length=200, blank=True, null=True, help_text="Referencia o detalle extra")
 
     def __str__(self):
@@ -84,15 +104,20 @@ class Receta(models.Model):
 
 
 class Producto(models.Model):
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, db_index=True)
     descripcion = models.TextField(blank=True, null=True)
     cantidad_actual = models.IntegerField(default=0)
     stock_minimo = models.IntegerField(default=5)
-    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    costo_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    precio_venta_sugerido = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.nombre} (Stock: {self.cantidad_actual})"
+
+    @property
+    def total_valor_stock(self):
+        return self.cantidad_actual * self.costo_unitario
 
     @property
     def necesita_reabastecimiento(self):
@@ -106,3 +131,35 @@ class MaterialTratamiento(models.Model):
 
     def __str__(self):
         return f"{self.cantidad_usada}x {self.producto.nombre} para {self.tratamiento.nombre}"
+
+
+class GoogleCalendarConfig(models.Model):
+    calendar_id = models.CharField(max_length=255, default='primary')
+    credentials_json = models.JSONField(null=True, blank=True)
+    is_active = models.BooleanField(default=False)
+    last_sync = models.DateTimeField(null=True, blank=True)
+
+
+class ConfiguracionClinica(models.Model):
+    # General
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
+    nombre_comercial = models.CharField(max_length=100, blank=True)
+    direccion = models.TextField(blank=True)
+    telefono_contacto = models.CharField(max_length=20, blank=True)
+    email_contacto = models.EmailField(blank=True)
+
+    # Clínica
+    duracion_cita_estandar = models.IntegerField(default=60)
+    horarios_atencion = models.JSONField(default=dict, blank=True)
+    
+    # Finanzas
+    moneda_simbolo = models.CharField(max_length=5, default='$')
+    impuesto_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=15.00)
+    pie_pagina_recibo = models.TextField(blank=True)
+
+    # WhatsApp
+    whatsapp_numero = models.CharField(max_length=20, blank=True)
+    whatsapp_recordatorios_activos = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Configuración de {self.nombre_comercial or 'la Clínica'}"

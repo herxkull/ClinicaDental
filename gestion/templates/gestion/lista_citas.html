@@ -1,45 +1,112 @@
 {% extends 'gestion/base.html' %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Agenda de Citas</h2>
-    <a href="{% url 'nueva_cita' %}" class="btn btn-success">+ Agendar Cita</a>
-</div>
+{% block title %}Citas - {{ request.tenant.nombre_clinica }}{% endblock %}
 
-<div class="card shadow-sm border-0">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Paciente</th>
-                    <th>Tratamiento</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Listado de Citas</h1>
+            <p class="text-sm text-gray-500">Historial completo y programación de servicios.</p>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+            <a href="{% url 'calendario' %}" class="flex-1 md:flex-none bg-white border border-gray-200 text-gray-600 font-bold py-2.5 px-6 rounded-lg shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center">
+                <i class="fas fa-calendar-alt mr-2 text-xs text-blue-500"></i> Ver Calendario
+            </a>
+            <a href="{% url 'nueva_cita' %}" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-sm transition-all flex items-center justify-center">
+                <i class="fas fa-plus mr-2 text-xs"></i> Nueva Cita
+            </a>
+        </div>
+    </div>
+
+    <!-- LISTADO -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if citas %}
+            <!-- ESCRITORIO -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha y Hora</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Paciente</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tratamiento</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for cita in citas %}
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-gray-900">{{ cita.fecha }}</div>
+                                <div class="text-xs text-gray-400">{{ cita.hora }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900">{{ cita.paciente.nombre }}</div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase">{{ cita.paciente.cedula|default:"S/C" }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-sm text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{{ cita.tratamiento.nombre }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if cita.completada %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 uppercase">
+                                        <i class="fas fa-check mr-1 text-[8px]"></i> Completada
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 uppercase">
+                                        <i class="fas fa-clock mr-1 text-[8px]"></i> Pendiente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-blue-600 hover:text-blue-900 font-bold text-xs uppercase tracking-widest">
+                                    Ver Expediente
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MÓVIL -->
+            <div class="md:hidden divide-y divide-gray-100">
                 {% for cita in citas %}
-                <tr>
-                    <td>{{ cita.fecha }}</td>
-                    <td>{{ cita.hora }}</td>
-                    <td>{{ cita.paciente.nombre }}</td>
-                    <td>{{ cita.tratamiento.nombre }}</td>
-                    <td>
+                <div class="p-4 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">{{ cita.fecha }} - {{ cita.hora }}</p>
+                            <h4 class="font-bold text-gray-900">{{ cita.paciente.nombre }}</h4>
+                        </div>
                         {% if cita.completada %}
-                        <span class="badge bg-success">Completada</span>
+                            <i class="fas fa-check-circle text-green-500"></i>
                         {% else %}
-                        <span class="badge bg-primary">Pendiente</span>
+                            <i class="fas fa-clock text-blue-400"></i>
                         {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center p-4">No hay citas agendadas.</td>
-                </tr>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500 italic">{{ cita.tratamiento.nombre }}</span>
+                        <a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-blue-600 font-bold text-[10px] uppercase tracking-widest">Expediente</a>
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+        {% else %}
+            <!-- EMPTY STATE -->
+            <div class="text-center py-20">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 text-gray-300 mb-4">
+                    <i class="fas fa-calendar-times fa-2x"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">No hay citas registradas</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto mt-2">Parece que aún no tienes actividad programada en tu agenda.</p>
+                <a href="{% url 'nueva_cita' %}" class="mt-6 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-blue-700 transition-all">
+                    Agendar Primera Cita
+                </a>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

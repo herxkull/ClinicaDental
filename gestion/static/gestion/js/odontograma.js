@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
     function crearDienteSVG(numero) {
         return `
         <div class="diente-wrapper" id="wrapper-${numero}">
+            <div class="diente-tooltip" id="tooltip-${numero}">Sano</div>
             <svg class="diente-svg" viewBox="0 0 40 40" data-diente="${numero}">
                 <polygon points="0,0 40,0 30,10 10,10" class="cara" data-cara="top" />
                 <polygon points="40,0 40,40 30,30 30,10" class="cara" data-cara="right" />
@@ -49,19 +50,27 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelectorAll('.diente-svg').forEach(svg => {
             const num = svg.getAttribute('data-diente');
             const wrapper = document.getElementById(`wrapper-${num}`);
+            const tooltip = document.getElementById(`tooltip-${num}`);
 
             svg.querySelectorAll('.cara').forEach(cara => cara.className.baseVal = 'cara estado-sano');
             wrapper.classList.remove('diente-ausente');
+            if (tooltip) tooltip.innerText = "Sano";
 
             if (datosOdontograma[num]) {
                 if (datosOdontograma[num]['ausente']) {
                     wrapper.classList.add('diente-ausente');
+                    if (tooltip) tooltip.innerText = "Pieza Ausente";
                 } else {
+                    let estados = [];
                     for (const [cara, estado] of Object.entries(datosOdontograma[num])) {
                         if (cara !== 'ausente') {
                             const polygon = svg.querySelector(`[data-cara="${cara}"]`);
                             if (polygon) polygon.className.baseVal = `cara estado-${estado}`;
+                            estados.push(estado.toUpperCase());
                         }
+                    }
+                    if (tooltip && estados.length > 0) {
+                        tooltip.innerText = [...new Set(estados)].join(" / ");
                     }
                 }
             }

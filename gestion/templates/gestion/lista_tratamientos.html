@@ -1,132 +1,195 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
-{% block content %}
-<div class="container-fluid mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+{% block title %}Tratamientos Pro - {{ request.tenant.nombre_clinica }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container--default .select2-selection--single {
+        border-radius: 0.75rem;
+        height: 42px;
+        border-color: #e5e7eb;
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <h1 class="h3 fw-bold mb-0 text-gray-800">⚕️ Catálogo de Tratamientos</h1>
-            <p class="text-muted">Gestiona los servicios y el uso de materiales automáticos</p>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Catálogo de Tratamientos</h1>
+            <p class="text-sm text-gray-500 font-medium">Análisis de márgenes operativos y automatización de insumos por servicio.</p>
         </div>
-        <div>
-            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoTratamiento">
-                <i class="fas fa-plus me-2"></i>Agregar Tratamiento
-            </button>
-        </div>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#modalNuevoTratamiento" 
+                class="w-full md:w-auto bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center justify-center group">
+            <i class="fas fa-plus mr-2 text-xs text-blue-400 group-hover:rotate-90 transition-transform"></i> Nuevo Tratamiento
+        </button>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-dark text-white">
-            <h6 class="m-0 font-weight-bold">Listado de Servicios</h6>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="bg-light">
+    <!-- LISTADO PRO -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if tratamientos %}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
-                            <th class="ps-4">Nombre del Tratamiento</th>
-                            <th>Costo Base</th>
-                            <th>Materiales Consumidos</th>
-                            <th class="text-end pe-4">Acciones</th>
+                            <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Precio Público</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Costo Insumos</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Margen (ROI)</th>
+                            <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for tratamiento in tratamientos %}
-                        <tr>
-                            <td class="ps-4">
-                                <span class="fw-bold text-gray-800">{{ tratamiento.nombre }}</span><br>
-                                <small class="text-muted">{{ tratamiento.descripcion|default:"Sin descripción" }}</small>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for t in tratamientos %}
+                        <tr class="hover:bg-gray-50/30 transition-colors">
+                            <td class="px-8 py-5">
+                                <div class="font-bold text-gray-900">{{ t.nombre }}</div>
+                                <div class="text-[11px] text-gray-400 font-medium max-w-xs truncate">{{ t.descripcion|default:"Sin descripción" }}</div>
                             </td>
-                            <td><span class="text-success fw-bold">${{ tratamiento.costo_base }}</span></td>
-                            <td>
-                                {% for item in tratamiento.materiales.all %}
-                                    <span class="badge bg-secondary mb-1">
-                                        {{ item.cantidad_usada }}x {{ item.producto.nombre }}
-                                    </span><br>
-                                {% empty %}
-                                    <span class="text-muted small"><i class="fas fa-info-circle"></i> No consume materiales</span>
-                                {% endfor %}
+                            <td class="px-6 py-5">
+                                <span class="font-display font-bold text-gray-900 text-sm">$ {{ t.precio_venta|floatformat:2 }}</span>
                             </td>
-                            <td class="text-end pe-4">
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar-{{ tratamiento.id }}">
-                                    <i class="fas fa-edit me-1"></i> Editar
+                            <td class="px-6 py-5">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-gray-500">$ {{ t.costo_materiales|floatformat:2 }}</span>
+                                    <span class="text-[9px] text-gray-400 font-medium uppercase tracking-tighter">{{ t.materiales.count }} insumos</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-5">
+                                {% with margin=t.margen_porcentaje %}
+                                <div class="flex items-center gap-2">
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+                                        {% if margin > 50 %}bg-green-100 text-green-700
+                                        {% elif margin < 30 %}bg-red-100 text-red-700
+                                        {% else %}bg-amber-100 text-amber-700{% endif %}">
+                                        {{ margin|floatformat:0 }}% ROI
+                                    </span>
+                                </div>
+                                {% endwith %}
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                <button data-bs-toggle="modal" data-bs-target="#modalEditar-{{ t.id }}" 
+                                        class="bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-blue-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
+                                    <i class="fas fa-cog mr-1"></i> Configurar
                                 </button>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="fas fa-tooth fa-3x mb-3 d-block"></i>
-                                No hay tratamientos registrados en el catálogo.
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <!-- VISTA MÓVIL PRO -->
+            <div class="md:hidden divide-y divide-gray-100">
+                {% for t in tratamientos %}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-gray-900">{{ t.nombre }}</h4>
+                            <p class="text-xs font-bold text-blue-600">$ {{ t.precio_venta|floatformat:2 }}</p>
+                        </div>
+                        <button data-bs-toggle="modal" data-bs-target="#modalEditar-{{ t.id }}" class="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-sliders-h"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">Costo Material</p>
+                            <p class="font-bold text-gray-700 text-xs">$ {{ t.costo_materiales|floatformat:2 }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">Márgen Estimado</p>
+                            <p class="font-bold text-green-600 text-xs">{{ t.margen_porcentaje|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-24">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-50 text-gray-200 mb-6">
+                    <i class="fas fa-tooth fa-3x"></i>
+                </div>
+                <h3 class="text-xl font-black text-gray-900">Catálogo de Servicios Vacío</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto mt-2">Registra tus tratamientos y vincula sus insumos para automatizar el inventario.</p>
+                <button data-bs-toggle="modal" data-bs-target="#modalNuevoTratamiento" class="mt-8 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all">
+                    Crear Primer Tratamiento
+                </button>
+            </div>
+        {% endif %}
     </div>
 </div>
 
-{% for tratamiento in tratamientos %}
-<div class="modal fade" id="modalEditar-{{ tratamiento.id }}" tabindex="-1" aria-hidden="true">
+<!-- MODAL MAESTRO (PARA EDICIÓN Y CREACIÓN) -->
+{% for t in tratamientos %}
+<div class="modal fade" id="modalEditar-{{ t.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Editar: {{ tratamiento.nombre }}</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden">
+            <div class="bg-gray-900 px-8 py-5 flex justify-between items-center text-white">
+                <h5 class="font-bold text-lg flex items-center"><i class="fas fa-sliders-h mr-3 text-blue-400"></i>Configurar Servicio</h5>
+                <button type="button" class="text-white hover:text-gray-400 transition-colors" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
-            <form action="{% url 'guardar_tratamiento' %}" method="POST">
+            <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
-                <input type="hidden" name="tratamiento_id" value="{{ tratamiento.id }}">
+                <input type="hidden" name="tratamiento_id" value="{{ t.id }}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Tratamiento <span class="text-red-500">*</span></label>
+                        <input type="text" name="nombre" value="{{ t.nombre }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio Público ($) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.01" name="precio_venta" value="{{ t.precio_venta|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
+                    </div>
+                </div>
 
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label fw-bold">Nombre del Tratamiento <span class="text-danger">*</span></label>
-                            <input type="text" name="nombre" class="form-control" required value="{{ tratamiento.nombre }}">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-success">Costo Base ($) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="costo_base" class="form-control" required value="{{ tratamiento.costo_base|stringformat:'f' }}">
-                        </div>
-                        <div class="col-md-12 mb-4">
-                            <label class="form-label fw-bold">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2">{{ tratamiento.descripcion }}</textarea>
+                <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos y Materiales</h6>
+                        <div class="flex gap-4">
+                            <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
+                            <span class="text-[10px] font-bold text-green-600 bg-white px-2 py-1 rounded-lg border border-green-100 badge-margen">ROI: 0%</span>
                         </div>
                     </div>
-
-                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar</h6>
-                    <div id="materiales-edit-{{ tratamiento.id }}">
-                        {% for item in tratamiento.materiales.all %}
-                        <div class="row mb-2">
-                            <div class="col-7">
-                                <select name="producto_id" class="form-select" required>
-                                    <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }}</option>
-                                    {% for p in productos %}
-                                        {% if p.id != item.producto.id %}
-                                        <option value="{{ p.id }}">{{ p.nombre }}</option>
-                                        {% endif %}
-                                    {% endfor %}
+                    
+                    <div id="materiales-edit-{{ t.id }}" class="space-y-3 contenedor-materiales">
+                        {% for item in t.materiales.all %}
+                        <div class="flex gap-3 fila-material">
+                            <div class="flex-grow">
+                                <select name="producto_id" class="w-full select2-insumo" onchange="actualizarCalculos(this)">
+                                    <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }} (${{ item.producto.costo_unitario }})</option>
                                 </select>
                             </div>
-                            <div class="col-3">
-                                <input type="number" name="cantidad" class="form-control" min="1" required value="{{ item.cantidad_usada }}">
+                            <div class="w-24">
+                                <input type="number" name="cantidad" value="{{ item.cantidad_usada }}" 
+                                       class="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-center font-bold text-sm" 
+                                       min="1" oninput="actualizarCalculos(this)">
                             </div>
-                            <div class="col-2">
-                                <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-trash"></i></button>
-                            </div>
+                            <button type="button" onclick="this.parentElement.remove(); actualizarCalculos(this);" 
+                                    class="w-12 h-12 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-xl transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
                         {% endfor %}
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="agregarMaterial('materiales-edit-{{ tratamiento.id }}')">
-                        <i class="fas fa-plus me-1"></i> Agregar Insumo
+                    <button type="button" onclick="agregarMaterial('materiales-edit-{{ t.id }}')" 
+                            class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">
+                        <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
                     </button>
                 </div>
 
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Cambios</button>
+                <div class="flex gap-4">
+                    <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Guardar Configuración</button>
                 </div>
             </form>
         </div>
@@ -134,56 +197,67 @@
 </div>
 {% endfor %}
 
+<!-- MODAL NUEVO -->
 <div class="modal fade" id="modalNuevoTratamiento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Registrar Nuevo Tratamiento</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden">
+            <div class="bg-gray-900 px-8 py-5 flex justify-between items-center text-white">
+                <h5 class="font-bold text-lg flex items-center"><i class="fas fa-plus-circle mr-3 text-blue-400"></i>Nuevo Tratamiento</h5>
+                <button type="button" class="text-white" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
-            <form action="{% url 'guardar_tratamiento' %}" method="POST">
+            <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label class="form-label fw-bold">Nombre del Tratamiento <span class="text-danger">*</span></label>
-                            <input type="text" name="nombre" class="form-control" required placeholder="Ej: Extracción">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-success">Costo Base ($) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="costo_base" class="form-control" required value="0.00">
-                        </div>
-                        <div class="col-md-12 mb-4">
-                            <label class="form-label fw-bold">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Detalles opcionales..."></textarea>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre <span class="text-red-500">*</span></label>
+                        <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required placeholder="Ej: Profilaxis Ultrasónica">
                     </div>
-
-                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-primary">📦 Materiales a descontar</h6>
-                    <div id="materiales-nuevo"></div>
-                    <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="agregarMaterial('materiales-nuevo')">
-                        <i class="fas fa-plus me-1"></i> Agregar Insumo
-                    </button>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio Público ($) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.01" name="precio_venta" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
+                    </div>
                 </div>
 
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Tratamiento</button>
+                <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos Requeridos</h6>
+                        <div class="flex gap-4">
+                            <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
+                        </div>
+                    </div>
+                    <div id="materiales-nuevo" class="space-y-3 contenedor-materiales"></div>
+                    <button type="button" onclick="agregarMaterial('materiales-nuevo')" 
+                            class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800">
+                        <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
+                    </button>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Registrar Servicio</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     const TRATAMIENTOS_CONFIG = {
         productos: [
             {% for p in productos %}
-                { id: {{ p.id }}, nombre: "{{ p.nombre|escapejs }}", stock: {{ p.cantidad_actual|default:0 }} }{% if not forloop.last %},{% endif %}
+                { id: {{ p.id }}, nombre: "{{ p.nombre|escapejs }}", costo: {{ p.costo_unitario|stringformat:'f' }} }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ]
     };
-</script>
 
-<script src="{% static 'gestion/js/tratamiento.js' %}?v=2"></script>
+    $(document).ready(function() {
+        $('.select2-insumo').select2({
+            placeholder: "Buscar insumo...",
+            dropdownParent: $('.modal')
+        });
+    });
+</script>
+<script src="{% static 'gestion/js/tratamiento.js' %}?v=3"></script>
 {% endblock %}

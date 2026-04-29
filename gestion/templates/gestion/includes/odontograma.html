@@ -4,30 +4,32 @@
 <!-- 1. VARIABLES PUENTE (DE DJANGO A JS) -->
 <!-- ========================================== -->
 <script>
-    const CONFIG_ODONTOGRAMA = {
-        pacienteId: "{{ paciente.id }}",
-        csrfToken: "{{ csrf_token }}"
-    };
+    if (typeof CONFIG_ODONTOGRAMA === 'undefined') {
+        var CONFIG_ODONTOGRAMA = {
+            pacienteId: "{{ paciente.id }}",
+            csrfToken: "{{ csrf_token }}"
+        };
+    }
 </script>
 
 <!-- ========================================== -->
 <!-- 2. ARCHIVO JAVASCRIPT EXTERNO -->
 <!-- ========================================== -->
-<script src="{% static 'js/odontograma.js' %}"></script>
+<script src="{% static 'gestion/js/odontograma.js' %}"></script>
 
 <!-- Contenedor del Odontograma -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="fas fa-tooth me-2"></i> Odontograma Interactivo</h5>
-        <span class="badge bg-light text-dark" id="estado-guardado">Guardado</span>
+<div class="bg-gray-50/50 rounded-3xl p-6 md:p-10 border border-gray-100 relative overflow-hidden">
+    <div class="flex justify-between items-center mb-10">
+        <h5 class="text-xs font-black text-gray-400 uppercase tracking-widest"><i class="fas fa-tooth me-2"></i> Mapeo Dental Interactivo</h5>
+        <span class="text-[10px] font-black px-3 py-1 bg-white rounded-full border border-gray-200 shadow-sm" id="estado-guardado">Sincronizado</span>
     </div>
-    <div class="card-body bg-light overflow-auto text-center">
-        <div class="d-flex justify-content-center flex-nowrap mb-4 gap-2" id="arcada-superior"></div>
-        <hr>
-        <div class="d-flex justify-content-center flex-nowrap gap-2" id="arcada-inferior"></div>
-    </div>
-    <div class="card-footer bg-white">
-        <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Haz clic en la cara de cualquier diente para cambiar su estado. Los cambios se guardan automáticamente.</small>
+    
+    <div class="overflow-auto py-4">
+        <div class="min-w-[800px] flex flex-col items-center gap-12">
+            <div class="flex justify-center gap-3" id="arcada-superior"></div>
+            <div class="w-full border-t border-dashed border-gray-200"></div>
+            <div class="flex justify-center gap-3" id="arcada-inferior"></div>
+        </div>
     </div>
 </div>
 
@@ -52,28 +54,41 @@
 </div>
 
 <style>
-    .diente-svg { width: 45px; height: 45px; cursor: pointer; transition: transform 0.2s; }
-    .diente-svg:hover { transform: scale(1.1); }
-    .cara { fill: #ffffff; stroke: #34495e; stroke-width: 1.5; transition: fill 0.2s; }
-    .cara:hover { opacity: 0.8; }
+    .diente-svg { width: 52px; height: 52px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
+    .diente-svg:hover { transform: translateY(-5px) scale(1.15); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+    .cara { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1; transition: all 0.2s; }
+    .cara:hover { stroke: #3b82f6; stroke-width: 2; opacity: 0.9; }
     .estado-sano { fill: #ffffff; }
-    .estado-caries { fill: #e74c3c; }
-    .estado-obturacion { fill: #3498db; }
-    .estado-corona { fill: #f1c40f; }
-    .diente-ausente { opacity: 0.3; filter: grayscale(100%); }
-    .diente-numero { font-size: 12px; font-weight: bold; margin-top: 5px; color: #2c3e50; }
-    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 45px; }
+    .estado-caries { fill: #ef4444; stroke: #dc2626; }
+    .estado-obturacion { fill: #3b82f6; stroke: #2563eb; }
+    .estado-corona { fill: #fbbf24; stroke: #f59e0b; }
+    .diente-ausente { opacity: 0.2; filter: grayscale(100%) blur(1px); }
+    .diente-numero { font-size: 11px; font-weight: 900; margin-top: 8px; color: #64748b; font-family: 'Inter', sans-serif; }
+    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 52px; position: relative; }
+    
+    /* Popover/Tooltip minimal */
+    .diente-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-10px);
+        background: #1e293b;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: all 0.2s;
+        z-index: 50;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .diente-wrapper:hover .diente-tooltip {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-20px);
+    }
 </style>
 
-<script>
-    var CONFIG_ODONTOGRAMA = {
-        pacienteId: "{{ paciente.id }}",
-        csrfToken: "{{ csrf_token }}"
-    };
-</script>
-
-<!-- ========================================== -->
-<!-- 2. ARCHIVO JAVASCRIPT EXTERNO -->
-<!-- ========================================== -->
-<script src="{% static 'gestion/js/odontograma.js' %}"></script>
 

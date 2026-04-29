@@ -1,0 +1,77 @@
+<!-- MODAL CITA GENERAL (DASHBOARD/CALENDARIO) -->
+<div class="modal fade" id="modalNuevaCitaGeneral" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-2xl border-0 shadow-2xl overflow-hidden">
+            <!-- CABECERA -->
+            <div class="bg-gray-900 px-8 py-6 flex justify-between items-center text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xl font-bold tracking-tight flex items-center">
+                        <span class="w-2 h-8 bg-blue-500 rounded-full mr-3"></span>
+                        Agendar Nueva Cita
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-medium">Gestión Rápida</p>
+                </div>
+                <button type="button" class="relative z-10 text-gray-400 hover:text-white transition-colors p-2" data-bs-dismiss="modal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form action="{% url 'guardar_cita_calendario' %}" method="POST" class="bg-white">
+                {% csrf_token %}
+                <div class="p-8 space-y-6">
+                    <!-- Paciente -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Paciente <span class="text-red-500">*</span></label>
+                        <select name="paciente" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none text-sm font-medium transition-all" required>
+                            <option value="">Seleccione un paciente...</option>
+                            {% for p in pacientes_all %}
+                                <option value="{{ p.id }}">{{ p.nombre }} - {{ p.cedula }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Tratamiento -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tratamiento / Servicio</label>
+                        <select name="tratamiento" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none text-sm font-medium transition-all">
+                            <option value="">Seleccione un tratamiento...</option>
+                            {% for t in tratamientos_all %}
+                                <option value="{{ t.id }}">{{ t.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Fecha y Hora -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fecha <span class="text-red-500">*</span></label>
+                            <input type="date" name="fecha" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none text-sm font-medium transition-all" required>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Hora <span class="text-red-500">*</span></label>
+                            <input type="time" name="hora" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none text-sm font-medium transition-all" required>
+                        </div>
+                    </div>
+
+                    <!-- Motivo -->
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Motivo / Notas <span class="text-red-500">*</span></label>
+                        <textarea name="motivo" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none text-sm font-medium transition-all" required placeholder="Ej: Revisión general..."></textarea>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="px-8 py-6 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3 justify-end">
+                    <button type="button" class="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-200 transition-all order-2 sm:order-1" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center order-1 sm:order-2">
+                        <i class="fas fa-calendar-check mr-2 text-xs opacity-70"></i>
+                        Confirmar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,8 @@
+from . import google_calendar
 import json
+import logging
 from datetime import date, datetime, time
+from decimal import Decimal
 import openpyxl
 from .utils import render_to_pdf
 from django.shortcuts import render, get_object_or_404, redirect
@@ -8,6 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction, connection
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
@@ -15,11 +19,21 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Q, Count, F, OuterRef, Subquery, DecimalField
 from django.db.models.functions import Coalesce
 from .decorators import grupo_requerido
-from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
-from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica
+from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm, ConfiguracionClinicaForm
 
+# Inicializar Logger de AuditorÃ­a
+audit_log = logging.getLogger('gestion.audit')
 
-# ==========================================
+def log_audit(request, action, details=""):
+    """Helper para registrar acciones con contexto de Tenant y Usuario"""
+    tenant_name = getattr(request, 'tenant', 'N/A')
+    user_id = request.user.username if request.user.is_authenticated else 'Anonymous'
+    audit_log.info(f"ACTION: {action} | DETAILS: {details}", extra={
+        'tenant_name': tenant_name,
+        'user_id': user_id
+    })
+
 # 1. DASHBOARD PRINCIPAL
 # ==========================================
 
@@ -28,45 +42,83 @@ def dashboard(request):
     hoy = timezone.localtime(timezone.now()).date()
     total_pacientes = Paciente.objects.count()
     
-    # Optimizamos con select_related para evitar N+1
-    citas_hoy_lista = Cita.objects.select_related('paciente', 'tratamiento').filter(fecha=hoy).order_by('fecha')
-    citas_hoy_count = citas_hoy_lista.count()
-    alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
+    # --- PRÓXIMAS CITAS (Elegante y compacto) ---
+    citas_proximas = Cita.objects.select_related('paciente', 'tratamiento').filter(
+        fecha__gte=hoy, completada=False
+    ).order_by('fecha', 'hora')[:5]
 
-    ingresos_esperados = citas_hoy_lista.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    # --- ALERTAS DE STOCK CRÍTICO ---
+    productos_criticos = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).order_by('cantidad_actual')
+    alertas_inventario = productos_criticos.count()
+
+    # --- KPIs FINANCIEROS Y TENDENCIAS ---
+    primer_dia_mes = hoy.replace(day=1)
+    ultimo_dia_mes_pasado = primer_dia_mes - timezone.timedelta(days=1)
+    primer_dia_mes_pasado = ultimo_dia_mes_pasado.replace(day=1)
+
+    # Ingresos
     ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
-
-    total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
+    ingresos_mes_actual = Pago.objects.filter(fecha__date__gte=primer_dia_mes).aggregate(total=Sum('monto'))['total'] or 0
+    ingresos_mes_pasado = Pago.objects.filter(
+        fecha__date__gte=primer_dia_mes_pasado, 
+        fecha__date__lte=ultimo_dia_mes_pasado
+    ).aggregate(total=Sum('monto'))['total'] or 0
     
-    # Mantenemos precisión Decimal eliminando conversiones a float innecesarias
-    cuentas_por_cobrar = total_servicios - ingresos_totales
+    tendencia_ingresos = ((ingresos_mes_actual - ingresos_mes_pasado) / ingresos_mes_pasado * 100) if ingresos_mes_pasado > 0 else 0
 
-    ultimos_pacientes = Paciente.objects.all().order_by('-id')
-
-    datos_tratamientos = Cita.objects.values('tratamiento__nombre').annotate(
+    # --- DATOS PARA GRÁFICOS (APEXCHARTS) ---
+    # 1. Top Tratamientos
+    datos_tratamientos = Cita.objects.filter(fecha__gte=primer_dia_mes).values('tratamiento__nombre').annotate(
         cantidad=Count('id')
-    ).order_by('-cantidad')
+    ).order_by('-cantidad')[:5]
+    
+    chart_tratamientos_labels = [item['tratamiento__nombre'] or "Sin nombre" for item in datos_tratamientos]
+    chart_tratamientos_series = [item['cantidad'] for item in datos_tratamientos]
 
-    labels_grafico = [item['tratamiento__nombre'] for item in datos_tratamientos]
-    data_grafico = [item['cantidad'] for item in datos_tratamientos]
+    # 2. Ingresos vs Gastos (Últimos 6 meses)
+    meses_nombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    chart_periodo_labels = []
+    chart_ingresos_data = []
+    chart_gastos_data = []
+
+    for i in range(5, -1, -1):
+        target_date = hoy - timezone.timedelta(days=i*30)
+        m = target_date.month
+        y = target_date.year
+        chart_periodo_labels.append(f"{meses_nombres[m-1]}")
+        
+        ingreso = Pago.objects.filter(fecha__year=y, fecha__month=m).aggregate(total=Sum('monto'))['total'] or 0
+        chart_ingresos_data.append(float(ingreso))
+        
+        # Gasto = materiales de citas completadas
+        citas_mes = Cita.objects.filter(fecha__year=y, fecha__month=m, completada=True)
+        gasto_total = 0
+        for cita in citas_mes:
+            if cita.tratamiento:
+                gasto_total += float(cita.tratamiento.costo_materiales)
+        chart_gastos_data.append(gasto_total)
 
     context = {
         'total_pacientes': total_pacientes,
-        'citas_hoy': citas_hoy_count,
-        'citas_hoy_lista': citas_hoy_lista,
-        'ingresos_esperados': ingresos_esperados,
-        'ultimos_pacientes': ultimos_pacientes,
+        'citas_proximas': citas_proximas,
         'ingresos_totales': ingresos_totales,
-        'cuentas_por_cobrar': cuentas_por_cobrar,
-        'labels_grafico': json.dumps(labels_grafico),
-        'data_grafico': json.dumps(data_grafico),
+        'ingresos_mes_actual': ingresos_mes_actual,
+        'tendencia_ingresos': round(tendencia_ingresos, 1),
         'alertas_inventario': alertas_inventario,
+        'productos_criticos': productos_criticos,
+        'chart_tratamientos_labels': json.dumps(chart_tratamientos_labels),
+        'chart_tratamientos_series': json.dumps(chart_tratamientos_series),
+        'chart_periodo_labels': json.dumps(chart_periodo_labels),
+        'chart_ingresos_data': json.dumps(chart_ingresos_data),
+        'chart_gastos_data': json.dumps(chart_gastos_data),
+        'pacientes_all': Paciente.objects.all().order_by('nombre'),
+        'tratamientos_all': Tratamiento.objects.all().order_by('nombre'),
     }
     return render(request, 'gestion/dashboard.html', context)
 
 
 # ==========================================
-# 2. MÓDULO DE PACIENTES
+# 2. MÃ“DULO DE PACIENTES
 # ==========================================
 
 @login_required
@@ -95,8 +147,8 @@ def detalle_paciente(request, pk):
 
     total_tratamientos = 0
     for cita in citas:
-        if cita.tratamiento and cita.tratamiento.costo_base:
-            total_tratamientos += cita.tratamiento.costo_base
+        if cita.tratamiento and cita.tratamiento.precio_venta:
+            total_tratamientos += cita.tratamiento.precio_venta
 
     pagos = Pago.objects.filter(paciente=paciente).order_by('-fecha')
     total_pagos = pagos.aggregate(total=Sum('monto')).get('total') or 0
@@ -163,12 +215,12 @@ def exportar_pacientes_excel(request):
     ws = wb.active
     ws.title = "Reporte de Pacientes"
 
-    headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
+    headers = ['Nombre Completo', 'CÃ©dula', 'TelÃ©fono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
     ws.append(headers)
 
     # Subconsultas para evitar el problema N+1
     citas_sub = Cita.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
-        total=Sum('tratamiento__costo_base')).values('total')
+        total=Sum('tratamiento__precio_venta')).values('total')
 
     pagos_sub = Pago.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
         total=Sum('monto')).values('total')
@@ -191,10 +243,10 @@ def exportar_pacientes_excel(request):
 @login_required
 def estado_cuenta_pdf(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
-    cargos = Cita.objects.filter(paciente=paciente).order_by('fecha')
+    cargos = Cita.objects.filter(paciente=paciente, completada=True).order_by('fecha')
     abonos = Pago.objects.filter(paciente=paciente).order_by('fecha')
 
-    total_cargos = cargos.aggregate(total=Sum('tratamiento__costo_base')).get('total') or 0
+    total_cargos = cargos.aggregate(total=Sum('tratamiento__precio_venta')).get('total') or 0
     total_abonos = abonos.aggregate(total=Sum('monto')).get('total') or 0
     saldo_pendiente = float(total_cargos) - float(total_abonos)
 
@@ -219,7 +271,7 @@ def estado_cuenta_pdf(request, pk):
 # ==========================================
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (Sólo doctor escribe en el JSON masivo)
+@grupo_requerido('Doctor') # <--- PROTEGIDO (SÃ³lo doctor escribe en el JSON masivo)
 def api_odontograma(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     if request.method == "POST":
@@ -227,6 +279,7 @@ def api_odontograma(request, paciente_id):
             data = json.loads(request.body)
             paciente.odontograma_data = data
             paciente.save()
+            log_audit(request, "MODIFICACION_ODONTOGRAMA", f"Paciente: {paciente.nombre} (ID: {paciente.id})")
             return JsonResponse({'status': 'ok'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
@@ -235,7 +288,7 @@ def api_odontograma(request, paciente_id):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (Clínico)
+@grupo_requerido('Doctor') # <--- PROTEGIDO (ClÃ­nico)
 @require_POST
 def actualizar_diente(request, paciente_id):
     try:
@@ -260,7 +313,7 @@ def actualizar_diente(request, paciente_id):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (Médico)
+@grupo_requerido('Doctor') # <--- PROTEGIDO (MÃ©dico)
 def nueva_receta(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     if request.method == "POST":
@@ -290,7 +343,7 @@ def imprimir_receta(request, pk):
 
 
 # ==========================================
-# 4. MÓDULO DE CITAS Y CALENDARIO
+# 4. MÃ“DULO DE CITAS Y CALENDARIO
 # ==========================================
 
 @login_required
@@ -303,7 +356,13 @@ def lista_citas(request):
 def calendario(request):
     pacientes = Paciente.objects.all().order_by('nombre')
     tratamientos = Tratamiento.objects.all().order_by('nombre')
-    return render(request, 'gestion/calendario.html', {'pacientes': pacientes, 'tratamientos': tratamientos})
+    google_config = GoogleCalendarConfig.objects.filter(is_active=True).first()
+    
+    return render(request, 'gestion/calendario.html', {
+        'pacientes': pacientes, 
+        'tratamientos': tratamientos,
+        'google_active': google_config is not None
+    })
 
 
 @login_required
@@ -316,14 +375,48 @@ def citas_json(request):
         nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
 
         eventos.append({
-            'title': f"{cita.paciente.nombre} ({nombre_tratamiento})",
+            'id': cita.id,
+            'title': f"{cita.paciente.nombre}",
             'start': start_dt,
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
-            'backgroundColor': '#198754' if cita.completada else '#0d6efd',
-            'borderColor': '#198754' if cita.completada else '#0d6efd',
+            'backgroundColor': cita.tratamiento.color if cita.tratamiento else '#3b82f6',
+            'borderColor': cita.tratamiento.color if cita.tratamiento else '#3b82f6',
+            'extendedProps': {
+                'tratamiento_nombre': nombre_tratamiento,
+                'motivo': cita.motivo,
+                'paciente_nombre': cita.paciente.nombre
+            }
         })
 
     return JsonResponse(eventos, safe=False)
+
+
+@login_required
+@require_POST
+def reprogramar_cita(request):
+    import json
+    from datetime import datetime
+    try:
+        data = json.loads(request.body)
+        cita = get_object_or_404(Cita, id=data.get('id'))
+        
+        # Parsear nueva fecha y hora (ISO string)
+        new_start = data.get('start') # Ej: 2023-10-27T08:00:00
+        dt_obj = datetime.fromisoformat(new_start.replace('Z', ''))
+        
+        cita.fecha = dt_obj.date()
+        cita.hora = dt_obj.time()
+        cita.save()
+        
+        # SincronizaciÃ³n automÃ¡tica con Google
+        try:
+            google_calendar.sync_cita_to_google(cita)
+        except Exception as ge:
+            print(f"Error Google Sync: {ge}")
+        
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 
 @login_required
@@ -340,36 +433,47 @@ def nueva_cita(request):
 
 @login_required
 def modal_nueva_cita(request, paciente_id):
-    paciente = get_object_or_404(Paciente, id=paciente_id)
+    try:
+        paciente = get_object_or_404(Paciente, id=paciente_id)
 
-    if request.method == "POST":
-        data = request.POST.copy()
-        if not data.get('motivo'):
-            data['motivo'] = "Consulta programada"
+        if request.method == "POST":
+            data = request.POST.copy()
+            if not data.get('motivo'):
+                data['motivo'] = "Consulta programada"
 
-        form = CitaForm(data)
+            form = CitaForm(data)
 
-        if 'paciente' in form.errors:
-            del form.errors
-        if 'motivo' in form.errors:
-            del form.errors
+            if 'paciente' in form.errors:
+                del form.errors['paciente']
+            
+            if form.is_valid():
+                cita = form.save(commit=False)
+                cita.paciente = paciente
+                if not cita.motivo:
+                    cita.motivo = "Consulta programada"
+                cita.save()
+                
+                # SincronizaciÃ³n automÃ¡tica
+                try:
+                    google_calendar.sync_cita_to_google(cita)
+                except Exception as ge:
+                    print(f"Error Google Sync: {ge}")
 
-        if form.is_valid():
-            cita = form.save(commit=False)
-            cita.paciente = paciente
-            if not cita.motivo:
-                cita.motivo = "Consulta programada"
-            cita.save()
-            return JsonResponse({'status': 'ok'})
+                return JsonResponse({'status': 'ok'})
 
+            html_form = render_to_string('gestion/includes/form_cita_modal.html', {'form': form, 'paciente': paciente},
+                                         request=request)
+            return JsonResponse({'status': 'error', 'html_form': html_form})
+
+        form = CitaForm(initial={'paciente': paciente})
         html_form = render_to_string('gestion/includes/form_cita_modal.html', {'form': form, 'paciente': paciente},
                                      request=request)
-        return JsonResponse({'status': 'error', 'html_form': html_form})
-
-    form = CitaForm(initial={'paciente': paciente})
-    html_form = render_to_string('gestion/includes/form_cita_modal.html', {'form': form, 'paciente': paciente},
-                                 request=request)
-    return JsonResponse({'html_form': html_form})
+        return JsonResponse({'html_form': html_form})
+    except Exception as e:
+        import traceback
+        print("ERROR EN MODAL_NUEVA_CITA:", str(e))
+        traceback.print_exc()
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @login_required
@@ -392,26 +496,31 @@ def guardar_cita_calendario(request):
 def completar_cita(request, pk):
     cita = get_object_or_404(Cita, pk=pk)
 
-    # Si la cita estaba pendiente y ahora se marca como completada
     if not cita.completada:
-        cita.completada = True
-        cita.save()
+        with transaction.atomic():
+            cita.completada = True
+            cita.save()
 
-        # Descontar del inventario
-        if cita.tratamiento:
-            materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
-            for item in materiales:
-                producto = item.producto
-                if producto.cantidad_actual >= item.cantidad_usada:
-                    producto.cantidad_actual -= item.cantidad_usada
-                    producto.save()
-                    messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
-                else:
-                    messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
+            if cita.tratamiento:
+                materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento).select_related('producto')
+                for item in materiales:
+                    producto = item.producto
+                    if producto.cantidad_actual >= item.cantidad_usada:
+                        producto.cantidad_actual -= item.cantidad_usada
+                        producto.save()
+                        messages.success(request, f"Insumo utilizado: {item.cantidad_usada}x {producto.nombre}.")
+                    else:
+                        raise Exception(f"Stock insuficiente de {producto.nombre}.")
     else:
-        # Si por error el usuario la vuelve a marcar como "Pendiente"
-        cita.completada = False
-        cita.save()
+        with transaction.atomic():
+            cita.completada = False
+            cita.save()
+            if cita.tratamiento:
+                materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento).select_related('producto')
+                for item in materiales:
+                    producto = item.producto
+                    producto.cantidad_actual += item.cantidad_usada
+                    producto.save()
 
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
@@ -420,17 +529,17 @@ def completar_cita(request, pk):
 def finalizar_cita(request, pk):
     cita = get_object_or_404(Cita, pk=pk)
     if not cita.completada:
-        cita.completada = True
-        cita.save()
-        materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
-        for item in materiales:
-            producto = item.producto
-            if producto.cantidad_actual >= item.cantidad_usada:
-                producto.cantidad_actual -= item.cantidad_usada
-                producto.save()
-                messages.success(request, f"Se descontó {item.cantidad_usada} de {producto.nombre}.")
-            else:
-                messages.warning(request, f"Stock insuficiente de {producto.nombre}.")
+        with transaction.atomic():
+            cita.completada = True
+            cita.save()
+            materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento).select_related('producto')
+            for item in materiales:
+                producto = item.producto
+                if producto.cantidad_actual >= item.cantidad_usada:
+                    producto.cantidad_actual -= item.cantidad_usada
+                    producto.save()
+                else:
+                    raise Exception(f"Stock insuficiente de {producto.nombre}.")
     return redirect('dashboard')
 
 
@@ -440,33 +549,46 @@ def completar_cita_con_pago(request, cita_id):
         data = json.loads(request.body)
         cita = get_object_or_404(Cita, id=cita_id)
 
-        if not cita.completada:
-            cita.completada = True
-            cita.save()
+        with transaction.atomic():
+            if not cita.completada:
+                cita.completada = True
+                cita.save()
 
-            # Descontar del inventario silenciosamente (sin messages porque es AJAX)
-            if cita.tratamiento:
-                materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento)
-                for item in materiales:
-                    producto = item.producto
-                    if producto.cantidad_actual >= item.cantidad_usada:
-                        producto.cantidad_actual -= item.cantidad_usada
-                        producto.save()
+                # Descontar del inventario
+                if cita.tratamiento:
+                    materiales = MaterialTratamiento.objects.filter(tratamiento=cita.tratamiento).select_related('producto')
+                    for item in materiales:
+                        producto = item.producto
+                        if producto.cantidad_actual >= item.cantidad_usada:
+                            producto.cantidad_actual -= item.cantidad_usada
+                            producto.save()
+                        else:
+                            raise Exception(f"Stock insuficiente de {producto.nombre}.")
+            
+            # Sincronizar estado con Google
+            try:
+                google_calendar.sync_cita_to_google(cita)
+            except:
+                pass
 
-        # Procesar el pago
-        monto = data.get('monto')
-        if monto and float(monto) > 0:
-            Pago.objects.create(
-                paciente=cita.paciente,
-                monto=monto,
-                notas=f"Pago por cita: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}"
-            )
-        return JsonResponse({'status': 'ok'})
+            # Procesar el pago
+            monto = data.get('monto')
+            metodo = data.get('metodo', 'EFECTIVO')
+            if monto and float(monto) > 0:
+                Pago.objects.create(
+                    paciente=cita.paciente,
+                    monto=monto,
+                    metodo=metodo,
+                    notas=f"Pago por cita: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}"
+                )
+                log_audit(request, "FINALIZAR_CITA_COBRO", f"Paciente: {cita.paciente.nombre} | Monto: {monto}")
+            
+            return JsonResponse({'status': 'ok'})
     return JsonResponse({'status': 'error'}, status=400)
 
 
 # ==========================================
-# 5. MÓDULO DE TRATAMIENTOS Y MATERIALES
+# 5. MÃ“DULO DE TRATAMIENTOS Y MATERIALES
 # ==========================================
 
 @login_required
@@ -503,19 +625,19 @@ def guardar_tratamiento(request):
     tratamiento_id = request.POST.get('tratamiento_id')
     nombre = request.POST.get('nombre')
     descripcion = request.POST.get('descripcion', '')
-    costo_base = request.POST.get('costo_base', 0)
+    precio_venta = request.POST.get('precio_venta', 0)
 
     if tratamiento_id:
         tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
         tratamiento.nombre = nombre
         tratamiento.descripcion = descripcion
-        tratamiento.costo_base = costo_base
+        tratamiento.precio_venta = precio_venta
         tratamiento.save()
         MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
     else:
-        tratamiento = Tratamiento.objects.create(nombre=nombre, descripcion=descripcion, costo_base=costo_base)
+        tratamiento = Tratamiento.objects.create(nombre=nombre, descripcion=descripcion, precio_venta=precio_venta)
 
-    # ¡AQUÍ ESTÁ LA MAGIA! Sin corchetes []
+    # Â¡AQUÃ ESTÃ LA MAGIA! Sin corchetes []
     productos_ids = request.POST.getlist('producto_id')
     cantidades = request.POST.getlist('cantidad')
 
@@ -528,7 +650,7 @@ def guardar_tratamiento(request):
 
 
 # ==========================================
-# 6. MÓDULO DE INVENTARIO
+# 6. MÃ“DULO DE INVENTARIO
 # ==========================================
 
 @login_required
@@ -537,14 +659,36 @@ def inventario(request):
     total_productos = productos.count()
     productos_bajos = productos.filter(cantidad_actual__lte=F('stock_minimo')).count()
     valor_inventario = productos.aggregate(
-        total=Sum(F('cantidad_actual') * F('precio_compra'))
+        total=Sum(F('cantidad_actual') * F('costo_unitario'))
     )['total'] or 0
+
+    # KPI 2: Presupuesto de ReposiciÃ³n (Llevar productos en alerta a su stock_minimo)
+    presupuesto_reposicion = productos.filter(cantidad_actual__lt=F('stock_minimo')).aggregate(
+        total=Sum((F('stock_minimo') - F('cantidad_actual')) * F('costo_unitario'))
+    )['total'] or 0
+
+    # KPI 3: Inteligencia de Negocio (Ley de Pareto - Productos Top 80% InversiÃ³n)
+    # Ordenamos por valor total invertido
+    productos_ordenados = sorted(productos, key=lambda p: p.total_valor_stock, reverse=True)
+    inversion_acumulada = 0
+    productos_top_ids = []
+    
+    for p in productos_ordenados:
+        inversion_acumulada += p.total_valor_stock
+        productos_top_ids.append(p.id)
+        if valor_inventario > 0 and inversion_acumulada >= (valor_inventario * Decimal('0.8')):
+            break
+    
+    # Marcamos los 3 primeros siempre o hasta cubrir el 80%
+    productos_top_ids = productos_top_ids[:3]
 
     context = {
         'productos': productos,
         'total_productos': total_productos,
         'productos_bajos': productos_bajos,
         'valor_inventario': valor_inventario,
+        'presupuesto_reposicion': presupuesto_reposicion,
+        'productos_top_ids': productos_top_ids,
         'alertas': productos_bajos > 0,
     }
     return render(request, 'gestion/inventario.html', context)
@@ -559,7 +703,8 @@ def crear_producto(request):
         descripcion=request.POST.get('descripcion', ''),
         cantidad_actual=request.POST.get('cantidad_actual', 0),
         stock_minimo=request.POST.get('stock_minimo', 5),
-        precio_compra=request.POST.get('precio_compra', 0.00)
+        costo_unitario=request.POST.get('costo_unitario', 0.00),
+        precio_venta_sugerido=request.POST.get('precio_venta_sugerido', 0.00)
     )
     return redirect('inventario')
 
@@ -582,37 +727,131 @@ def disminuir_stock(request, pk):
 
 
 # ==========================================
-# 7. MÓDULO DE FINANZAS Y PAGOS
+# 7. MÃ“DULO DE FINANZAS Y PAGOS
 # ==========================================
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (Finanzas globales)
+@grupo_requerido('Doctor')
 def reporte_finanzas(request):
+    hoy = timezone.localtime(timezone.now()).date()
+    primer_dia_mes = hoy.replace(day=1)
+    
+    # 1. FILTROS DINÃMICOS
     fecha_inicio_str = request.GET.get('fecha_inicio')
     fecha_fin_str = request.GET.get('fecha_fin')
-    pagos = Pago.objects.all()
-    citas = Cita.objects.all()
+    metodo_pago = request.GET.get('metodo')
+    estado_pago = request.GET.get('estado') # 'pagado', 'pendiente'
+    search_query = request.GET.get('q')
+
+    pagos = Pago.objects.select_related('paciente', 'cita__tratamiento')
+    citas = Cita.objects.select_related('paciente', 'tratamiento')
 
     if fecha_inicio_str and fecha_fin_str:
         try:
-            f_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
-            f_fin = datetime.combine(datetime.strptime(fecha_fin_str, '%Y-%m-%d'), time.max)
-            pagos = pagos.filter(fecha__range=(f_inicio, f_fin))
+            f_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+            f_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+            pagos = pagos.filter(fecha__date__range=(f_inicio, f_fin))
             citas = citas.filter(fecha__range=(f_inicio, f_fin))
         except ValueError:
             pass
 
+    if metodo_pago:
+        pagos = pagos.filter(metodo=metodo_pago)
+
+    if search_query:
+        pagos = pagos.filter(Q(paciente__nombre__icontains=search_query) | Q(notas__icontains=search_query))
+        citas = citas.filter(paciente__nombre__icontains=search_query)
+
+    # 2. MÃ‰TRICAS PRINCIPALES (KPIs)
     ingresos_totales = pagos.aggregate(total=Sum('monto'))['total'] or 0
-    total_cargos = citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    deuda_total = total_cargos - ingresos_totales
+    total_facturado = citas.aggregate(total=Sum('tratamiento__precio_venta'))['total'] or 0
+    deuda_total = total_facturado - ingresos_totales
+
+    # Tendencia (vs Mes Anterior)
+    ultimo_dia_mes_pasado = primer_dia_mes - timezone.timedelta(days=1)
+    primer_dia_mes_pasado = ultimo_dia_mes_pasado.replace(day=1)
+    
+    ingresos_mes_pasado = Pago.objects.filter(
+        fecha__date__range=(primer_dia_mes_pasado, ultimo_dia_mes_pasado)
+    ).aggregate(total=Sum('monto'))['total'] or 0
+    
+    tendencia_ingresos = ((ingresos_totales - ingresos_mes_pasado) / ingresos_mes_pasado * 100) if ingresos_mes_pasado > 0 else 100
+
+    # Punto de Equilibrio
+    gastos_fijos = getattr(request.tenant, 'gastos_fijos', 0)
+    falta_punto_equilibrio = max(0, gastos_fijos - ingresos_totales)
+    progreso_equilibrio = min(100, (ingresos_totales / gastos_fijos * 100)) if gastos_fijos > 0 else 100
+
+    # 3. DATOS PARA GRÃFICOS (Data Viz)
+    # Columna A: Flujo 30 dÃ­as
+    hace_30_dias = hoy - timezone.timedelta(days=30)
+    flujo_30_dias = Pago.objects.filter(fecha__date__gte=hace_30_dias).extra(
+        select={'day': "date(fecha)"}
+    ).values('day').annotate(total=Sum('monto')).order_by('day')
+    
+    labels_flujo = [item['day'].strftime('%d %b') if isinstance(item['day'], date) else item['day'] for item in flujo_30_dias]
+    data_flujo = [float(item['total']) for item in flujo_30_dias]
+
+    # Columna B: Ingresos por Tratamiento
+    ingresos_por_tratamiento = Pago.objects.filter(cita__isnull=False).values(
+        'cita__tratamiento__nombre'
+    ).annotate(total=Sum('monto')).order_by('-total')[:5]
+    
+    labels_tratamientos = [item['cita__tratamiento__nombre'] for item in ingresos_por_tratamiento]
+    data_tratamientos = [float(item['total']) for item in ingresos_por_tratamiento]
+
+    # 4. TABLA DE MOVIMIENTOS PRO (Aging & Status)
+    movimientos = []
+    # AÃ±adimos pagos realizados
+    for p in pagos.order_by('-fecha')[:50]:
+        movimientos.append({
+            'tipo': 'INGRESO',
+            'fecha': p.fecha,
+            'paciente': p.paciente,
+            'concepto': p.notas or (p.cita.tratamiento.nombre if p.cita else "Pago General"),
+            'monto': p.monto,
+            'metodo': p.get_metodo_display(),
+            'estado': 'COMPLETO',
+            'es_mora': False
+        })
+    
+    # AÃ±adimos citas pendientes de pago (Aging > 15 dÃ­as)
+    limite_mora = hoy - timezone.timedelta(days=15)
+    citas_pendientes = citas.filter(completada=True, fecha__lte=limite_mora).annotate(
+        pagado=Coalesce(Sum('pagos_detalle__monto'), 0, output_field=DecimalField())
+    ).filter(pagado__lt=F('tratamiento__precio_venta'))
+
+    for c in citas_pendientes:
+        movimientos.append({
+            'tipo': 'DEUDA',
+            'fecha': datetime.combine(c.fecha, time.min),
+            'paciente': c.paciente,
+            'concepto': f"Pendiente: {c.tratamiento.nombre}",
+            'monto': c.tratamiento.precio_venta - c.pagado,
+            'metodo': 'N/A',
+            'estado': 'PENDIENTE',
+            'es_mora': True
+        })
+
+    # Ordenar por fecha descendente
+    movimientos.sort(key=lambda x: x['fecha'], reverse=True)
 
     context = {
         'ingresos_totales': ingresos_totales,
+        'total_facturado': total_facturado,
         'deuda_total': deuda_total,
-        'ultimos_pagos': pagos.select_related('paciente').order_by('-fecha'),
-        'total_cargos': total_cargos,
+        'tendencia_ingresos': round(tendencia_ingresos, 1),
+        'gastos_fijos': gastos_fijos,
+        'falta_equilibrio': falta_punto_equilibrio,
+        'progreso_equilibrio': round(progreso_equilibrio, 1),
+        'labels_flujo': json.dumps(labels_flujo),
+        'data_flujo': json.dumps(data_flujo),
+        'labels_tratamientos': json.dumps(labels_tratamientos),
+        'data_tratamientos': json.dumps(data_tratamientos),
+        'movimientos': movimientos,
         'fecha_inicio': fecha_inicio_str,
         'fecha_fin': fecha_fin_str,
+        'search_query': search_query,
     }
     return render(request, 'gestion/finanzas.html', context)
 
@@ -630,6 +869,7 @@ def registrar_pago(request, pk):
                     pago = form.save(commit=False)
                     pago.paciente = paciente
                     pago.save()
+                    log_audit(request, "REGISTRO_PAGO", f"Paciente: {paciente.nombre} | Monto: {pago.monto}")
                     return JsonResponse({'status': 'ok'})
                 else:
                     return JsonResponse({'status': 'error', 'errores': form.errors})
@@ -641,8 +881,123 @@ def registrar_pago(request, pk):
                 pago = form.save(commit=False)
                 pago.paciente = paciente
                 pago.save()
+                log_audit(request, "REGISTRO_PAGO", f"Paciente: {paciente.nombre} | Monto: {pago.monto}")
                 return redirect('detalle_paciente', pk=paciente.pk)
     else:
         form = PagoForm()
 
     return render(request, 'gestion/pago_form.html', {'form': form, 'paciente': paciente})
+
+
+# ==========================================
+# 7. INTEGRACIÃ“N GOOGLE CALENDAR (OAuth2)
+# ==========================================
+
+from google_auth_oauthlib.flow import Flow
+from django.conf import settings
+
+@login_required
+@grupo_requerido('Doctor')
+def google_calendar_init(request):
+    """Inicia el flujo de autenticaciÃ³n con Google"""
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [settings.GOOGLE_REDIRECT_URI],
+            }
+        },
+        scopes=['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly']
+    )
+    
+    flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+    
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='consent'
+    )
+    
+    request.session['google_auth_state'] = state
+    return redirect(authorization_url)
+
+
+@login_required
+@grupo_requerido('Doctor')
+def google_calendar_callback(request):
+    """Callback de Google para guardar las credenciales"""
+    state = request.session.get('google_auth_state')
+    
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [settings.GOOGLE_REDIRECT_URI],
+            }
+        },
+        scopes=['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly'],
+        state=state
+    )
+    flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+    
+    # Obtener el token
+    authorization_response = request.build_absolute_uri()
+    if not settings.DEBUG and 'http://' in authorization_response:
+        authorization_response = authorization_response.replace('http://', 'https://')
+        
+    flow.fetch_token(authorization_response=authorization_response)
+    
+    credentials = flow.credentials
+    
+    # Guardar en la base de datos del Tenant
+    config, created = GoogleCalendarConfig.objects.get_or_create(id=1)
+    config.credentials_json = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+    config.is_active = True
+    config.save()
+    
+    return redirect('calendario')
+@login_required
+@grupo_requerido('Doctor')
+def panel_configuracion(request):
+    config, created = ConfiguracionClinica.objects.get_or_create(id=1)
+    google_config = GoogleCalendarConfig.objects.filter(id=1).first()
+
+    if request.method == 'POST':
+        form = ConfiguracionClinicaForm(request.POST, request.FILES, instance=config)
+        if form.is_valid():
+            form.save()
+            horarios = {}
+            dias = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']
+            for dia in dias:
+                apertura = request.POST.get(f'apertura_{dia}')
+                cierre = request.POST.get(f'cierre_{dia}')
+                if apertura and cierre:
+                    horarios[dia] = [apertura, cierre]
+            config.horarios_atencion = horarios
+            config.save()
+            messages.success(request, '¡Configuración actualizada con éxito!')
+            return redirect('panel_configuracion')
+    else:
+        form = ConfiguracionClinicaForm(instance=config)
+
+    context = {
+        'form': form,
+        'config': config,
+        'google_config': google_config,
+        'dias': ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']
+    }
+    return render(request, 'gestion/configuraciones.html', context)
+

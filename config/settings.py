@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,9 +35,9 @@ ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com',
 # Application definition
 
 SHARED_APPS = (
-    'django_tenants',  # ¡Debe ser el primero obligatoriamente!
+    'django_tenants',  # Â¡Debe ser el primero obligatoriamente!
 
-    'clientes',  # Tu nueva app de administración de clínicas
+    'clientes',  # Tu nueva app de administraciÃ³n de clÃ­nicas
 
     'django.contrib.contenttypes',
     'django.contrib.auth',
@@ -44,13 +48,13 @@ SHARED_APPS = (
 )
 
 TENANT_APPS = (
-    # Aquí van las apps que cada clínica tendrá para sí misma
+    # AquÃ­ van las apps que cada clÃ­nica tendrÃ¡ para sÃ­ misma
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
 
-    'gestion',  # ¡Aquí está tu app dental!
+    'gestion',  # Â¡AquÃ­ estÃ¡ tu app dental!
 )
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -73,11 +77,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Esta es la ruta para las clínicas (Tenants)
+# Esta es la ruta para las clÃ­nicas (Tenants)
 ROOT_URLCONF = 'config.urls'
 PUBLIC_SCHEMA_URLCONF = 'config.urls_publicas'
 
-# Configuración para evitar 404 si no se detecta el tenant (cae al público)
+# ConfiguraciÃ³n para evitar 404 si no se detecta el tenant (cae al pÃºblico)
 SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 TEMPLATES = [
@@ -154,9 +158,9 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Redirigir al dashboard después de iniciar sesión
+# Redirigir al dashboard despuÃ©s de iniciar sesiÃ³n
 LOGIN_REDIRECT_URL = 'dashboard'
-# Redirigir a la pantalla de login al cerrar sesión
+# Redirigir a la pantalla de login al cerrar sesiÃ³n
 LOGOUT_REDIRECT_URL = 'login'
 
 
@@ -165,7 +169,41 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 CSRF_TRUSTED_ORIGINS = ['https://herxull.pythonanywhere.com']
 
-# Configuración de Email (Consola para desarrollo)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'DentalSaaS <noreply@dentalsaas.com>'
+# ConfiguraciÃ³n de Logs Profesionales
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'tenant_format': {
+            'format': '[%(asctime)s] [%(levelname)s] [%(name)s] [Tenant:%(tenant_name)s] [User:%(user_id)s] %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'audit_access.log'),
+            'formatter': 'tenant_format',
+        },
+    },
+    'loggers': {
+        'gestion.audit': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
 
+# Seguridad de Archivos: Prefijar carpetas de medios por esquema
+import django_tenants.utils
+MULTITENANT_RELATIVE_MEDIA_ROOT = "" # Los archivos se guardarÃ¡n en MEDIA_ROOT/schema_name/
+
+
+# CONFIGURACIÓN GOOGLE CALENDAR (Cargada de forma segura desde .env)
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8000/google/callback/')

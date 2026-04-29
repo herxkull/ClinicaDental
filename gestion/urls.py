@@ -35,4 +35,8 @@ urlpatterns = [
     path('cita/completar/<int:cita_id>/', views.completar_cita_con_pago, name='completar_cita_pago'),
     path('paciente/<int:paciente_id>/nueva-cita-modal/', views.modal_nueva_cita, name='modal_nueva_cita'),
     path('paciente/<int:paciente_id>/odontograma/api/', views.api_odontograma, name='api_odontograma'),
+    path('api/citas/reprogramar/', views.reprogramar_cita, name='reprogramar_cita'),
+    path('google/init/', views.google_calendar_init, name='google_init'),
+    path('google/callback/', views.google_calendar_callback, name='google_callback'),
+    path('configuracion/', views.panel_configuracion, name='panel_configuracion'),
 ]

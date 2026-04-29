@@ -24,13 +24,27 @@ function abrirModalPaciente(id = null) {
 // Recibe la URL directamente desde el botón HTML para no fallar nunca
 function abrirModalCita(url_vista) {
     fetch(url_vista)
-        .then(r => r.json())
+        .then(async r => {
+            const isJson = r.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await r.json() : null;
+
+            if (!r.ok) {
+                throw new Error(data?.message || `Error del servidor (${r.status})`);
+            }
+            return data;
+        })
         .then(data => {
-            document.getElementById('contenidoModalCita').innerHTML = data.html_form;
+            const container = document.getElementById('contenidoModalCita');
+            if (!container) throw new Error("No se encontró el contenedor 'contenidoModalCita'");
+            
+            container.innerHTML = data.html_form;
             const modal = getModal('modalCita');
             if (modal) modal.show();
         })
-        .catch(err => console.error("Error al abrir modal cita:", err));
+        .catch(err => {
+            console.error("Error al abrir modal cita:", err);
+            alert("No se pudo cargar el formulario: " + err.message);
+        });
 }
 
 // 3. VIGILANTE GLOBAL DE FORMULARIOS (Mejorado para atrapar múltiples modales)

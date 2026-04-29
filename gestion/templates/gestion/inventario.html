@@ -1,182 +1,240 @@
 {% extends 'gestion/base.html' %}
 
-{% block content %}
-<div class="container-fluid mt-4">
+{% block title %}Inventario Pro - {{ request.tenant.nombre_clinica }}{% endblock %}
 
-    <!-- Encabezado con Botón de Agregar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- ENCABEZADO -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <h1 class="h3 fw-bold mb-0 text-gray-800">📦 Inventario de Suministros</h1>
-            <p class="text-muted">Control de stock e insumos de la clínica</p>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Inventario de Suministros</h1>
+            <p class="text-sm text-gray-500 font-medium">Control de stock, valoración de activos y análisis de reposición.</p>
         </div>
-        <div>
-            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
-                <i class="fas fa-plus me-2"></i>Nuevo Producto
-            </button>
-        </div>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" 
+                class="w-full md:w-auto bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-gray-200 transition-all flex items-center justify-center group">
+            <i class="fas fa-plus mr-2 text-xs text-blue-400 group-hover:rotate-90 transition-transform"></i> Nuevo Producto
+        </button>
     </div>
 
-    <!-- Sección de Alertas Críticas -->
+    <!-- ALERTAS CRÍTICAS -->
     {% if alertas %}
-    <div class="alert alert-danger shadow-sm border-left-danger" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-            <div>
-                <strong class="d-block">¡Atención! Stock Crítico detectado</strong>
-                Hay {{ alertas|length }} productos por debajo del límite mínimo. Es necesario reabastecer pronto.
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-2xl shadow-sm animate-pulse">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 text-red-500">
+                <i class="fas fa-exclamation-triangle fa-lg"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="text-xs font-bold text-red-800 uppercase tracking-widest">Atención: Stock Crítico</h3>
+                <p class="text-sm text-red-700 font-medium">Hay {{ alertas|length }} insumos por debajo del límite mínimo de seguridad.</p>
             </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- Tarjetas de Resumen Rápido -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total de Productos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ productos|length }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+    <!-- MÉTRICAS FINANCIERAS (KPIs) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-md transition-all">
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Suministros</p>
+                <h2 class="text-2xl font-black text-gray-900 mt-1">{{ productos|length }}</h2>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
+                <i class="fas fa-boxes fa-lg"></i>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-md transition-all">
+            <div>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">En Alerta</p>
+                <h2 class="text-2xl font-black text-amber-600 mt-1">{{ productos_bajos }}</h2>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl group-hover:scale-110 transition-transform">
+                <i class="fas fa-exclamation-circle fa-lg"></i>
+            </div>
+        </div>
+
+        <!-- Card Valorización con Desglose -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-md transition-all relative overflow-hidden">
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valorización</p>
+                <h2 class="text-2xl font-black text-green-600 mt-1">${{ valor_inventario|floatformat:2 }}</h2>
+                <div class="absolute top-0 left-0 w-full h-full bg-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center pointer-events-none">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fórmula Activos</p>
+                    <p class="text-[11px] text-gray-600 font-medium">Σ (Stock * Costo Unit.)</p>
                 </div>
+            </div>
+            <div class="p-3 bg-green-50 text-green-600 rounded-xl group-hover:scale-110 transition-transform">
+                <i class="fas fa-dollar-sign fa-lg"></i>
+            </div>
+        </div>
+
+        <!-- Card Presupuesto Reposición -->
+        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 flex items-center justify-between group hover:bg-black transition-all">
+            <div>
+                <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Presupuesto Reposición</p>
+                <h2 class="text-2xl font-black text-white mt-1">${{ presupuesto_reposicion|floatformat:2 }}</h2>
+            </div>
+            <div class="p-3 bg-white/10 text-blue-400 rounded-xl">
+                <i class="fas fa-shopping-cart fa-lg"></i>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de Inventario -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-dark text-white">
-            <h6 class="m-0 font-weight-bold">Listado de Materiales</h6>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="bg-light">
+    <!-- LISTADO PRO -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if productos %}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
-                            <th class="ps-4">Producto</th>
-                            <th class="text-center">Stock Actual</th>
-                            <th class="text-center">Mínimo</th>
-                            <th class="text-center">Costo Unitario</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-end pe-4">Acciones Rápidas</th>
+                            <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Producto</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Costo Unit.</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Stock Actual</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Inversión Total</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Estado</th>
+                            <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Ajuste</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-50">
                         {% for producto in productos %}
-                        <tr {% if producto.necesita_reabastecimiento %}class="table-warning"{% endif %}>
-                            <td class="ps-4">
-                                <span class="fw-bold text-gray-800">{{ producto.nombre }}</span>
-                                <br>
-                                <small class="text-muted">{{ producto.descripcion|default:"Sin descripción" }}</small>
+                        <tr class="hover:bg-gray-50/30 transition-colors {% if producto.id in productos_top_ids %}border-l-4 border-blue-500 bg-blue-50/10{% endif %}">
+                            <td class="px-8 py-5">
+                                <div class="flex items-center">
+                                    <div>
+                                        <div class="font-bold text-gray-900">{{ producto.nombre }}</div>
+                                        <div class="text-[11px] text-gray-400 font-medium">{{ producto.descripcion|default:"Sin especificaciones" }}</div>
+                                    </div>
+                                    {% if producto.id in productos_top_ids %}
+                                        <span class="ml-3 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter bg-blue-600 text-white">Alta Inversión</span>
+                                    {% endif %}
+                                </div>
                             </td>
-                            <td class="text-center">
-                                <span class="badge {% if producto.necesita_reabastecimiento %}bg-danger{% else %}bg-secondary{% endif %} fs-6">
-                                    {{ producto.cantidad_actual }}
+                            <td class="px-6 py-5 text-right font-medium text-gray-600 text-sm">
+                                ${{ producto.costo_unitario|floatformat:2 }}
+                            </td>
+                            <td class="px-6 py-5 text-center">
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black {% if producto.necesita_reabastecimiento %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ producto.cantidad_actual }} / {{ producto.stock_minimo }}
                                 </span>
                             </td>
-                            <td class="text-center text-muted">{{ producto.stock_minimo }}</td>
-                            <td class="text-center">${{ producto.precio_compra }}</td>
-                            <td class="text-center">
+                            <td class="px-6 py-5 text-right font-bold text-gray-900 text-sm">
+                                ${{ producto.total_valor_stock|floatformat:2 }}
+                            </td>
+                            <td class="px-6 py-5 text-center">
                                 {% if producto.necesita_reabastecimiento %}
-                                    <span class="text-danger fw-bold small"><i class="fas fa-arrow-down"></i> Reordenar</span>
+                                    <span class="flex items-center justify-center text-red-500 text-[10px] font-black uppercase tracking-widest">
+                                        <i class="fas fa-arrow-down mr-1.5 animate-bounce"></i> Reordenar
+                                    </span>
                                 {% else %}
-                                    <span class="text-success small"><i class="fas fa-check-circle"></i> Óptimo</span>
+                                    <span class="flex items-center justify-center text-green-500 text-[10px] font-black uppercase tracking-widest">
+                                        <i class="fas fa-check-circle mr-1.5 opacity-50"></i> Óptimo
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group shadow-sm" role="group">
-                                    <!-- Botón Disminuir -->
-                                    <a href="{% url 'disminuir_stock' producto.pk %}" class="btn btn-sm btn-white border border-end-0">
-                                        <i class="fas fa-minus text-danger"></i>
+                            <td class="px-8 py-5 text-right">
+                                <div class="inline-flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                                    <a href="{% url 'disminuir_stock' producto.pk %}" class="w-8 h-8 flex items-center justify-center bg-white text-red-500 rounded-lg hover:bg-red-50 transition-colors shadow-sm">
+                                        <i class="fas fa-minus text-xs"></i>
                                     </a>
-                                    <!-- Indicador Visual -->
-                                    <button class="btn btn-sm btn-light disabled fw-bold border-top border-bottom px-3">
-                                        {{ producto.cantidad_actual }}
-                                    </button>
-                                    <!-- Botón Aumentar -->
-                                    <a href="{% url 'aumentar_stock' producto.pk %}" class="btn btn-sm btn-white border border-start-0">
-                                        <i class="fas fa-plus text-success"></i>
+                                    <span class="px-3 text-sm font-black text-gray-900">{{ producto.cantidad_actual }}</span>
+                                    <a href="{% url 'aumentar_stock' producto.pk %}" class="w-8 h-8 flex items-center justify-center bg-white text-green-500 rounded-lg hover:bg-green-50 transition-colors shadow-sm">
+                                        <i class="fas fa-plus text-xs"></i>
                                     </a>
                                 </div>
-                                
-                                <!-- Botón Editar (Admin) -->
-                                <a href="/admin/gestion/producto/{{ producto.pk }}/change/" class="btn btn-sm btn-outline-secondary ms-2" title="Editar detalles">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <i class="fas fa-box-open fa-3x mb-3 d-block"></i>
-                                No hay productos registrados en el inventario.
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <!-- VISTA MÓVIL OPTIMIZADA -->
+            <div class="md:hidden divide-y divide-gray-100">
+                {% for producto in productos %}
+                <div class="p-5 {% if producto.id in productos_top_ids %}bg-blue-50/20{% endif %}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-gray-900">{{ producto.nombre }}</h4>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Costo: ${{ producto.costo_unitario|floatformat:2 }}</p>
+                        </div>
+                        {% if producto.id in productos_top_ids %}
+                            <span class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded">ALTA INVERSIÓN</span>
+                        {% endif %}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-gray-50 p-3 rounded-xl">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">Inversión Total</p>
+                            <p class="font-bold text-gray-900">${{ producto.total_valor_stock|floatformat:2 }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-xl">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">Estado Stock</p>
+                            <p class="font-bold {% if producto.necesita_reabastecimiento %}text-red-600{% else %}text-green-600{% endif %}">
+                                {{ producto.cantidad_actual }} Unid.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="{% url 'disminuir_stock' producto.pk %}" class="flex-1 py-3 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-red-500 shadow-sm"><i class="fas fa-minus"></i></a>
+                        <a href="{% url 'aumentar_stock' producto.pk %}" class="flex-1 py-3 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-green-500 shadow-sm"><i class="fas fa-plus"></i></a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-24">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-50 text-gray-200 mb-6">
+                    <i class="fas fa-box-open fa-3x"></i>
+                </div>
+                <h3 class="text-xl font-black text-gray-900">Almacén sin existencias</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto mt-2">No se han registrado suministros. Inicia cargando los materiales críticos.</p>
+                <button data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" class="mt-8 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all">
+                    Registrar Primer Insumo
+                </button>
+            </div>
+        {% endif %}
     </div>
 </div>
 
-<style>
-    .border-left-primary { border-left: .25rem solid #4e73df!important; }
-    .border-left-danger { border-left: .25rem solid #e74a3b!important; }
-    .btn-white { background-color: #fff; }
-    .btn-white:hover { background-color: #f8f9fc; }
-</style>
-
-<!-- MODAL NUEVO PRODUCTO -->
+<!-- MODAL NUEVO PRODUCTO PRO -->
 <div class="modal fade" id="modalNuevoProducto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-box-open me-2"></i>Agregar Nuevo Material</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden">
+            <div class="bg-gray-900 px-8 py-5 flex justify-between items-center text-white">
+                <h5 class="font-bold text-lg flex items-center"><i class="fas fa-plus-circle mr-3 text-blue-400"></i>Alta de Insumo</h5>
+                <button type="button" class="text-white hover:text-gray-400 transition-colors" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
-
-            <!-- El formulario envía los datos por POST a la URL que creamos -->
-            <form action="{% url 'crear_producto' %}" method="POST">
-                {% csrf_token %} <!-- Obligatorio por seguridad en Django -->
-
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label fw-bold">Nombre del Producto <span class="text-danger">*</span></label>
-                            <input type="text" name="nombre" class="form-control" required placeholder="Ej: Guantes de Látex Talla M (Caja 100u)">
-                        </div>
-
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label fw-bold">Descripción o Marca</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Opcional..."></textarea>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-success">Stock Inicial <span class="text-danger">*</span></label>
-                            <input type="number" name="cantidad_actual" class="form-control" required value="0" min="0">
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-danger">Stock Mínimo (Alerta) <span class="text-danger">*</span></label>
-                            <input type="number" name="stock_minimo" class="form-control" required value="5" min="0">
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold text-primary">Costo Unitario ($) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="precio_compra" class="form-control" required value="0.00" min="0">
-                        </div>
+            <form action="{% url 'crear_producto' %}" method="POST" class="p-8">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Material <span class="text-red-500">*</span></label>
+                        <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-medium" required placeholder="Ej: Resina Fotocurable A2">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Descripción / Uso</label>
+                        <textarea name="descripcion" rows="2" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Costo Unitario ($) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.01" name="costo_unitario" value="0.00" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio Sugerido (Opcional)</label>
+                        <input type="number" step="0.01" name="precio_venta_sugerido" value="0.00" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Stock Inicial</label>
+                        <input type="number" name="cantidad_actual" value="0" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Mínimo de Seguridad</label>
+                        <input type="number" name="stock_minimo" value="5" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
                     </div>
                 </div>
-
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar Producto</button>
+                <div class="mt-10 flex gap-4">
+                    <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">Guardar en Inventario</button>
                 </div>
             </form>
         </div>
