@@ -25,22 +25,45 @@ SECRET_KEY = 'django-insecure-l(qa+)+!l_1hk$qb3nz)u*2dfh(=$@+52c$@+#pbs#xlb(nnjv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com', 'localhost', '.localhost', '127.0.0.1']
 
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
+SHARED_APPS = (
+    'django_tenants',  # ¡Debe ser el primero obligatoriamente!
+
+    'clientes',  # Tu nueva app de administración de clínicas
+
     'django.contrib.contenttypes',
+    'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'gestion'
-]
+    'django.contrib.admin',
+)
+
+TENANT_APPS = (
+    # Aquí van las apps que cada clínica tendrá para sí misma
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+
+    'gestion',  # ¡Aquí está tu app dental!
+)
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "clientes.Clinica" # El modelo que define los esquemas
+TENANT_DOMAIN_MODEL = "clientes.Dominio" # El modelo que enruta las URLs
+
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
 
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -50,7 +73,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Esta es la ruta para las clínicas (Tenants)
 ROOT_URLCONF = 'config.urls'
+PUBLIC_SCHEMA_URLCONF = 'config.urls_publicas'
+
+# Configuración para evitar 404 si no se detecta el tenant (cae al público)
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 TEMPLATES = [
     {
@@ -75,8 +103,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'Tenesketchu15/-',
+        'HOST': 'db.yorshrwsrqgdjwvsfdkq.supabase.co',
+        'PORT': '6543',  # Usamos el Transaction Pooler para mayor estabilidad
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
     }
 }
 
@@ -129,4 +164,8 @@ LOGOUT_REDIRECT_URL = 'login'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 CSRF_TRUSTED_ORIGINS = ['https://herxull.pythonanywhere.com']
+
+# Configuración de Email (Consola para desarrollo)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'DentalSaaS <noreply@dentalsaas.com>'
 

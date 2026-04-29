@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px; }
+        .header { background: #0d6efd; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { padding: 20px; line-height: 1.6; color: #333; }
+        .button { display: inline-block; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        .footer { font-size: 12px; color: #777; text-align: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>¡Bienvenido a DentalSaaS!</h1>
+        </div>
+        <div class="content">
+            <p>Hola <strong>Dr/Dra. {{ nombre_doctor }}</strong>,</p>
+            <p>Es un placer saludarte. Tu clínica <strong>{{ nombre_clinica }}</strong> ha sido dada de alta correctamente en nuestra plataforma multitenant.</p>
+            <p>Tu sistema está listo para usar. Puedes acceder haciendo clic en el siguiente botón:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ url_acceso }}" class="button">Acceder a mi Clínica</a>
+            </div>
+
+            <p style="margin-top: 30px;"><strong>Tus credenciales de acceso:</strong><br>
+            Usuario: <code>{{ email }}</code><br>
+            Contraseña: La que elegiste al registrarte.</p>
+            
+            <p>¡Esperamos que DentalSaaS sea una herramienta clave para el éxito de tu clínica!</p>
+        </div>
+        <div class="footer">
+            <p>Este es un correo automático, por favor no respondas directamente.<br>
+            &copy; 2026 DentalSaaS Inc.</p>
+        </div>
+    </div>
+</body>
+</html>

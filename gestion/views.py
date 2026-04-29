@@ -12,7 +12,8 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.core.paginator import Paginator
-from django.db.models import Sum, Q, Count, F
+from django.db.models import Sum, Q, Count, F, OuterRef, Subquery, DecimalField
+from django.db.models.functions import Coalesce
 from .decorators import grupo_requerido
 from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento
 from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm
@@ -26,7 +27,9 @@ from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPac
 def dashboard(request):
     hoy = timezone.localtime(timezone.now()).date()
     total_pacientes = Paciente.objects.count()
-    citas_hoy_lista = Cita.objects.filter(fecha=hoy).order_by('fecha')
+    
+    # Optimizamos con select_related para evitar N+1
+    citas_hoy_lista = Cita.objects.select_related('paciente', 'tratamiento').filter(fecha=hoy).order_by('fecha')
     citas_hoy_count = citas_hoy_lista.count()
     alertas_inventario = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).count()
 
@@ -34,7 +37,9 @@ def dashboard(request):
     ingresos_totales = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
 
     total_servicios = Cita.objects.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-    cuentas_por_cobrar = float(total_servicios) - float(ingresos_totales)
+    
+    # Mantenemos precisión Decimal eliminando conversiones a float innecesarias
+    cuentas_por_cobrar = total_servicios - ingresos_totales
 
     ultimos_pacientes = Paciente.objects.all().order_by('-id')
 
@@ -84,7 +89,7 @@ def lista_pacientes(request):
 @login_required
 def detalle_paciente(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
-    citas = Cita.objects.filter(paciente=paciente).order_by('-fecha')
+    citas = Cita.objects.select_related('tratamiento').filter(paciente=paciente).order_by('-fecha')
 
     diccionario_dientes = paciente.odontograma_data if paciente.odontograma_data else {}
 
@@ -161,12 +166,21 @@ def exportar_pacientes_excel(request):
     headers = ['Nombre Completo', 'Cédula', 'Teléfono', 'Total Cargos', 'Total Pagado', 'Saldo Pendiente']
     ws.append(headers)
 
-    pacientes = Paciente.objects.all()
+    # Subconsultas para evitar el problema N+1
+    citas_sub = Cita.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
+        total=Sum('tratamiento__costo_base')).values('total')
+
+    pagos_sub = Pago.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
+        total=Sum('monto')).values('total')
+
+    pacientes = Paciente.objects.annotate(
+        total_cargos=Coalesce(Subquery(citas_sub), 0.0, output_field=DecimalField()),
+        total_pagos=Coalesce(Subquery(pagos_sub), 0.0, output_field=DecimalField())
+    ).order_by('nombre')
+
     for p in pacientes:
-        cargos = p.citas.aggregate(total=Sum('tratamiento__costo_base'))['total'] or 0
-        pagos = p.pagos.aggregate(total=Sum('monto'))['total'] or 0
-        saldo = cargos - pagos
-        ws.append([p.nombre, p.cedula, p.telefono, cargos, pagos, saldo])
+        saldo = p.total_cargos - p.total_pagos
+        ws.append([p.nombre, p.cedula, p.telefono, p.total_cargos, p.total_pagos, saldo])
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="Reporte_Pacientes_Hersan.xlsx"'
@@ -281,7 +295,7 @@ def imprimir_receta(request, pk):
 
 @login_required
 def lista_citas(request):
-    citas = Cita.objects.all().order_by('fecha', 'hora')
+    citas = Cita.objects.select_related('paciente', 'tratamiento').all().order_by('fecha', 'hora')
     return render(request, 'gestion/lista_citas.html', {'citas': citas})
 
 
@@ -294,7 +308,7 @@ def calendario(request):
 
 @login_required
 def citas_json(request):
-    citas = Cita.objects.all()
+    citas = Cita.objects.select_related('paciente', 'tratamiento').all()
     eventos = []
 
     for cita in citas:
@@ -522,7 +536,9 @@ def inventario(request):
     productos = Producto.objects.all().order_by('nombre')
     total_productos = productos.count()
     productos_bajos = productos.filter(cantidad_actual__lte=F('stock_minimo')).count()
-    valor_inventario = sum(p.cantidad_actual * p.precio_compra for p in productos)
+    valor_inventario = productos.aggregate(
+        total=Sum(F('cantidad_actual') * F('precio_compra'))
+    )['total'] or 0
 
     context = {
         'productos': productos,

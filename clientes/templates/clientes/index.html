@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DentalSaaS - Software para Clínicas Dentales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero { background: linear-gradient(135deg, #0d6efd 0%, #00d2ff 100%); color: white; padding: 100px 0; }
+        .feature-icon { font-size: 2.5rem; color: #0d6efd; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <header class="hero text-center">
+        <div class="container">
+            <h1 class="display-3 fw-bold">Gestiona tu Clínica Dental como un Profesional</h1>
+            <p class="lead mb-5">La plataforma SaaS multi-tenant más completa para odontólogos.</p>
+            <a href="{% url 'registro_clinica' %}" class="btn btn-light btn-lg px-5 py-3 fw-bold shadow">Empieza Gratis Ahora</a>
+        </div>
+    </header>
+
+    <section class="container my-5 py-5 text-center">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-icon">🦷</div>
+                <h3>Odontograma</h3>
+                <p>Mapeo dental visual y moderno para cada paciente.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-icon">📅</div>
+                <h3>Citas Inteligentes</h3>
+                <p>Calendario interactivo y recordatorios.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-icon">💰</div>
+                <h3>Control Financiero</h3>
+                <p>Pagos, reportes y estados de cuenta automáticos.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white text-center py-4">
+        <p>&copy; 2026 DentalSaaS multi-tenant. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

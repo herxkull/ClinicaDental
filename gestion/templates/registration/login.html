@@ -6,7 +6,7 @@
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px;">
         <div class="card-header bg-primary text-white text-center py-4">
-            <h3 class="mb-0">🦷 Hersan Dental</h3>
+            <h3 class="mb-0">🦷 {{ request.tenant.nombre_clinica|default:"Hersan Dental" }}</h3>
             <p class="mb-0 text-white-50">Acceso Seguro</p>
         </div>
         <div class="card-body p-4">

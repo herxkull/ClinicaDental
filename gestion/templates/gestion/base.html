@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Hersan Dental{% endblock %}</title>
+    <title>{% block title %}{{ request.tenant.nombre_clinica|default:"Hersan Dental" }}{% endblock %}</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,45 +17,55 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="bg-light">
-    <div class="container-fluid">
-        <div class="row">
+<!-- Barra lateral -->
+<div class="container-fluid p-0"> <div class="row g-0"> {% if user.is_authenticated %}
+            <div class="col-12 d-md-none bg-dark text-white p-3 d-flex justify-content-between align-items-center shadow-sm w-100">
+                <h5 class="mb-0 fw-bold">🦷 {{ request.tenant.nombre_clinica|default:"Hersan Dental" }}</h5>
+                <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
 
-            {% if user.is_authenticated %}
-            <!-- MENÚ LATERAL -->
-            <nav class="col-md-2 d-none d-md-block sidebar p-3 shadow">
-                <h4 class="text-center mb-4 mt-2">🦷 Hersan Dental</h4>
-                <ul class="nav flex-column">
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'dashboard' %}">🏠 Dashboard</a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'lista_pacientes' %}">👥 Pacientes</a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'calendario' %}">📅 Agenda Visual</a>
-                    </li>
-                    <li class="nav-item mb-2">
-                        <a class="nav-link" href="{% url 'lista_tratamientos' %}">💉 Tratamientos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'inventario' %}"><i class="fas fa-boxes me-2"></i> Inventario</a>
-                    </li>
-                    <li>
-                        <a href="{% url 'reporte_finanzas' %}" class="nav-link text-white"><i class="fas fa-chart-line me-2"></i> Finanzas</a>
-                    </li>
-                </ul>
+            <nav class="col-md-2 sidebar offcanvas-md offcanvas-start shadow" id="sidebarMenu" tabindex="-1" style="min-height: 100vh;">
 
-                <hr class="text-secondary mt-5">
-                <!-- BOTÓN DE CERRAR SESIÓN -->
-                <form action="{% url 'logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger w-100">🚪 Cerrar Sesión</button>
-                </form>
+                <div class="offcanvas-header bg-dark text-white d-md-none">
+                    <h5 class="offcanvas-title">🦷 {{ request.tenant.nombre_clinica|default:"Hersan Dental" }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"></button>
+                </div>
+
+                <div class="offcanvas-body d-flex flex-column p-3 h-100">
+                    <h4 class="text-center mb-4 mt-2 d-none d-md-block">🦷 {{ request.tenant.nombre_clinica|default:"Hersan Dental" }}</h4>
+                    <ul class="nav flex-column w-100 mb-auto">
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="{% url 'dashboard' %}">🏠 Dashboard</a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="{% url 'lista_pacientes' %}">👥 Pacientes</a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="{% url 'calendario' %}">📅 Agenda Visual</a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="{% url 'lista_tratamientos' %}">💉 Tratamientos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'inventario' %}"><i class="fas fa-boxes me-2"></i> Inventario</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'reporte_finanzas' %}" class="nav-link text-white"><i class="fas fa-chart-line me-2"></i> Finanzas</a>
+                        </li>
+                    </ul>
+
+                    <hr class="text-secondary mt-4">
+                    <form action="{% url 'logout' %}" method="post" class="mt-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-100">🚪 Cerrar Sesión</button>
+                    </form>
+                </div>
             </nav>
             {% endif %}
 
-            <!-- CONTENIDO PRINCIPAL -->
-            <main class="{% if user.is_authenticated %}col-md-10 ms-sm-auto{% else %}col-12{% endif %} p-4" style="min-height: 100vh; position: relative;">
+            <main class="{% if user.is_authenticated %}col-md-10{% else %}col-12{% endif %} p-4" style="min-height: 100vh; position: relative;">
 
                 <!-- SISTEMA GLOBAL DE ALERTAS FLOTANTES -->
                 {% if messages %}

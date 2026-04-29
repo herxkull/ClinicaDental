@@ -1,0 +1,21 @@
+{% autoescape off %}
+Hola Dr/Dra. {{ nombre_doctor }},
+
+¡Bienvenido(a) a DentalSaaS! 🦷
+
+Nos alegra informarle que su clínica "{{ nombre_clinica }}" ha sido registrada exitosamente en nuestra plataforma.
+
+Su panel de control personalizado ya está activo en la siguiente dirección:
+{{ url_acceso }}
+
+Sus credenciales de acceso son:
+- Usuario: {{ email }}
+- Contraseña: La que ingresó durante el registro.
+
+Si tiene alguna pregunta, no dude en contactarnos respondiendo a este correo.
+
+¡Mucho éxito con su nueva gestión digital!
+
+Atentamente,
+El equipo de DentalSaaS
+{% endautoescape %}
