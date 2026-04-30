@@ -42,9 +42,9 @@
                     <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
                             <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Especialista</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Precio Público</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Costo Insumos</th>
-                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Margen (ROI)</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Comisión Clínica</th>
                             <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
                         </tr>
                     </thead>
@@ -56,25 +56,20 @@
                                 <div class="text-[11px] text-gray-400 font-medium max-w-xs truncate">{{ t.descripcion|default:"Sin descripción" }}</div>
                             </td>
                             <td class="px-6 py-5">
-                                <span class="font-display font-bold text-gray-900 text-sm">$ {{ t.precio_venta|floatformat:2 }}</span>
-                            </td>
-                            <td class="px-6 py-5">
-                                <div class="flex flex-col">
-                                    <span class="text-xs font-bold text-gray-500">$ {{ t.costo_materiales|floatformat:2 }}</span>
-                                    <span class="text-[9px] text-gray-400 font-medium uppercase tracking-tighter">{{ t.materiales.count }} insumos</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full" style="background-color: {{ t.doctor_referencia.color_agenda|default:'#3b82f6' }}"></div>
+                                    <span class="text-xs font-bold text-gray-700">Dr. {{ t.doctor_referencia.nombre|default:"General" }}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-5">
-                                {% with margin=t.margen_porcentaje %}
+                                <span class="font-display font-black text-gray-900 text-sm">$ {{ t.precio_venta|floatformat:2 }}</span>
+                            </td>
+                            <td class="px-6 py-5">
                                 <div class="flex items-center gap-2">
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
-                                        {% if margin > 50 %}bg-green-100 text-green-700
-                                        {% elif margin < 30 %}bg-red-100 text-red-700
-                                        {% else %}bg-amber-100 text-amber-700{% endif %}">
-                                        {{ margin|floatformat:0 }}% ROI
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
+                                        {{ t.comision_clinica_porcentaje|floatformat:0 }}% Clínica
                                     </span>
                                 </div>
-                                {% endwith %}
                             </td>
                             <td class="px-8 py-5 text-right">
                                 <button data-bs-toggle="modal" data-bs-target="#modalEditar-{{ t.id }}" 
@@ -141,15 +136,29 @@
             <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
                 <input type="hidden" name="tratamiento_id" value="{{ t.id }}">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Tratamiento <span class="text-red-500">*</span></label>
                         <input type="text" name="nombre" value="{{ t.nombre }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio Público ($) <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
                         <input type="number" step="0.01" name="precio_venta" value="{{ t.precio_venta|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.1" name="comision_clinica_porcentaje" value="{{ t.comision_clinica_porcentaje|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
+                    <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                        <option value="">Doctor General (Clínica)</option>
+                        {% for doc in doctores %}
+                            <option value="{{ doc.id }}" {% if t.doctor_referencia_id == doc.id %}selected{% endif %}>Dr. {{ doc.nombre }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">
@@ -207,15 +216,29 @@
             </div>
             <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre <span class="text-red-500">*</span></label>
                         <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required placeholder="Ej: Profilaxis Ultrasónica">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio Público ($) <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
                         <input type="number" step="0.01" name="precio_venta" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.1" name="comision_clinica_porcentaje" value="30.0" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
+                    <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                        <option value="">Doctor General (Clínica)</option>
+                        {% for doc in doctores %}
+                            <option value="{{ doc.id }}">Dr. {{ doc.nombre }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">

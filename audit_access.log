@@ -1,3 +1,17 @@
 [2026-04-28 18:45:47,162] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Hernandez (ID: 1)
 [2026-04-28 22:49:32,975] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Hernandez (ID: 1)
 [2026-04-28 22:58:05,672] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Hernandez (ID: 1)
+[2026-04-29 09:16:14,137] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ana Julia Martinez | Monto: 120.00
+[2026-04-29 09:16:45,352] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Giselle Maria Obando | Monto: 120.00
+[2026-04-29 09:17:37,773] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Francisco Javier Cruz | Monto: 80.00
+[2026-04-29 09:25:33,179] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Claudia Maria Ortiz | Monto: 80
+[2026-04-29 09:25:43,828] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Hugo Armando Diaz | Monto: 80.00
+[2026-04-29 09:28:17,593] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Humberto Danilo Sequeira | Monto: 120.00
+[2026-04-29 09:28:26,392] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Humberto Danilo Sequeira | Monto: 120.00
+[2026-04-29 09:28:35,159] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Hugo Armando Diaz | Monto: 80.00
+[2026-04-29 09:29:43,632] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Enrique Javier Guido | Monto: 80.00
+[2026-04-29 09:29:50,086] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Enrique Javier Guido | Monto: 80.00
+[2026-04-29 11:21:58,626] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Adriana Maria Bello | Monto: 80.00
+[2026-04-29 11:55:38,164] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Beatriz Elena Roman | Monto: 80.00
+[2026-04-29 13:02:45,378] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ana Julia Martinez | Monto: 120.00
+[2026-04-29 15:08:11,618] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Hugo Armando Diaz | Monto: 80.00

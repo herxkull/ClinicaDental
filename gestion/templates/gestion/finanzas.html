@@ -42,53 +42,44 @@
 
     <!-- MÉTRICAS ENTERPRISE (4 CARDS) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <!-- Card 1: Ingresos -->
+        <!-- Ingresos Totales -->
         <div class="card-gradient-blue rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
             <div class="relative z-10">
-                <div class="flex justify-between items-start">
-                    <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Reales</p>
-                    <span class="bg-white/20 text-[10px] font-bold px-2 py-1 rounded-full">
-                        <i class="fas {% if tendencia_ingresos >= 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %} mr-1"></i>
-                        {{ tendencia_ingresos }}%
-                    </span>
-                </div>
+                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Totales (Caja)</p>
                 <h2 class="text-3xl font-extrabold mt-2 font-display">${{ ingresos_totales|floatformat:2 }}</h2>
-                <p class="text-[10px] text-blue-200 mt-2">vs mes anterior</p>
+                <p class="text-[10px] text-blue-200 mt-2">Flujo de efectivo real</p>
             </div>
             <i class="fas fa-wallet absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
-        <!-- Card 2: Cuentas por Cobrar -->
+        <!-- Revenue Share: Ganancia Clínica -->
+        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica (Espacio)</p>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
+                <p class="text-[10px] text-gray-400 mt-2">Parte proporcional neta</p>
+            </div>
+            <i class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+        </div>
+
+        <!-- Revenue Share: Pago a Doctores -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group">
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Compromisos Doctores</p>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ pagos_a_doctores|floatformat:2 }}</h2>
+                <p class="text-[10px] text-gray-400 mt-2">Pendiente de liquidar</p>
+            </div>
+            <i class="fas fa-user-md absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+        </div>
+
+        <!-- Deuda Pendiente -->
         <div class="card-gradient-red rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-red-100 uppercase tracking-widest">Por Cobrar</p>
+                <p class="text-[10px] font-bold text-red-100 uppercase tracking-widest">Cuentas por Cobrar</p>
                 <h2 class="text-3xl font-extrabold mt-2 font-display">${{ deuda_total|floatformat:2 }}</h2>
                 <p class="text-[10px] text-red-200 mt-2">Cartera activa</p>
             </div>
             <i class="fas fa-hand-holding-usd absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
-        </div>
-
-        <!-- Card 3: Punto de Equilibrio -->
-        <div class="card-gradient-purple rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-purple-100 uppercase tracking-widest">Meta de Equilibrio</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display">${{ falta_equilibrio|floatformat:2 }}</h2>
-                <div class="w-full bg-white/20 h-1.5 rounded-full mt-4 overflow-hidden">
-                    <div class="bg-white h-full" style="width: {{ progreso_equilibrio }}%"></div>
-                </div>
-                <p class="text-[10px] text-purple-200 mt-2">{{ progreso_equilibrio }}% de gastos cubiertos</p>
-            </div>
-            <i class="fas fa-chart-line absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
-        </div>
-
-        <!-- Card 4: Facturación Bruta -->
-        <div class="card-gradient-green rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-green-100 uppercase tracking-widest">Facturación Total</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display">${{ total_facturado|floatformat:2 }}</h2>
-                <p class="text-[10px] text-green-200 mt-2">Valor de servicios</p>
-            </div>
-            <i class="fas fa-file-invoice-dollar absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
     </div>
 
@@ -194,7 +185,15 @@
                         </td>
                         <td class="px-8 py-5">
                             <div class="flex gap-2">
-                                <button class="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Ver Recibo"><i class="fas fa-receipt"></i></button>
+                                {% if mov.tipo == 'INGRESO' %}
+                                    <a href="{% url 'imprimir_ticket' mov.id %}" target="_blank" class="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Ver Recibo">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
+                                {% else %}
+                                    <button class="p-2 text-gray-200 cursor-not-allowed" disabled title="No disponible para deudas">
+                                        <i class="fas fa-receipt"></i>
+                                    </button>
+                                {% endif %}
                                 {% if mov.es_mora %}
                                 <button class="p-2 text-red-400 hover:text-red-600 transition-colors" title="Enviar Recordatorio"><i class="fas fa-bell"></i></button>
                                 {% endif %}
@@ -219,10 +218,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const FINANCE_DATA = {
-        labelsFlujo: {{ labels_flujo|safe }},
-        dataFlujo: {{ data_flujo|safe }},
-        labelsTratamientos: {{ labels_tratamientos|safe }},
-        dataTratamientos: {{ data_tratamientos|safe }}
+        labelsFlujo: JSON.parse('{{ labels_flujo_json|safe }}'),
+        dataFlujo: JSON.parse('{{ data_flujo_json|safe }}'),
+        labelsTratamientos: JSON.parse('{{ labels_tratamientos_json|safe }}'),
+        dataTratamientos: JSON.parse('{{ data_tratamientos_json|safe }}')
     };
 
     document.addEventListener('DOMContentLoaded', function() {

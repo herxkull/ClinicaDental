@@ -35,24 +35,27 @@ class PacienteForm(forms.ModelForm):
 class CitaForm(forms.ModelForm):
     class Meta:
         model = Cita
-        fields = ['paciente','tratamiento', 'fecha', 'hora', 'observaciones_doctor', 'motivo']
+        fields = ['paciente', 'doctor', 'tratamiento', 'fecha', 'hora', 'observaciones_doctor', 'motivo']
         widgets = {
-            'tratamiento': forms.Select(attrs={'class': 'form-select'}),
-            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'hora': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'observaciones_doctor': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'motivo': forms.TextInput(attrs={'class': 'form-control'}),
+            'doctor': forms.Select(attrs={'class': 'form-select rounded-xl'}),
+            'tratamiento': forms.Select(attrs={'class': 'form-select rounded-xl'}),
+            'fecha': forms.DateInput(attrs={'class': 'form-control rounded-xl', 'type': 'date'}),
+            'hora': forms.TimeInput(attrs={'class': 'form-control rounded-xl', 'type': 'time'}),
+            'observaciones_doctor': forms.Textarea(attrs={'class': 'form-control rounded-xl', 'rows': 2}),
+            'motivo': forms.TextInput(attrs={'class': 'form-control rounded-xl'}),
         }
 
 
 class TratamientoForm(forms.ModelForm):
     class Meta:
         model = Tratamiento
-        # Asumo que tus campos se llaman así por lo que usamos en el Dashboard
-        fields = ['nombre', 'precio_venta']
+        fields = ['nombre', 'precio_venta', 'comision_clinica_porcentaje', 'doctor_referencia', 'color']
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Limpieza Dental'}),
-            'precio_venta': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control rounded-xl', 'placeholder': 'Ej. Limpieza Dental'}),
+            'precio_venta': forms.NumberInput(attrs={'class': 'form-control rounded-xl', 'step': '0.01'}),
+            'comision_clinica_porcentaje': forms.NumberInput(attrs={'class': 'form-control rounded-xl', 'step': '0.01'}),
+            'doctor_referencia': forms.Select(attrs={'class': 'form-select rounded-xl'}),
+            'color': forms.TextInput(attrs={'class': 'form-control rounded-xl', 'type': 'color'}),
         }
 
 class PagoForm(forms.ModelForm):

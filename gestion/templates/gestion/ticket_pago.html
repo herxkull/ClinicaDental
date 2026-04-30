@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket de Pago - {{ request.tenant.nombre_clinica }}</title>
+    <style>
+        @page { size: 80mm 200mm; margin: 0; }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 72mm;
+            margin: 0 auto;
+            padding: 5mm;
+            color: #000;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 5mm 0; }
+        
+        .header { margin-bottom: 5mm; }
+        .logo-text { font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+        .clinic-info { font-size: 10px; color: #333; }
+
+        .item-row { display: flex; justify-content: space-between; margin-bottom: 2mm; }
+        .total-section { margin-top: 5mm; font-size: 14px; }
+        
+        .footer { margin-top: 8mm; font-size: 10px; }
+
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="background: #f3f4f6; padding: 10px; text-align: center; margin-bottom: 20px; border-radius: 8px;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            🖨️ IMPRIMIR TICKET
+        </button>
+    </div>
+
+    <div class="header text-center">
+        <div class="logo-text uppercase">{{ config.nombre_comercial|default:request.tenant.nombre_clinica }}</div>
+        <div class="clinic-info">
+            {{ config.direccion|default:"Dirección no configurada" }}<br>
+            Tel: {{ config.telefono_contacto }}<br>
+            {{ config.email_contacto }}
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="info-venta">
+        <div class="item-row">
+            <span>FECHA:</span>
+            <span class="text-right">{{ pago.fecha|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="item-row">
+            <span>TICKET #:</span>
+            <span class="text-right">{{ pago.id|stringformat:"05d" }}</span>
+        </div>
+        <div class="item-row">
+            <span>PACIENTE:</span>
+            <span class="text-right bold">{{ pago.paciente.nombre|upper }}</span>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="items">
+        <div class="bold" style="margin-bottom: 2mm;">CONCEPTO:</div>
+        <div style="font-size: 11px; margin-bottom: 4mm;">
+            {{ pago.notas|default:"Pago por servicios dentales" }}
+            {% if pago.cita and pago.cita.tratamiento %}
+                <br>({{ pago.cita.tratamiento.nombre }})
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="total-section">
+        <div class="item-row bold">
+            <span>TOTAL:</span>
+            <span>${{ pago.monto|floatformat:2 }}</span>
+        </div>
+        
+        <div class="item-row" style="font-size: 11px; margin-top: 2mm;">
+            <span>MÉTODO:</span>
+            <span>{{ pago.get_metodo_display }}</span>
+        </div>
+
+        {% if pago.monto_recibido %}
+        <div class="item-row" style="font-size: 11px;">
+            <span>RECIBIDO:</span>
+            <span>${{ pago.monto_recibido|floatformat:2 }}</span>
+        </div>
+        <div class="item-row bold" style="font-size: 12px; margin-top: 1mm; border-top: 1px solid #eee; padding-top: 1mm;">
+            <span>CAMBIO:</span>
+            <span>${{ pago.cambio|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer text-center">
+        <p class="bold">¡GRACIAS POR SU PREFERENCIA!</p>
+        <p>{{ config.pie_pagina_recibo|default:"Salud dental, vida feliz." }}</p>
+        <div class="divider"></div>
+        <p style="font-size: 8px;">Powered by DentalCloud</p>
+    </div>
+
+    <script>
+        // Auto imprimir al cargar si es necesario
+        // window.onload = () => { window.print(); }
+    </script>
+</body>
+</html>

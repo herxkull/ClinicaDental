@@ -3,33 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Nueva Clínica | DentalSaaS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Comenzar con DentalSaaS | Registro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #f8f9fa; }
-        .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #0d6efd; border: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .google-btn {
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .google-btn:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
-<body>
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card p-4">
-                    <h2 class="text-center mb-4">Registra tu Clínica</h2>
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">Crear Mi Clínica Ahora</button>
-                        </div>
-                    </form>
-                    <div class="text-center mt-3">
-                        <a href="{% url 'home_publico' %}" class="text-muted">Volver al inicio</a>
-                    </div>
-                </div>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 space-y-8 border border-gray-100">
+        <!-- Header -->
+        <div class="text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl mb-4">
+                <i class="fas fa-tooth text-3xl text-blue-600"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Bienvenido</h2>
+            <p class="mt-2 text-sm text-gray-500">Crea tu clínica digital en menos de 2 minutos.</p>
+            <p class="mt-1 text-[10px] text-blue-600 font-bold uppercase tracking-widest">No se requiere tarjeta de crédito</p>
+        </div>
+
+        {% if error %}
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+            <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Google Login Section -->
+        <div>
+            <a href="{% url 'google_login' %}" class="google-btn w-full flex items-center justify-center px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5 mr-3" alt="Google">
+                Registrarse con Google
+            </a>
+        </div>
+
+        <!-- Separator -->
+        <div class="relative py-4">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+            <div class="relative flex justify-center text-sm uppercase">
+                <span class="bg-white px-4 text-gray-400 font-medium tracking-wider">o registro manual</span>
             </div>
         </div>
+
+        <!-- Manual Form (Simplified) -->
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 gap-4">
+                {% for field in form %}
+                <div class="relative">
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 ml-1 uppercase">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-[10px] text-gray-400">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="mt-1 text-xs text-red-500 font-medium">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-200 transition-all transform active:scale-95 mt-6">
+                Crear Mi Clínica Ahora
+            </button>
+        </form>
+
+        <p class="text-center text-xs text-gray-400">
+            Al registrarte, aceptas nuestros <a href="#" class="text-blue-500 hover:underline">Términos de Servicio</a>.
+        </p>
     </div>
+
+    <script>
+        // Aplicar estilos a los inputs del formulario Django
+        document.querySelectorAll('input').forEach(input => {
+            input.className = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm";
+        });
+    </script>
 </body>
 </html>

@@ -121,9 +121,21 @@ function ejecutarCobroFicha() {
         },
         body: JSON.stringify({
             monto: document.getElementById('montoCobroFicha').value,
+            monto_recibido: document.getElementById('montoRecibidoFicha').value,
             metodo: document.getElementById('metodoCobroFicha').value
         })
     })
     .then(r => r.json())
-    .then(d => { if(d.status === 'ok') location.reload(); });
+    .then(d => { 
+        if(d.status === 'ok') {
+            // Si hay un ID de pago, abrimos el ticket en pestaña nueva
+            if (d.pago_id) {
+                window.open(`/pagos/${d.pago_id}/ticket/`, '_blank');
+            }
+            location.reload(); 
+        } else {
+            alert("Error: " + d.message);
+        }
+    })
+    .catch(err => alert("Error en el servidor: " + err));
 }

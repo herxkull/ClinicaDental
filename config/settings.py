@@ -24,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l(qa+)+!l_1hk$qb3nz)u*2dfh(=$@+52c$@+#pbs#xlb(nnjv'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com', 'localhost', '.localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['herxull.pythonanywhere.com', 'www.herxull.pythonanywhere.com', 'localhost', '.localhost', '127.0.0.1', '.test-clinica.com', '.nip.io', '.127.0.0.1.nip.io']
 
 
 # Application definition
@@ -68,6 +68,7 @@ DATABASE_ROUTERS = (
 
 MIDDLEWARE = [
     'django_tenants.middleware.main.TenantMainMiddleware',
+    'clientes.middleware.TrialExpirationMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -87,7 +88,7 @@ SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -102,17 +103,52 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+# Configuración de Correo Electrónico
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'DentalSaaS <noreply@dentalsaas.com>')
+
+# Configuración de Logs (Fundamental para SaaS comercial)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'error_criticos.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'Tenesketchu15/-',
-        'HOST': 'db.yorshrwsrqgdjwvsfdkq.supabase.co',
-        'PORT': '6543',  # Usamos el Transaction Pooler para mayor estabilidad
+        'NAME': os.getenv('DB_NAME', 'postgres'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
         'OPTIONS': {
             'sslmode': 'require',
         }
@@ -163,6 +199,11 @@ LOGIN_REDIRECT_URL = 'dashboard'
 # Redirigir a la pantalla de login al cerrar sesiÃ³n
 LOGOUT_REDIRECT_URL = 'login'
 
+AUTHENTICATION_BACKENDS = [
+    'config.backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -207,3 +248,12 @@ MULTITENANT_RELATIVE_MEDIA_ROOT = "" # Los archivos se guardarÃ¡n en MEDIA_ROO
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8000/google/callback/')
+
+# CONFIGURACIÓN 2CHECKOUT
+TWO_CHECKOUT_MERCHANT_ID = os.getenv('TWO_CHECKOUT_MERCHANT_ID')
+TWO_CHECKOUT_SECRET_KEY = os.getenv('TWO_CHECKOUT_SECRET_KEY')
+TWO_CHECKOUT_SECRET_WORD = os.getenv('TWO_CHECKOUT_SECRET_WORD')
+TWO_CHECKOUT_BUY_LINK = os.getenv('TWO_CHECKOUT_BUY_LINK')
+CURRENCY = os.getenv('CURRENCY', 'USD')
+# Desactivar COOP en desarrollo para evitar bloqueos por origen no confiable
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None

@@ -5,18 +5,20 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from .models import GoogleCalendarConfig, Cita
 
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly']
 
 def get_calendar_service(config):
     """Obtiene el servicio de Google Calendar usando las credenciales del modelo"""
     if not config or not config.credentials_json:
+        print("DEBUG: GoogleCalendarConfig o credentials_json están vacíos.")
         return None
     
     creds = Credentials.from_authorized_user_info(config.credentials_json, SCOPES)
     
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
-        config.credentials_json = creds.to_json()
+        import json
+        config.credentials_json = json.loads(creds.to_json())
         config.save()
         
     return build('calendar', 'v3', credentials=creds)
@@ -24,16 +26,29 @@ def get_calendar_service(config):
 def sync_cita_to_google(cita):
     """Sincroniza una cita individual con Google Calendar"""
     config = GoogleCalendarConfig.objects.filter(is_active=True).first()
+    if not config:
+        raise Exception("No hay una configuración activa de Google Calendar.")
+        
     service = get_calendar_service(config)
     
     if not service:
-        return None
+        raise Exception("No se pudo establecer conexión con el servicio de Google Calendar. Verifica tus credenciales.")
 
-    prefix = "✅ [COMPLETADA] " if cita.completada else "🦷 Cita: "
-    from datetime import datetime, timedelta
+    prefix = "✅ [FINALIZADA] " if cita.estado == 'COMPLETADA' else "🦷 Cita: "
+    # Asegurar que fecha y hora son objetos date/time
+    from datetime import datetime, date, time, timedelta
+    
+    fecha_obj = cita.fecha
+    if isinstance(fecha_obj, str):
+        fecha_obj = date.fromisoformat(fecha_obj)
+        
+    hora_obj = cita.hora
+    if isinstance(hora_obj, str):
+        # Manejar formatos HH:MM o HH:MM:SS
+        hora_obj = time.fromisoformat(hora_obj)
 
-    # Calculamos fin (1 hora después)
-    start_dt_obj = datetime.combine(cita.fecha, cita.hora)
+    # Calculamos inicio y fin (1 hora después)
+    start_dt_obj = datetime.combine(fecha_obj, hora_obj)
     end_dt_obj = start_dt_obj + timedelta(hours=1)
 
     event_data = {
@@ -50,25 +65,28 @@ def sync_cita_to_google(cita):
     }
 
     try:
+        calendar_id = config.calendar_id if config.calendar_id else 'primary'
+        
         if cita.google_event_id:
             # Actualizar existente
             event = service.events().update(
-                calendarId=config.calendar_id, 
+                calendarId=calendar_id, 
                 eventId=cita.google_event_id, 
                 body=event_data
             ).execute()
         else:
             # Crear nuevo
             event = service.events().insert(
-                calendarId=config.calendar_id, 
+                calendarId=calendar_id, 
                 body=event_data
             ).execute()
             cita.google_event_id = event['id']
             cita.save()
         return event['id']
     except Exception as e:
-        print(f"Error sincronizando con Google: {e}")
-        return None
+        error_msg = f"Error sincronizando con Google: {str(e)}"
+        print(error_msg)
+        raise Exception(error_msg) # Re-lanzamos para que la vista lo capture
 
 def delete_google_event(cita):
     """Elimina el evento de Google si la cita se borra en Django"""

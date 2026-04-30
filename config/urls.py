@@ -18,8 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from clientes import views
 
 urlpatterns = [
+    path('plan-expirado/', views.plan_expirado, name='plan_expirado'),
+    path('facturacion/', include([
+        path('', views.facturacion_planes, name='facturacion_planes'),
+        path('checkout/', views.checkout_2checkout, name='checkout_2checkout'),
+        path('comprobante/', views.subir_comprobante, name='subir_comprobante'),
+    ])),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('gestion.urls')),

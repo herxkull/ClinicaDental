@@ -24,13 +24,17 @@ urlpatterns = [
     path('recetas/<int:pk>/imprimir/', views.imprimir_receta, name='imprimir_receta'),
     path('pacientes/exportar/excel/', views.exportar_pacientes_excel, name='exportar_excel'),
     path('pacientes/<int:pk>/estado-cuenta/', views.estado_cuenta_pdf, name='estado_cuenta'),
+    
+    # Inventario
     path('inventario/', views.inventario, name='inventario'),
-    path('inventario/subir/<int:pk>/', views.aumentar_stock, name='aumentar_stock'),
-    path('inventario/bajar/<int:pk>/', views.disminuir_stock, name='disminuir_stock'),
+    path('inventario/crear/', views.crear_producto, name='crear_producto'),
+    path('inventario/movimiento/', views.registrar_movimiento, name='registrar_movimiento'),
+    path('inventario/historial/', views.historial_movimientos, name='historial_movimientos'),
+    path('inventario/historial/<int:producto_id>/', views.historial_movimientos, name='historial_producto'),
+    
     path('citas/finalizar/<int:pk>/', views.finalizar_cita, name='finalizar_cita'),
     path('paciente/<int:pk>/', views.detalle_paciente, name='detalle_paciente'),
     path('api/paciente/<int:paciente_id>/actualizar-diente/', views.actualizar_diente, name='actualizar_diente'),
-     path('inventario/crear/', views.crear_producto, name='crear_producto'),
     path('finanzas/', views.reporte_finanzas, name='reporte_finanzas'),
     path('cita/completar/<int:cita_id>/', views.completar_cita_con_pago, name='completar_cita_pago'),
     path('paciente/<int:paciente_id>/nueva-cita-modal/', views.modal_nueva_cita, name='modal_nueva_cita'),
@@ -39,4 +43,8 @@ urlpatterns = [
     path('google/init/', views.google_calendar_init, name='google_init'),
     path('google/callback/', views.google_calendar_callback, name='google_callback'),
     path('configuracion/', views.panel_configuracion, name='panel_configuracion'),
+    path('api/dashboard/stats/', views.api_dashboard_stats, name='api_dashboard_stats'),
+    path('pagos/<int:pago_id>/ticket/', views.imprimir_ticket_pago, name='imprimir_ticket'),
+    path('pacientes/<int:pk>/editar-rapido/', views.editar_paciente_rapido, name='editar_paciente_rapido'),
+    path('staff/', views.gestion_doctores, name='gestion_doctores'),
 ]

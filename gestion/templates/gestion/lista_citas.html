@@ -31,6 +31,7 @@
                         <tr>
                             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha y Hora</th>
                             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Paciente</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Doctor</th>
                             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tratamiento</th>
                             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
                             <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
@@ -48,18 +49,18 @@
                                 <div class="text-[10px] text-gray-400 font-bold uppercase">{{ cita.paciente.cedula|default:"S/C" }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="text-sm text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{{ cita.tratamiento.nombre }}</span>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full" style="background-color: {{ cita.doctor.color_agenda|default:'#3b82f6' }}"></div>
+                                    <span class="text-sm font-bold text-gray-700">Dr. {{ cita.doctor.nombre|default:"General" }}</span>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
-                                {% if cita.completada %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 uppercase">
-                                        <i class="fas fa-check mr-1 text-[8px]"></i> Completada
-                                    </span>
-                                {% else %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 uppercase">
-                                        <i class="fas fa-clock mr-1 text-[8px]"></i> Pendiente
-                                    </span>
-                                {% endif %}
+                                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg uppercase">{{ cita.tratamiento.nombre }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white {{ cita.badge_class }} uppercase">
+                                    {{ cita.get_estado_display }}
+                                </span>
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <a href="{% url 'detalle_paciente' cita.paciente.pk %}" class="text-blue-600 hover:text-blue-900 font-bold text-xs uppercase tracking-widest">
@@ -81,11 +82,9 @@
                             <p class="text-[10px] text-gray-400 font-bold uppercase">{{ cita.fecha }} - {{ cita.hora }}</p>
                             <h4 class="font-bold text-gray-900">{{ cita.paciente.nombre }}</h4>
                         </div>
-                        {% if cita.completada %}
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        {% else %}
-                            <i class="fas fa-clock text-blue-400"></i>
-                        {% endif %}
+                        <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase text-white {{ cita.badge_class }}">
+                            {{ cita.get_estado_display }}
+                        </span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500 italic">{{ cita.tratamiento.nombre }}</span>
