@@ -285,7 +285,7 @@
                                                 {% if s.estado_pago == 'TRIAL' or s.estado_pago == 'CORTESIA' %}
                                                     $ 0.00
                                                 {% else %}
-                                                    $ {{ s.clinica.gastos_fijos }}
+                                                    $ 49.99
                                                 {% endif %}
                                             </td>
                                             <td class="px-6 py-4">
@@ -310,6 +310,96 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- TAB SEGURIDAD -->
+                    <div class="tab-pane fade" id="tab-security" role="tabpanel">
+                        <div class="space-y-8">
+                            <!-- Cambio de Contraseña -->
+                            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                                <h2 class="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
+                                    <i class="fas fa-key text-blue-500"></i>
+                                    Cambiar Contraseña
+                                </h2>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-2 block">Contraseña Actual</label>
+                                        <input type="password" name="current_password" class="w-full bg-gray-50 border-0 rounded-2xl p-4 text-sm font-bold ring-1 ring-gray-100 focus:ring-blue-500 transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-2 block">Nueva Contraseña</label>
+                                        <input type="password" name="new_password" class="w-full bg-gray-50 border-0 rounded-2xl p-4 text-sm font-bold ring-1 ring-gray-100 focus:ring-blue-500 transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-2 block">Confirmar Nueva</label>
+                                        <input type="password" name="confirm_password" class="w-full bg-gray-50 border-0 rounded-2xl p-4 text-sm font-bold ring-1 ring-gray-100 focus:ring-blue-500 transition-all">
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-8">
+                                    <button type="submit" name="cambiar_password" class="px-8 py-3 bg-gray-900 text-white font-black text-xs rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200">
+                                        ACTUALIZAR CREDENCIALES
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Registro de Auditoría -->
+                            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                                <h2 class="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
+                                    <i class="fas fa-history text-blue-500"></i>
+                                    Registro de Auditoría (Logs)
+                                </h2>
+                                
+                                <div class="overflow-hidden rounded-2xl border border-gray-100">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-gray-50 text-gray-400 font-black uppercase text-[10px]">
+                                            <tr>
+                                                <th class="px-6 py-4">Fecha/Hora</th>
+                                                <th class="px-6 py-4">Usuario</th>
+                                                <th class="px-6 py-4">Acción</th>
+                                                <th class="px-6 py-4">Detalles</th>
+                                                <th class="px-6 py-4">IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-50">
+                                            {% for log in audit_logs %}
+                                            <tr class="hover:bg-gray-50 transition-all">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span class="font-bold text-gray-600">{{ log.fecha|date:"d/m/Y" }}</span>
+                                                    <span class="text-[10px] text-gray-400 block">{{ log.fecha|date:"H:i:s" }}</span>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                                                            {{ log.usuario.username|slice:":2"|upper }}
+                                                        </div>
+                                                        <span class="font-bold text-gray-700">{{ log.usuario.username }}</span>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black rounded uppercase tracking-tighter">
+                                                        {{ log.accion }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 text-xs text-gray-500 max-w-xs truncate" title="{{ log.detalles }}">
+                                                    {{ log.detalles }}
+                                                </td>
+                                                <td class="px-6 py-4 text-[10px] font-mono text-gray-400">
+                                                    {{ log.ip_address }}
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="px-6 py-10 text-center text-gray-400 font-bold italic">No hay registros de actividad recientes.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mt-8 flex justify-end">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 px-8 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3">
                             <i class="fas fa-save"></i>

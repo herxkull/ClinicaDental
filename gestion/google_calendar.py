@@ -55,11 +55,11 @@ def sync_cita_to_google(cita):
         'summary': f"{prefix}{cita.paciente.nombre}",
         'description': f"Tratamiento: {cita.tratamiento.nombre if cita.tratamiento else 'Consulta'}\nMotivo: {cita.motivo}",
         'start': {
-            'dateTime': start_dt_obj.isoformat(),
+            'dateTime': start_dt_obj.strftime('%Y-%m-%dT%H:%M:%S'),
             'timeZone': 'America/Managua',
         },
         'end': {
-            'dateTime': end_dt_obj.isoformat(),
+            'dateTime': end_dt_obj.strftime('%Y-%m-%dT%H:%M:%S'),
             'timeZone': 'America/Managua',
         },
     }
@@ -100,3 +100,28 @@ def delete_google_event(cita):
             service.events().delete(calendarId=config.calendar_id, eventId=cita.google_event_id).execute()
         except:
             pass
+def fetch_google_events(config, start_date=None, end_date=None):
+    """Trae eventos de Google Calendar para mostrarlos en el calendario de Django"""
+    service = get_calendar_service(config)
+    if not service:
+        return []
+    
+    try:
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Por defecto, traer desde hoy hasta 30 días después
+        time_min = (start_date or timezone.now()).isoformat()
+        if not time_min.endswith('Z'): time_min += 'Z'
+        
+        events_result = service.events().list(
+            calendarId=config.calendar_id, 
+            timeMin=time_min,
+            maxResults=50, 
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        return events_result.get('items', [])
+    except Exception as e:
+        print(f"Error recuperando eventos de Google: {e}")
+        return []

@@ -1,4 +1,5 @@
 # clientes/views.py
+import os
 import json
 import secrets
 from django.shortcuts import render, redirect
@@ -9,6 +10,8 @@ from django_tenants.utils import schema_context
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.contrib import messages
+from django.utils import timezone
+from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -31,7 +34,7 @@ GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/calendar.events',
 ]
 
-def google_login(request):
+def google_init(request):
     """Inicia el flujo de OAuth con Google"""
     flow = Flow.from_client_config(
         {
@@ -45,21 +48,62 @@ def google_login(request):
         scopes=GOOGLE_SCOPES
     )
     
-    redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+    # Google ya NO permite 127.0.0.1 por HTTP. Forzamos localhost siempre en local.
+    host_full = request.get_host()
+    if 'localhost' in host_full or '127.0.0.1' in host_full or 'nip.io' in host_full:
+        base_url = "http://localhost:8000"
+    else:
+        base_url = f"https://{settings.TENANT_USERS_DOMAIN}"
+    
+    redirect_uri = f"{base_url}{reverse('google_callback')}"
     flow.redirect_uri = redirect_uri
 
+    print(f"DEBUG OAUTH (FORCED LOCALHOST): redirect_uri={redirect_uri}")
+
+    # Forzar flexibilidad en desarrollo
+    if settings.DEBUG:
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+        os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
+    # Robustez: Si el middleware falló o venimos de un subdominio, buscamos el tenant
+    tenant_slug = request.GET.get('tenant')
+    if tenant_slug:
+        try:
+            tenant = Clinica.objects.get(schema_name=tenant_slug)
+        except Clinica.DoesNotExist:
+            tenant = getattr(request, 'tenant', None)
+    else:
+        tenant = getattr(request, 'tenant', None)
+
+    if not tenant:
+        try:
+            tenant = Clinica.objects.get(schema_name='public')
+        except Clinica.DoesNotExist:
+            return render(request, 'clientes/registro.html', {'error': "Error crítico: Esquema público no configurado."})
+
+    # Almacenamos el schema_name en el state para saber a dónde volver
+    state_token = secrets.token_urlsafe(16)
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'
+        prompt='consent',
+        state=f"{state_token}_tenant_{tenant.schema_name}"
     )
 
+    # IMPORTANTE: Guardar el verificador para evitar error "Missing code verifier"
+    request.session['google_auth_code_verifier'] = flow.code_verifier
     request.session['google_auth_state'] = state
+    
     return redirect(authorization_url)
 
 def google_callback(request):
     """Recibe la respuesta de Google y gestiona el Onboarding"""
     state = request.session.get('google_auth_state')
+    # Extraer el tenant del state
+    schema_name = 'public'
+    if state and '_tenant_' in state:
+        schema_name = state.split('_tenant_')[1]
+
     flow = Flow.from_client_config(
         {
             "web": {
@@ -72,7 +116,18 @@ def google_callback(request):
         scopes=GOOGLE_SCOPES,
         state=state
     )
-    flow.redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+
+    # Re-configurar el flow para el callback (Forzando localhost en local)
+    host_full = request.get_host()
+    if 'localhost' in host_full or '127.0.0.1' in host_full or 'nip.io' in host_full:
+        base_url = "http://localhost:8000"
+    else:
+        base_url = f"https://{settings.TENANT_USERS_DOMAIN}"
+    
+    flow.redirect_uri = f"{base_url}{reverse('google_callback')}"
+
+    # Restaurar el verificador de código para PKCE
+    flow.code_verifier = request.session.get('google_auth_code_verifier')
 
     try:
         flow.fetch_token(authorization_response=request.build_absolute_uri())
@@ -82,15 +137,68 @@ def google_callback(request):
             credentials.id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
         )
 
-        google_email = id_info.get('email')
+        google_email = id_info.get('email').lower().strip()
         google_name = id_info.get('name')
 
         request.session['google_user_data'] = {
             'email': google_email,
             'nombre': google_name,
+            'token': credentials.token,
             'refresh_token': credentials.refresh_token,
-            'access_token': credentials.token
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes
         }
+
+        if schema_name == 'public':
+            # Buscamos la clínica por email (insensible a mayúsculas)
+            clinica_existente = Clinica.objects.filter(email_contacto__iexact=google_email).first()
+            
+            if not clinica_existente:
+                # Segundo intento: ¿Hay alguna clínica que no sea la pública?
+                # Si el sistema es nuevo y solo hay una, asumimos que es la del doctor
+                total_clinicas = Clinica.objects.exclude(schema_name='public').count()
+                if total_clinicas == 1:
+                    clinica_existente = Clinica.objects.exclude(schema_name='public').first()
+            
+            if clinica_existente:
+                schema_name = clinica_existente.schema_name
+                print(f"DEBUG: Clínica detectada automáticamente: {schema_name}")
+
+        if schema_name != 'public':
+            with schema_context(schema_name):
+                from gestion.models import GoogleCalendarConfig
+                user = User.objects.filter(email=google_email).first()
+                if user:
+                    config = GoogleCalendarConfig.objects.filter(calendar_id='primary').first()
+                    
+                    new_creds = {
+                        'token': credentials.token,
+                        'refresh_token': credentials.refresh_token or (config.credentials_json.get('refresh_token') if config and config.credentials_json else None),
+                        'token_uri': credentials.token_uri,
+                        'client_id': credentials.client_id,
+                        'client_secret': credentials.client_secret,
+                        'scopes': credentials.scopes
+                    }
+                    
+                    config, _ = GoogleCalendarConfig.objects.update_or_create(
+                        calendar_id='primary',
+                        defaults={
+                            'credentials_json': new_creds,
+                            'is_active': True,
+                            'last_sync': timezone.now()
+                        }
+                    )
+                    user.backend = 'django.contrib.auth.backends.ModelBackend'
+                    login(request, user)
+            
+            host_completo = request.get_host()
+            puerto = ":" + host_completo.split(':')[1] if ':' in host_completo else ""
+            base_host = host_completo.split(':')[0].replace('localhost', '').strip('.')
+            if not base_host: base_host = "localhost"
+            
+            return redirect(f"http://{schema_name}.{base_host}{puerto}/")
 
         return redirect('finalizar_registro_google')
 
@@ -138,10 +246,16 @@ def finalizar_registro_google(request):
 
                     from gestion.models import GoogleCalendarConfig
                     GoogleCalendarConfig.objects.create(
-                        usuario=user,
-                        email_cuenta=user_data['email'],
-                        refresh_token=user_data['refresh_token'],
-                        calendar_id='primary'
+                        calendar_id='primary',
+                        credentials_json={
+                            'token': user_data.get('token'),
+                            'refresh_token': user_data.get('refresh_token'),
+                            'token_uri': user_data.get('token_uri'),
+                            'client_id': user_data.get('client_id'),
+                            'client_secret': user_data.get('client_secret'),
+                            'scopes': user_data.get('scopes'),
+                        },
+                        is_active=True
                     )
 
             # 4. Enviar correo de bienvenida
@@ -170,8 +284,12 @@ def finalizar_registro_google(request):
             except Exception as mail_error:
                 print(f"Error enviando correo: {mail_error}")
 
+            # LOGUEAR AL USUARIO RECIÉN CREADO
+            user.backend = 'django.contrib.auth.backends.ModelBackend'
+            login(request, user)
+
             del request.session['google_user_data']
-            return redirect(f"http://{domain_full}/dashboard/")
+            return redirect(f"http://{domain_full}/")
 
         except Exception as e:
             return render(request, 'clientes/finalizar_registro.html', {'error': f"Error: {str(e)}"})
@@ -196,7 +314,13 @@ def check_subdomain(request):
 def home_publico(request):
     return render(request, 'clientes/index.html')
 
+@csrf_exempt
 def registro_clinica(request):
+    """Maneja el registro manual (Sin Google)"""
+    # Asegurar que el transporte inseguro esté habilitado en debug para este flujo también
+    if settings.DEBUG:
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+        
     if request.method == 'POST':
         form = RegistroClinicaForm(request.POST)
         if form.is_valid():
@@ -313,19 +437,22 @@ def facturacion_planes(request):
 def checkout_2checkout(request):
     """Genera el enlace de pago para 2Checkout"""
     tenant = request.tenant
-    # Crear registro previo de suscripción en estado PENDIENTE
-    sub = Suscripcion.objects.create(
+    # Buscar suscripción existente (Trial o Pendiente) para actualizarla, o crear una nueva si no hay ninguna
+    sub, created = Suscripcion.objects.update_or_create(
         clinica=tenant,
-        plan_tipo='PRO',
-        metodo_pago='2CHECKOUT',
-        estado_pago='PENDIENTE'
+        estado_pago__in=['TRIAL', 'PENDIENTE'],
+        defaults={
+            'plan_tipo': 'PRO',
+            'metodo_pago': '2CHECKOUT',
+            'estado_pago': 'PENDIENTE'
+        }
     )
     
     # Parámetros básicos para 2Checkout (Inline o Redirect)
     params = {
         'prod': 'SUSCRIPCION_PRO_MENSUAL',
         'qty': 1,
-        'price': 49.00,
+        'price': 49.99,
         'type': 'self-handled',
         'merchant': settings.TWO_CHECKOUT_MERCHANT_ID,
         'ref': sub.id, # Referencia interna para el Webhook
@@ -344,13 +471,16 @@ def subir_comprobante(request):
         tenant = request.tenant
         img = request.FILES['comprobante']
         
-        # Crear suscripción en estado VALIDACIÓN
-        Suscripcion.objects.create(
+        # Actualizar la suscripción actual a estado de Validación
+        sub, created = Suscripcion.objects.update_or_create(
             clinica=tenant,
-            plan_tipo='PRO',
-            metodo_pago='TRANSFERENCIA',
-            estado_pago='VALIDACION',
-            comprobante_img=img
+            estado_pago__in=['TRIAL', 'PENDIENTE', 'VALIDACION'],
+            defaults={
+                'plan_tipo': 'PRO',
+                'metodo_pago': 'TRANSFERENCIA',
+                'estado_pago': 'VALIDACION',
+                'comprobante_img': img
+            }
         )
         
         messages.success(request, "Hemos recibido tu comprobante. Nuestro equipo revisará la transferencia y se te otorgará acceso completo en un tiempo estimado de 1-12 horas.")

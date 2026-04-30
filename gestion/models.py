@@ -236,3 +236,19 @@ class ConfiguracionClinica(models.Model):
 
     def __str__(self):
         return f"Configuración de {self.nombre_comercial or 'la Clínica'}"
+
+
+class LogActividad(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    accion = models.CharField(max_length=100)
+    detalles = models.TextField(blank=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Log de Actividad"
+        verbose_name_plural = "Logs de Actividad"
+
+    def __str__(self):
+        return f"{self.fecha.strftime('%d/%m/%Y %H:%M')} - {self.usuario} - {self.accion}"

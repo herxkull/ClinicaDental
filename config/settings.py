@@ -194,21 +194,21 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Redirigir al dashboard despuÃ©s de iniciar sesiÃ³n
-LOGIN_REDIRECT_URL = 'dashboard'
+# Sesiones y Autenticación Multi-Tenant
+SESSION_COOKIE_DOMAIN = '.localhost' if DEBUG else '.dentalsaas.com'
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
 # Redirigir a la pantalla de login al cerrar sesiÃ³n
 LOGOUT_REDIRECT_URL = 'login'
 
 AUTHENTICATION_BACKENDS = [
-    'config.backends.EmailOrUsernameBackend',
+    # 'config.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-CSRF_TRUSTED_ORIGINS = ['https://herxull.pythonanywhere.com']
+CSRF_TRUSTED_ORIGINS = ['https://herxull.pythonanywhere.com', 'http://localhost:8000', 'http://*.localhost:8000']
 
 # ConfiguraciÃ³n de Logs Profesionales
 LOGGING = {

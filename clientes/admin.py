@@ -19,7 +19,7 @@ def custom_index(request, extra_context=None):
     if not request.user.is_superuser:
         return redirect('/logout/') # Seguridad para el esquema público
         
-    mrr = Suscripcion.objects.filter(estado_pago__in=['APROBADO', 'CORTESIA']).count() * 29.99
+    mrr = Suscripcion.objects.filter(estado_pago__in=['APROBADO', 'CORTESIA']).count() * 49.99
     registros_hoy = Clinica.objects.filter(trial_start_date__gte=timezone.now() - timedelta(days=1)).count()
     
     extra_context = extra_context or {}
@@ -134,12 +134,53 @@ class DominioAdmin(admin.ModelAdmin):
 
 @admin.register(Suscripcion)
 class SuscripcionAdmin(admin.ModelAdmin):
-    list_display = ('clinica', 'get_pago_status', 'plan_tipo', 'metodo_pago', 'fecha_vencimiento', 'preview')
+    list_display = ('clinica', 'get_pago_status', 'plan_tipo', 'metodo_pago', 'fecha_vencimiento', 'preview', 'fast_actions')
     list_editable = ('metodo_pago',)
     list_filter = (ExpiracionFiltro, 'estado_pago', 'plan_tipo', 'metodo_pago')
     search_fields = ('clinica__nombre_clinica', 'clinica__schema_name', 'external_reference')
     readonly_fields = ('preview_large',)
     actions = ['aprobar_pago_manual', 'regalar_cortesia']
+
+    @admin.display(description='Aprobar/Rechazar')
+    def fast_actions(self, obj):
+        if obj.estado_pago == 'VALIDACION':
+            approve_url = reverse('admin:approve_sub', args=[obj.pk])
+            reject_url = reverse('admin:reject_sub', args=[obj.pk])
+            return format_html(
+                '<a href="{}" title="Aprobar" style="color: #10b981; font-size: 1.2rem; margin-right: 10px;">✅</a>'
+                '<a href="{}" title="Rechazar" style="color: #ef4444; font-size: 1.2rem;">❌</a>',
+                approve_url, reject_url
+            )
+        return "-"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('approve/<int:sub_id>/', self.admin_site.admin_view(self.approve_sub_view), name='approve_sub'),
+            path('reject/<int:sub_id>/', self.admin_site.admin_view(self.reject_sub_view), name='reject_sub'),
+        ]
+        return custom_urls + urls
+
+    def approve_sub_view(self, request, sub_id):
+        sub = self.get_object(request, sub_id)
+        if sub:
+            sub.estado_pago = 'APROBADO'
+            sub.fecha_vencimiento = timezone.now() + timedelta(days=30)
+            sub.save()
+            c = sub.clinica
+            c.is_trial = False
+            c.trial_end_date = sub.fecha_vencimiento
+            c.save()
+            self.message_user(request, f"Suscripción de {c.nombre_clinica} aprobada.")
+        return redirect(reverse('admin:clientes_suscripcion_changelist'))
+
+    def reject_sub_view(self, request, sub_id):
+        sub = self.get_object(request, sub_id)
+        if sub:
+            sub.estado_pago = 'RECHAZADO'
+            sub.save()
+            self.message_user(request, f"Suscripción de {sub.clinica.nombre_clinica} rechazada.", level='warning')
+        return redirect(reverse('admin:clientes_suscripcion_changelist'))
 
     def regalar_cortesia(self, request, queryset):
         for sub in queryset:

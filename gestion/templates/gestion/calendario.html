@@ -25,19 +25,26 @@
             <div class="flex flex-wrap gap-3 w-full md:w-auto">
                 <!-- Filtro de Doctor (Placeholder para futuro multi-doctor) -->
                 <div class="relative group">
-                    <select class="appearance-none bg-white border-0 pl-10 pr-10 py-3 rounded-2xl text-sm font-bold text-gray-600 shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
-                        <option>Todos los Doctores</option>
-                        <option>Dr. {{ request.user.last_name }}</option>
+                    <select id="doctorFilter" class="appearance-none bg-white border-0 pl-10 pr-10 py-3 rounded-2xl text-sm font-bold text-gray-600 shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                        <option value="all">Todos los Doctores</option>
+                        {% for d in doctores %}
+                            <option value="{{ d.id }}">Dr. {{ d.nombre }}</option>
+                        {% endfor %}
                     </select>
                     <i class="fas fa-user-md absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px]"></i>
                 </div>
 
                 {% if google_active %}
-                <div class="bg-green-50 text-green-700 font-bold py-3 px-6 rounded-2xl border border-green-100 flex items-center gap-2 shadow-sm">
-                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" class="w-12 h-4">
-                    <span class="text-sm">Sincronizado</span>
+                <div class="flex flex-col gap-1">
+                    <div class="bg-green-50 text-green-700 font-bold py-2 px-4 rounded-xl border border-green-100 flex items-center gap-2 shadow-sm">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg" class="w-10 h-3">
+                        <span class="text-xs">Sincronizado</span>
+                    </div>
+                    <button onclick="conectarGoogle()" class="text-[10px] font-bold text-blue-500 hover:text-blue-700 underline text-center">
+                        ¿No sincroniza? Reconectar
+                    </button>
                 </div>
                 {% else %}
                 <button onclick="conectarGoogle()" class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-6 rounded-2xl shadow-sm border border-gray-100 transition-all flex items-center gap-2 group">
@@ -84,7 +91,10 @@
     };
 
     function conectarGoogle() {
-        window.location.href = "{% url 'google_init' %}";
+        // Forzamos ir al dominio principal para evitar errores de subdominio en el callback
+        const mainDomain = window.location.hostname.split('.').slice(-1)[0] === 'localhost' ? 'localhost:8000' : '{{ settings.TENANT_USERS_DOMAIN }}';
+        const currentTenant = "{{ request.tenant.schema_name }}";
+        window.location.href = `http://${mainDomain}/google/init/?tenant=${currentTenant}`;
     }
 </script>
 <script src="{% static 'gestion/js/calendario.js' %}?v=2"></script>

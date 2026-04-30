@@ -7,7 +7,8 @@ from clientes import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('registro/', views.registro_clinica, name='registro_clinica'),
-    path('google/login/', views.google_login, name='google_login'),
+    path('google/login/', views.google_init, name='google_login'),
+    path('google/init/', views.google_init, name='google_init'),
     path('google/callback/', views.google_callback, name='google_callback'),
     path('finalizar-registro/', views.finalizar_registro_google, name='finalizar_registro_google'),
     path('api/check-subdomain/', views.check_subdomain, name='check_subdomain'),

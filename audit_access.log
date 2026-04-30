@@ -15,3 +15,13 @@
 [2026-04-29 11:55:38,164] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Beatriz Elena Roman | Monto: 80.00
 [2026-04-29 13:02:45,378] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ana Julia Martinez | Monto: 120.00
 [2026-04-29 15:08:11,618] [INFO] [gestion.audit] [Tenant:Clínica Dental Hersan] [User:herxkull] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Hugo Armando Diaz | Monto: 80.00
+[2026-04-29 23:15:53,011] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Juan Hernandez | Monto: 100.00
+[2026-04-29 23:35:45,390] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Carmen Vargas (ID: 13)
+[2026-04-30 00:07:44,651] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 0.00 para Ana Rodriguez
+[2026-04-30 00:08:37,693] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 0.00 para Ana Rodriguez
+[2026-04-30 00:08:49,114] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 0.00 para Ana Rodriguez
+[2026-04-30 00:11:08,040] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 0.00 para Ana Rodriguez
+[2026-04-30 00:12:48,194] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 0.00 para Ana Rodriguez
+[2026-04-30 00:22:03,313] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 45.0 para Carmen Vargas
+[2026-04-30 00:30:14,043] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 00:31:29,652] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Carlos Garcia | Monto: 450.00

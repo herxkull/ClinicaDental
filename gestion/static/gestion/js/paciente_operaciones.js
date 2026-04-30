@@ -113,29 +113,37 @@ function ejecutarCobroFicha() {
     const id = document.getElementById('cobroCitaId').value;
     const url = id ? `/cita/completar/${id}/` : `/pacientes/${CONFIG_PACIENTE.id}/pagos/nuevo/`;
 
+    const formData = new FormData();
+    formData.append('monto', document.getElementById('montoCobroFicha').value);
+    formData.append('monto_recibido', document.getElementById('montoRecibidoFicha').value);
+    formData.append('metodo', document.getElementById('metodoCobroFicha').value);
+
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             'X-CSRFToken': CONFIG_PACIENTE.csrfToken
         },
-        body: JSON.stringify({
-            monto: document.getElementById('montoCobroFicha').value,
-            monto_recibido: document.getElementById('montoRecibidoFicha').value,
-            metodo: document.getElementById('metodoCobroFicha').value
-        })
+        body: formData
     })
     .then(r => r.json())
     .then(d => { 
-        if(d.status === 'ok') {
-            // Si hay un ID de pago, abrimos el ticket en pestaña nueva
-            if (d.pago_id) {
-                window.open(`/pagos/${d.pago_id}/ticket/`, '_blank');
-            }
-            location.reload(); 
+        if(d.status === 'success' || d.status === 'ok') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Cobro Exitoso',
+                html: `<div class="text-center"><p class="text-gray-500 uppercase text-[10px] font-black mb-2">Vuelto Entregado</p><h2 class="text-5xl font-black text-green-600">$ ${(d.cambio || 0).toFixed(2)}</h2></div>`,
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#2563eb'
+            }).then(() => {
+                if (d.pago_id) {
+                    window.open(`/pagos/${d.pago_id}/ticket/`, '_blank');
+                }
+                location.reload(); 
+            });
         } else {
-            alert("Error: " + d.message);
+            Swal.fire('Error', d.error || d.message || 'Error en la operación', 'error');
         }
     })
-    .catch(err => alert("Error en el servidor: " + err));
-}
+    .catch(err => Swal.fire('Error Fatal', 'No se pudo procesar el pago: ' + err, 'error'));
+}

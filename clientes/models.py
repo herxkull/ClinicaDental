@@ -7,6 +7,7 @@ from django_tenants.models import TenantMixin, DomainMixin
 
 class Clinica(TenantMixin):
     nombre_clinica = models.CharField(max_length=100)
+    email_contacto = models.EmailField(max_length=100, blank=True, null=True)
     creado_en = models.DateField(auto_now_add=True)
 
     # Estado Maestro de la Clínica

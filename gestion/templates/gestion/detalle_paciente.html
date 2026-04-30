@@ -144,7 +144,7 @@
                     <h3 class="font-black text-gray-900 uppercase tracking-widest text-xs">Situación Financiera</h3>
                     {% if saldo_pendiente > 0 %}
                         <div class="flex gap-2">
-                            <button onclick="abrirModalAbono()" 
+                            <button data-bs-toggle="modal" data-bs-target="#modalCobroFicha"
                                     class="text-xs font-black text-white bg-blue-600 hover:bg-blue-700 uppercase tracking-tighter px-4 py-2 rounded-xl shadow-lg shadow-blue-100 transition-all">
                                 <i class="fas fa-money-bill-wave mr-2"></i> Registrar Abono
                             </button>
@@ -358,6 +358,10 @@
 </style>
 
 <script>
+    window.CONFIG_PACIENTE = { id: "{{ paciente.id }}", csrfToken: "{{ csrf_token }}" };
+</script>
+
+<script>
     function openLightbox(url, title) {
         const modal = document.getElementById('lightboxModal');
         const img = document.getElementById('lightboxImg');
@@ -391,7 +395,6 @@
     // El resto de lógica de tabs y config se mantiene...
 </script>
 <script>
-    var CONFIG_PACIENTE = { id: "{{ paciente.id }}", csrfToken: "{{ csrf_token }}" };
 
     function cambiarTab(tabId) {
         document.querySelectorAll('.tab-pane-tailwind').forEach(pane => pane.classList.add('hidden'));
@@ -454,7 +457,6 @@
 </div>
 
 <script>
-    const CONFIG_PACIENTE = { id: "{{ paciente.id }}", csrfToken: "{{ csrf_token }}" };
 
     function abrirModalEdicion(url) {
         fetch(url).then(r => r.text()).then(html => {
@@ -463,10 +465,14 @@
         });
     }
 
-    function abrirModalAbono() {
-        document.getElementById('tituloModalCobro').innerText = "Registrar Abono a Saldo";
-        document.getElementById('montoCobroFicha').value = "{{ saldo_pendiente }}";
-        new bootstrap.Modal(document.getElementById('modalCobroFicha')).show();
+    // Inicializar el modal de abono con el saldo pendiente
+    const modalCobro = document.getElementById('modalCobroFicha');
+    if (modalCobro) {
+        modalCobro.addEventListener('show.bs.modal', function (event) {
+            document.getElementById('tituloModalCobro').innerText = "Registrar Abono a Saldo";
+            document.getElementById('montoCobroFicha').value = "{{ saldo_pendiente }}";
+            calcularVuelto(); // Forzar cálculo inicial
+        });
     }
 
     // Calculadora de Vuelto
@@ -499,32 +505,10 @@
         montoPagarInput.addEventListener('input', calcularVuelto);
     }
 
-    async function ejecutarCobroFicha() {
-        const formData = new FormData();
-        formData.append('paciente_id', CONFIG_PACIENTE.id);
-        formData.append('monto', montoPagarInput.value);
-        formData.append('monto_recibido', montoRecibidoInput.value);
-        formData.append('metodo', document.getElementById('metodoCobroFicha').value);
+    // El resto de la lógica de la galería se mantiene...
+</script>
 
-        const response = await fetch('{% url "registrar_pago" paciente.id %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CONFIG_PACIENTE.csrfToken }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            Swal.fire({
-                icon: 'success',
-                title: 'Cobro Exitoso',
-                html: `<div class="text-center"><p class="text-gray-500 uppercase text-[10px] font-black mb-2">Vuelto Entregado</p><h2 class="text-5xl font-black text-green-600">$ ${data.cambio.toFixed(2)}</h2></div>`,
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#2563eb',
-                customClass: { popup: 'rounded-[2.5rem]' }
-            }).then(() => location.reload());
-        }
-    }
-
+<script>
     // Drag & Drop Galería
     const dropzone = document.getElementById('dropzone-galeria');
     const fileInput = document.getElementById('file-upload-input');
@@ -553,5 +537,5 @@
     }
 </script>
 
-<script src="{% static 'gestion/js/paciente_operaciones.js' %}?v=3"></script>
+<script src="{% static 'gestion/js/paciente_operaciones.js' %}?v=5"></script>
 {% endblock %}

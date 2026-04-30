@@ -2,9 +2,11 @@ from . import google_calendar
 import json
 import logging
 import os
+import secrets
 import uuid
 from datetime import date, datetime, time
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+import decimal
 import openpyxl
 from .utils import render_to_pdf
 from django.shortcuts import render, get_object_or_404, redirect
@@ -12,16 +14,35 @@ from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth.models import User
+from django.core.signing import TimestampSigner, SignatureExpired
 from django.contrib.auth.decorators import login_required
 from django.db import transaction, connection
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
+
+def magic_login(request):
+    token = request.GET.get('token')
+    if not token:
+        return HttpResponse("Token faltante", status=400)
+    
+    signer = TimestampSigner()
+    try:
+        # El token expira en 10 minutos
+        username = signer.unsign(token, max_age=600)
+        user = User.objects.get(username=username)
+        user.backend = 'django.contrib.auth.backends.ModelBackend'
+        login(request, user)
+        return redirect('dashboard')
+    except (SignatureExpired, User.DoesNotExist, Exception) as e:
+        return HttpResponse(f"Token invÃ¡lido o expirado: {e}", status=403)
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q, Count, F, OuterRef, Subquery, DecimalField
 from django.db.models.functions import Coalesce
 from .decorators import grupo_requerido
-from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica, MovimientoInventario, DoctorColaborador
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica, MovimientoInventario, DoctorColaborador, LogActividad
 from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm, ConfiguracionClinicaForm
 
 # Inicializar Logger de AuditorÃ­a
@@ -30,11 +51,25 @@ audit_log = logging.getLogger('gestion.audit')
 def log_audit(request, action, details=""):
     """Helper para registrar acciones con contexto de Tenant y Usuario"""
     tenant_name = getattr(request, 'tenant', 'N/A')
-    user_id = request.user.username if request.user.is_authenticated else 'Anonymous'
+    user = request.user if request.user.is_authenticated else None
+    user_id = user.username if user else 'Anonymous'
+    
+    # 1. Log a archivo (Logging standard)
     audit_log.info(f"ACTION: {action} | DETAILS: {details}", extra={
         'tenant_name': tenant_name,
         'user_id': user_id
     })
+
+    # 2. Log a Base de Datos (Auditoría visible en UI)
+    try:
+        LogActividad.objects.create(
+            usuario=user,
+            accion=action,
+            detalles=details,
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+    except Exception as e:
+        print(f"Error al guardar log de auditoría: {e}")
 
 # 1. DASHBOARD PRINCIPAL
 # ==========================================
@@ -426,18 +461,25 @@ def lista_citas(request):
 def calendario(request):
     pacientes = Paciente.objects.all().order_by('nombre')
     tratamientos = Tratamiento.objects.all().order_by('nombre')
+    doctores = DoctorColaborador.objects.filter(is_active=True).order_by('nombre')
     google_config = GoogleCalendarConfig.objects.filter(is_active=True).first()
     
     return render(request, 'gestion/calendario.html', {
         'pacientes': pacientes, 
         'tratamientos': tratamientos,
+        'doctores': doctores,
         'google_active': google_config is not None
     })
 
 
 @login_required
 def citas_json(request):
+    # 1. Citas locales (DentalSaaS)
+    doctor_id = request.GET.get('doctor_id', 'all')
     citas = Cita.objects.select_related('paciente', 'tratamiento').all()
+    
+    if doctor_id != 'all':
+        citas = citas.filter(doctor_id=doctor_id)
     eventos = []
 
     for cita in citas:
@@ -445,7 +487,7 @@ def citas_json(request):
         nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
 
         eventos.append({
-            'id': cita.id,
+            'id': f"local_{cita.id}",
             'title': f"{cita.paciente.nombre}",
             'start': start_dt,
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
@@ -458,6 +500,34 @@ def citas_json(request):
             }
         })
 
+    # 2. Eventos externos (Google Calendar)
+    google_config = GoogleCalendarConfig.objects.filter(is_active=True).first()
+    if google_config:
+        g_events = google_calendar.fetch_google_events(google_config)
+        for g_event in g_events:
+            # Evitar duplicados (no mostrar eventos que nosotros mismos enviamos a Google)
+            g_id = g_event.get('id')
+            if Cita.objects.filter(google_event_id=g_id).exists():
+                continue
+                
+            start = g_event['start'].get('dateTime', g_event['start'].get('date'))
+            end = g_event['end'].get('dateTime', g_event['end'].get('date'))
+            
+            eventos.append({
+                'id': f"google_{g_id}",
+                'title': f"[Google] {g_event.get('summary', '(Sin título)')}",
+                'start': start,
+                'end': end,
+                'backgroundColor': '#94a3b8', # Gris para eventos externos
+                'borderColor': '#94a3b8',
+                'editable': False, # No permitir mover eventos de Google desde aquí
+                'extendedProps': {
+                    'tratamiento_nombre': 'Evento Externo',
+                    'motivo': g_event.get('description', 'Evento sincronizado de Google Calendar'),
+                    'paciente_nombre': 'Google User'
+                }
+            })
+
     return JsonResponse(eventos, safe=False)
 
 
@@ -468,7 +538,10 @@ def reprogramar_cita(request):
     from datetime import datetime
     try:
         data = json.loads(request.body)
-        cita = get_object_or_404(Cita, id=data.get('id'))
+        raw_id = str(data.get('id'))
+        # Limpiar el prefijo 'local_' si existe
+        clean_id = raw_id.replace('local_', '')
+        cita = get_object_or_404(Cita, id=clean_id)
         
         # Parsear nueva fecha y hora (ISO string)
         new_start = data.get('start') # Ej: 2023-10-27T08:00:00
@@ -991,7 +1064,7 @@ def reporte_finanzas(request):
     for c in citas_pendientes:
         movimientos.append({
             'tipo': 'DEUDA',
-            'fecha': datetime.combine(c.fecha, time.min),
+            'fecha': timezone.make_aware(datetime.combine(c.fecha, time.min)) if timezone.is_naive(datetime.combine(c.fecha, time.min)) else datetime.combine(c.fecha, time.min),
             'paciente': c.paciente,
             'concepto': f"Pendiente: {c.tratamiento.nombre}",
             'monto': c.tratamiento.precio_venta - c.pagado,
@@ -1033,18 +1106,26 @@ def registrar_pago(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
     
     if request.method == 'POST':
+        print(f"DEBUG: All POST keys: {list(request.POST.keys())}")
         monto = request.POST.get('monto')
         monto_recibido = request.POST.get('monto_recibido', 0)
         metodo = request.POST.get('metodo', 'EFECTIVO')
         notas = request.POST.get('notas', '')
 
-        try:
-            monto = Decimal(str(monto))
-            monto_recibido = Decimal(str(monto_recibido))
-        except (ValueError, TypeError, decimal.InvalidOperation):
-            from decimal import Decimal as D
-            monto = D(str(monto))
-            monto_recibido = D(str(monto_recibido))
+        def clean_decimal(value):
+            if not value: return Decimal('0.00')
+            # Quitar símbolos de moneda, espacios y convertir comas en puntos
+            v = str(value).replace('$', '').replace(' ', '').replace(',', '.').strip()
+            try:
+                return Decimal(v)
+            except:
+                return Decimal('0.00')
+
+        monto = clean_decimal(monto)
+        monto_recibido = clean_decimal(monto_recibido)
+
+        if monto <= 0:
+            return JsonResponse({'status': 'error', 'error': 'El monto debe ser mayor a 0. Se recibio: ' + str(request.POST.get('monto'))}, status=400)
 
         pago = Pago.objects.create(
             paciente=paciente,
@@ -1080,13 +1161,18 @@ from django.conf import settings
 @grupo_requerido('Doctor')
 def google_calendar_init(request):
     """Inicia el flujo de autenticaciÃ³n con Google"""
-    # Permitir HTTP para desarrollo local
     if settings.DEBUG:
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-        
-    dynamic_redirect_uri = request.build_absolute_uri(reverse('google_callback'))
-    if not settings.DEBUG and 'http://' in dynamic_redirect_uri:
-        dynamic_redirect_uri = dynamic_redirect_uri.replace('http://', 'https://')
+        os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
+    # Google exige que la URI sea EXACTA a la registrada. Forzamos localhost global.
+    host_full = request.get_host()
+    if 'localhost' in host_full or '127.0.0.1' in host_full:
+        base_url = "http://localhost:8000"
+    else:
+        base_url = f"https://{settings.TENANT_USERS_DOMAIN}"
+    
+    global_callback = f"{base_url}/google/callback/"
 
     flow = Flow.from_client_config(
         {
@@ -1095,21 +1181,21 @@ def google_calendar_init(request):
                 "client_secret": settings.GOOGLE_CLIENT_SECRET,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [dynamic_redirect_uri],
+                "redirect_uris": [global_callback],
             }
         },
-        scopes=['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly']
+        scopes=['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly', 'openid', 'email', 'profile']
     )
-    flow.redirect_uri = dynamic_redirect_uri
+    flow.redirect_uri = global_callback
     
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'
+        prompt='consent',
+        state=f"{secrets.token_urlsafe(16)}_tenant_{request.tenant.schema_name}"
     )
     
     request.session['google_auth_state'] = state
-    request.session['google_auth_code_verifier'] = flow.code_verifier
     return redirect(authorization_url)
 
 
@@ -1174,12 +1260,33 @@ def panel_configuracion(request):
     google_config = GoogleCalendarConfig.objects.filter(id=1).first()
 
     if request.method == 'POST':
-        # Manejo de auto-renovación (Checkbox en el nuevo tab)
+        # 1. Manejo de auto-renovación
         auto_renov = request.POST.get('auto_renovacion') == 'on'
         tenant = request.tenant
         tenant.auto_renovacion = auto_renov
         tenant.save()
 
+        # 2. Manejo de Cambio de Contraseña
+        if 'cambiar_password' in request.POST:
+            old_pass = request.POST.get('current_password')
+            new_pass = request.POST.get('new_password')
+            confirm_pass = request.POST.get('confirm_password')
+
+            if not request.user.check_password(old_pass):
+                messages.error(request, 'La contraseña actual es incorrecta.')
+            elif new_pass != confirm_pass:
+                messages.error(request, 'Las nuevas contraseñas no coinciden.')
+            elif len(new_pass) < 6:
+                messages.error(request, 'La nueva contraseña debe tener al menos 6 caracteres.')
+            else:
+                request.user.set_password(new_pass)
+                request.user.save()
+                update_session_auth_hash(request, request.user) # No cerrar sesión
+                log_audit(request, "CAMBIO_PASSWORD", "Usuario actualizó su contraseña")
+                messages.success(request, '¡Contraseña actualizada con éxito!')
+            return redirect('/configuracion/#tab-security')
+
+        # 3. Manejo de Formulario General
         form = ConfiguracionClinicaForm(request.POST, request.FILES, instance=config)
         if form.is_valid():
             form.save()
@@ -1192,6 +1299,7 @@ def panel_configuracion(request):
                     horarios[dia] = [apertura, cierre]
             config.horarios_atencion = horarios
             config.save()
+            log_audit(request, "UPDATE_CONFIG", "Actualización de parámetros generales")
             messages.success(request, '¡Configuración actualizada con éxito!')
             return redirect('panel_configuracion')
     else:
@@ -1202,7 +1310,8 @@ def panel_configuracion(request):
         'config': config,
         'google_config': google_config,
         'suscripciones': request.tenant.suscripciones.all().order_by('-fecha_inicio'),
-        'dias': ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']
+        'dias': ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'],
+        'audit_logs': LogActividad.objects.all()[:50] # Últimos 50 logs
     }
     return render(request, 'gestion/configuraciones.html', context)
 

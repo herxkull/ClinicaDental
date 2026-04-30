@@ -43,8 +43,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     calendar.render();
-
     window.fullCalendarInstance = calendar; // Para acceso global
+
+    // FILTRO DE DOCTORES
+    const doctorFilter = document.getElementById('doctorFilter');
+    if (doctorFilter) {
+        doctorFilter.addEventListener('change', function() {
+            calendar.refetchEvents();
+        });
+    }
+
+    // Modificamos la carga de eventos para incluir el filtro
+    calendar.setOption('eventSources', [
+        {
+            url: CALENDARIO_CONFIG.urlEventos,
+            extraParams: function() {
+                return {
+                    doctor_id: doctorFilter ? doctorFilter.value : 'all'
+                };
+            }
+        }
+    ]);
 });
 
 // FUNCIÓN PARA ACTUALIZAR EN DB

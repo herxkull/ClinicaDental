@@ -8,8 +8,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from clientes.models import Dominio
+from clientes.models import Clinica
 
-print("\n--- REVISIÓN DE DOMINIOS ---")
-for d in Dominio.objects.all():
-    print(f"Dominio: {d.domain} | Clínica Relacionada: {d.tenant.nombre_clinica} | Primario: {d.is_primary}")
+clinicas = Clinica.objects.all()
+if clinicas.exists():
+    for c in clinicas:
+        print(f"CLINICA_ENCONTRADA:{c.schema_name}")
+else:
+    print("NO_HAY_CLINICAS")
