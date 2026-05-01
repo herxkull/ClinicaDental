@@ -432,7 +432,10 @@ def registro_clinica(request):
                         fecha_vencimiento=timezone.now() + timezone.timedelta(days=7)
                     )
 
-                    domain_full = f"{subdominio}.localhost{puerto}" # Link de éxito con puerto
+                    if "localhost" in host_sin_puerto or "127.0.0.1" in host_sin_puerto:
+                        domain_full = f"{subdominio}.localhost{puerto}"
+                    else:
+                        domain_full = f"{subdominio}.{host_sin_puerto}{puerto}"
                     
                 with schema_context(nueva_clinica.schema_name):
                     user = User.objects.create_superuser(
