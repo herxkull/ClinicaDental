@@ -197,7 +197,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Sesiones y Autenticación Multi-Tenant
-SESSION_COOKIE_DOMAIN = None if DEBUG else '.dentalsaas.com'
+SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN', None)
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 # Redirigir a la pantalla de login al cerrar sesiÃ³n
