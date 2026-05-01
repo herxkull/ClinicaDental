@@ -137,9 +137,15 @@ def dashboard(request):
     ingresos_map = {(d['mes'], d['anio']): float(d['total']) for d in ingresos_qs}
     gastos_map = {(d['mes'], d['anio']): float(d['total_gasto']) for d in gastos_qs}
 
+    mes_actual = hoy.month
+    anio_actual = hoy.year
+
     for i in range(5, -1, -1):
-        target_date = hoy - timezone.timedelta(days=i*30)
-        m, y = target_date.month, target_date.year
+        m = mes_actual - i
+        y = anio_actual
+        if m <= 0:
+            m += 12
+            y -= 1
         chart_periodo_labels.append(meses_nombres[m-1])
         chart_ingresos_data.append(ingresos_map.get((m, y), 0.0))
         chart_gastos_data.append(gastos_map.get((m, y), 0.0))
@@ -179,13 +185,13 @@ def api_dashboard_stats(request):
     ingresos = Pago.objects.filter(fecha__date__gte=start_date).aggregate(total=Sum('monto'))['total'] or 0
     pacientes_nuevos = Paciente.objects.filter(id__gt=0).count() # Placeholder
     
-    # Top Tratamientos para el periodo
-    datos_tratamientos = Cita.objects.filter(fecha__gte=start_date).values('tratamiento__nombre').annotate(
-        cantidad=Count('id')
-    ).order_by('-cantidad')[:5]
+    # Top Tratamientos (Ingresos) para el periodo
+    datos_tratamientos = Pago.objects.filter(fecha__date__gte=start_date).values(
+        'cita__tratamiento__nombre'
+    ).annotate(total=Sum('monto')).order_by('-total')[:5]
     
-    labels = [item['tratamiento__nombre'] or "Sin nombre" for item in datos_tratamientos]
-    series = [item['cantidad'] for item in datos_tratamientos]
+    labels = [item['cita__tratamiento__nombre'] or "Abonos/Otros" for item in datos_tratamientos]
+    series = [float(item['total']) for item in datos_tratamientos]
 
     return JsonResponse({
         'ingresos': float(ingresos),
@@ -202,18 +208,44 @@ def api_dashboard_stats(request):
 @login_required
 def lista_pacientes(request):
     query = request.GET.get('q')
+    solo_deudores = request.GET.get('con_deuda') == 'on'
+
+    from django.db.models import Subquery, OuterRef, DecimalField
+    from django.db.models.functions import Coalesce
+
+    # Subconsultas para cálculo de saldo sin duplicar filas
+    citas_sub = Cita.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
+        total=Sum('tratamiento__precio_venta')
+    ).values('total')
+
+    pagos_sub = Pago.objects.filter(paciente=OuterRef('pk')).values('paciente').annotate(
+        total=Sum('monto')
+    ).values('total')
+
+    pacientes_lista = Paciente.objects.annotate(
+        total_t=Coalesce(Subquery(citas_sub), 0, output_field=DecimalField()),
+        total_p=Coalesce(Subquery(pagos_sub), 0, output_field=DecimalField())
+    ).annotate(
+        saldo=F('total_t') - F('total_p')
+    ).order_by('nombre')
+
     if query:
-        pacientes_lista = Paciente.objects.filter(
+        pacientes_lista = pacientes_lista.filter(
             Q(nombre__icontains=query) | Q(cedula__icontains=query)
-        ).order_by('nombre')
-    else:
-        pacientes_lista = Paciente.objects.all().order_by('nombre')
+        )
+
+    if solo_deudores:
+        pacientes_lista = pacientes_lista.filter(saldo__gt=0)
 
     paginator = Paginator(pacientes_lista, 10)
     page_number = request.GET.get('page')
     pacientes = paginator.get_page(page_number)
 
-    return render(request, 'gestion/lista_pacientes.html', {'pacientes': pacientes, 'query': query})
+    return render(request, 'gestion/lista_pacientes.html', {
+        'pacientes': pacientes, 
+        'query': query,
+        'solo_deudores': solo_deudores
+    })
 
 
 @login_required
@@ -503,32 +535,36 @@ def citas_json(request):
     # 2. Eventos externos (Google Calendar)
     google_config = GoogleCalendarConfig.objects.filter(is_active=True).first()
     if google_config:
-        g_events = google_calendar.fetch_google_events(google_config)
-        for g_event in g_events:
-            # Evitar duplicados (no mostrar eventos que nosotros mismos enviamos a Google)
-            g_id = g_event.get('id')
-            if Cita.objects.filter(google_event_id=g_id).exists():
-                continue
+        try:
+            g_events = google_calendar.fetch_google_events(google_config)
+            for g_event in g_events:
+                # Evitar duplicados (no mostrar eventos que nosotros mismos enviamos a Google)
+                g_id = g_event.get('id')
+                if Cita.objects.filter(google_event_id=g_id).exists():
+                    continue
+                    
+                start = g_event['start'].get('dateTime', g_event['start'].get('date'))
+                end = g_event['end'].get('dateTime', g_event['end'].get('date'))
                 
-            start = g_event['start'].get('dateTime', g_event['start'].get('date'))
-            end = g_event['end'].get('dateTime', g_event['end'].get('date'))
-            
-            eventos.append({
-                'id': f"google_{g_id}",
-                'title': f"[Google] {g_event.get('summary', '(Sin título)')}",
-                'start': start,
-                'end': end,
-                'backgroundColor': '#94a3b8', # Gris para eventos externos
-                'borderColor': '#94a3b8',
-                'editable': False, # No permitir mover eventos de Google desde aquí
-                'extendedProps': {
-                    'tratamiento_nombre': 'Evento Externo',
-                    'motivo': g_event.get('description', 'Evento sincronizado de Google Calendar'),
-                    'paciente_nombre': 'Google User'
-                }
-            })
+                eventos.append({
+                    'id': f"google_{g_id}",
+                    'title': f"[Google] {g_event.get('summary', '(Sin título)')}",
+                    'start': start,
+                    'end': end,
+                    'backgroundColor': '#94a3b8', # Gris para eventos externos
+                    'borderColor': '#94a3b8',
+                    'editable': False, # No permitir mover eventos de Google desde aquí
+                    'extendedProps': {
+                        'tratamiento_nombre': 'Evento Externo',
+                        'motivo': g_event.get('description', 'Evento sincronizado de Google Calendar'),
+                        'paciente_nombre': 'Google User'
+                    }
+                })
+        except Exception as ge_error:
+            print(f"Error cargando eventos de Google Calendar: {ge_error}")
 
     return JsonResponse(eventos, safe=False)
+
 
 
 @login_required
@@ -593,13 +629,24 @@ def modal_nueva_cita(request, paciente_id):
             # El doctor se asigna automáticamente vía el ModelForm o manualmente aquí
             cita.save()
             return JsonResponse({'status': 'success'})
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+        else:
+            from django.template.loader import render_to_string
+            html_form = render_to_string('gestion/modals/nueva_cita.html', {
+                'paciente': paciente,
+                'tratamientos': tratamientos,
+                'doctores': doctores,
+                'form': form
+            }, request=request)
+            return JsonResponse({'status': 'error', 'html_form': html_form}, status=400)
 
-    return render(request, 'gestion/modals/nueva_cita.html', {
+    from django.template.loader import render_to_string
+    html_form = render_to_string('gestion/modals/nueva_cita.html', {
         'paciente': paciente,
         'tratamientos': tratamientos,
         'doctores': doctores
-    })
+    }, request=request)
+    
+    return JsonResponse({'html_form': html_form})
 
 
 @login_required
@@ -969,16 +1016,19 @@ def reporte_finanzas(request):
     pagos = Pago.objects.select_related('paciente', 'cita__tratamiento')
     citas = Cita.objects.select_related('paciente', 'tratamiento')
 
-    inicio = hoy - timezone.timedelta(days=30)
+    # Por defecto: Mes actual (para coincidir con el Dashboard)
+    inicio = hoy.replace(day=1)
     fin = hoy
     if fecha_inicio_str and fecha_fin_str:
         try:
             inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
             fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-            pagos = pagos.filter(fecha__date__range=(inicio, fin))
-            citas = citas.filter(fecha__range=(inicio, fin))
         except ValueError:
             pass
+    
+    # Aplicar filtros siempre (ya sea por defecto o por selección del usuario)
+    pagos = pagos.filter(fecha__date__range=(inicio, fin))
+    citas = citas.filter(fecha__range=(inicio, fin))
 
     if metodo_pago:
         pagos = pagos.filter(metodo=metodo_pago)
@@ -1021,22 +1071,23 @@ def reporte_finanzas(request):
     falta_punto_equilibrio = max(0, gastos_fijos - ingresos_totales)
     progreso_equilibrio = min(100, (ingresos_totales / gastos_fijos * 100)) if gastos_fijos > 0 else 100
 
-    # 3. DATOS PARA GRÃ FICOS (Data Viz)
-    # Columna A: Flujo 30 dÃ­as
-    hace_30_dias = hoy - timezone.timedelta(days=30)
-    flujo_30_dias = Pago.objects.filter(fecha__date__gte=hace_30_dias).extra(
+    # 3. DATOS PARA GRÁFICOS (Sincronizados con el filtro)
+    # Columna A: Flujo en el periodo seleccionado
+    flujo_periodo = Pago.objects.filter(fecha__date__range=(inicio, fin)).extra(
         select={'day': "date(fecha)"}
     ).values('day').annotate(total=Sum('monto')).order_by('day')
     
-    labels_flujo = [item['day'].strftime('%d %b') if isinstance(item['day'], date) else item['day'] for item in flujo_30_dias]
-    data_flujo = [float(item['total']) for item in flujo_30_dias]
+    labels_flujo = [item['day'].strftime('%d %b') if isinstance(item['day'], date) else item['day'] for item in flujo_periodo]
+    data_flujo = [float(item['total']) for item in flujo_periodo]
 
-    # Columna B: Ingresos por Tratamiento
-    ingresos_por_tratamiento = Pago.objects.filter(cita__isnull=False).values(
+    # Columna B: Ingresos por Tratamiento en el periodo seleccionado (incluyendo abonos)
+    ingresos_por_tratamiento = Pago.objects.filter(
+        fecha__date__range=(inicio, fin)
+    ).values(
         'cita__tratamiento__nombre'
     ).annotate(total=Sum('monto')).order_by('-total')[:5]
     
-    labels_tratamientos = [item['cita__tratamiento__nombre'] for item in ingresos_por_tratamiento]
+    labels_tratamientos = [item['cita__tratamiento__nombre'] or "Abonos/Otros" for item in ingresos_por_tratamiento]
     data_tratamientos = [float(item['total']) for item in ingresos_por_tratamiento]
 
     # 4. TABLA DE MOVIMIENTOS PRO (Aging & Status)
@@ -1076,9 +1127,13 @@ def reporte_finanzas(request):
     # Ordenar por fecha descendente
     movimientos.sort(key=lambda x: x['fecha'], reverse=True)
 
+    # Ingresos Históricos (All time)
+    ingresos_historicos = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
+
     import json
     context = {
         'ingresos_totales': ingresos_totales,
+        'ingresos_historicos': ingresos_historicos,
         'ingresos_alquiler_espacio': ingresos_alquiler_espacio,
         'pagos_a_doctores': pagos_a_doctores,
         'total_facturado': total_facturado,
@@ -1123,19 +1178,24 @@ def registrar_pago(request, pk):
 
         monto = clean_decimal(monto)
         monto_recibido = clean_decimal(monto_recibido)
+        cita_id = request.POST.get('cita_id')
+        cita = None
+        if cita_id:
+            cita = get_object_or_404(Cita, id=cita_id)
 
         if monto <= 0:
-            return JsonResponse({'status': 'error', 'error': 'El monto debe ser mayor a 0. Se recibio: ' + str(request.POST.get('monto'))}, status=400)
+            return JsonResponse({'status': 'error', 'error': 'El monto debe ser mayor a 0.'}, status=400)
 
         pago = Pago.objects.create(
             paciente=paciente,
+            cita=cita,
             monto=monto,
             monto_recibido=monto_recibido,
             metodo=metodo,
-            notas=notas or f"Abono registrado - {metodo}"
+            notas=notas or (f"Abono para {cita.tratamiento.nombre}" if cita else f"Abono registrado - {metodo}")
         )
         
-        log_audit(request, "REGISTRAR_PAGO", f"Pago de {monto} para {paciente.nombre}")
+        log_audit(request, "REGISTRAR_PAGO", f"Pago de {monto} para {paciente.nombre}" + (f" (Cita: {cita.tratamiento.nombre})" if cita else " (Abono General)"))
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -1375,4 +1435,23 @@ def enviar_recordatorio_whatsapp(paciente, cita):
     # Simulación de envío
     print(f"WS-PUSH: {paciente.telefono} -> Cita {cita.fecha}")
     return True
+
+
+@login_required
+@grupo_requerido('Doctor')
+def descargar_respaldo(request):
+    """Permite descargar el archivo db.sqlite3 actual"""
+    import os
+    from django.http import FileResponse, Http404
+    from django.conf import settings
+
+    db_path = os.path.join(settings.BASE_DIR, 'db.sqlite3')
+    
+    if os.path.exists(db_path):
+        response = FileResponse(open(db_path, 'rb'), content_type='application/x-sqlite3')
+        response['Content-Disposition'] = f'attachment; filename="respaldo_densaas_{timezone.now().strftime("%Y%m%d")}.sqlite3"'
+        log_audit(request, "BACKUP_DOWNLOAD", "Usuario descargó respaldo de base de datos")
+        return response
+    else:
+        raise Http404("Base de datos no encontrada")
 

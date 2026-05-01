@@ -8,16 +8,16 @@
     </button>
 </div>
 
-<form id="formEditarPaciente" class="p-8">
+<form id="formEditarPaciente" class="p-8" action="{% url 'editar_paciente_rapido' paciente.id %}">
     {% csrf_token %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Nombre Completo</label>
-            <input type="text" name="nombre" value="{{ paciente.nombre }}" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all">
+            <input type="text" name="nombre" value="{{ paciente.nombre }}" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" required>
         </div>
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Teléfono / WhatsApp</label>
-            <input type="text" name="telefono" value="{{ paciente.telefono }}" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all">
+            <input type="text" name="telefono" value="{{ paciente.telefono }}" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" required>
         </div>
     </div>
 
@@ -41,24 +41,3 @@
         <i class="fas fa-save"></i> GUARDAR CAMBIOS
     </button>
 </form>
-
-<script>
-    document.getElementById('formEditarPaciente').onsubmit = async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const response = await fetch('{% url "editar_paciente_rapido" paciente.pk %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        });
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Paciente Actualizado',
-                text: 'Los cambios se han guardado correctamente.',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => location.reload());
-        }
-    };
-</script>

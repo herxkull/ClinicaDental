@@ -95,6 +95,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'gestion.context_processors.clinica_config',
             ],
         },
     },
@@ -195,7 +196,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Sesiones y Autenticación Multi-Tenant
-SESSION_COOKIE_DOMAIN = '.localhost' if DEBUG else '.dentalsaas.com'
+SESSION_COOKIE_DOMAIN = None if DEBUG else '.dentalsaas.com'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 # Redirigir a la pantalla de login al cerrar sesiÃ³n

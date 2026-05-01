@@ -81,28 +81,54 @@ def google_init(request):
         except Clinica.DoesNotExist:
             return render(request, 'clientes/registro.html', {'error': "Error crítico: Esquema público no configurado."})
 
-    # Almacenamos el schema_name en el state para saber a dónde volver
+    # Almacenamos el schema_name y el code_verifier en el state para recuperarlo sin importar la sesión
     state_token = secrets.token_urlsafe(16)
+    
+    # Forzar la generación de un code_verifier si no existe (PKCE)
+    if not getattr(flow, 'code_verifier', None):
+        flow.code_verifier = secrets.token_urlsafe(64)
+    
+    cv = flow.code_verifier
+    
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
         prompt='consent',
-        state=f"{state_token}_tenant_{tenant.schema_name}"
+        state=f"{state_token}_tenant_{tenant.schema_name}_cv_{cv}"
     )
 
-    # IMPORTANTE: Guardar el verificador para evitar error "Missing code verifier"
-    request.session['google_auth_code_verifier'] = flow.code_verifier
+    # También guardamos en sesión por redundancia
+    request.session['google_auth_code_verifier'] = cv
     request.session['google_auth_state'] = state
     
     return redirect(authorization_url)
 
 def google_callback(request):
     """Recibe la respuesta de Google y gestiona el Onboarding"""
-    state = request.session.get('google_auth_state')
-    # Extraer el tenant del state
+    state = request.GET.get('state') or request.session.get('google_auth_state')
+    
+    # Extraer el tenant y el code_verifier del state
     schema_name = 'public'
-    if state and '_tenant_' in state:
-        schema_name = state.split('_tenant_')[1]
+    code_verifier = None
+    
+    if state:
+        # Extraer tenant: buscamos lo que hay entre _tenant_ y _cv_
+        if '_tenant_' in state:
+            try:
+                schema_part = state.split('_tenant_')[1]
+                if '_cv_' in schema_part:
+                    schema_name = schema_part.split('_cv_')[0]
+                    code_verifier = schema_part.split('_cv_')[1]
+                else:
+                    schema_name = schema_part
+            except IndexError:
+                pass
+        # Caso de emergencia: solo hay CV
+        elif '_cv_' in state:
+            try:
+                code_verifier = state.split('_cv_')[1]
+            except IndexError:
+                pass
 
     flow = Flow.from_client_config(
         {
@@ -126,8 +152,8 @@ def google_callback(request):
     
     flow.redirect_uri = f"{base_url}{reverse('google_callback')}"
 
-    # Restaurar el verificador de código para PKCE
-    flow.code_verifier = request.session.get('google_auth_code_verifier')
+    # Restaurar el verificador de código para PKCE de forma ultra-segura
+    flow.code_verifier = code_verifier or request.session.get('google_auth_code_verifier')
 
     try:
         flow.fetch_token(authorization_response=request.build_absolute_uri())
@@ -213,34 +239,70 @@ def finalizar_registro_google(request):
 
     if request.method == 'POST':
         nombre_clinica = request.POST.get('nombre_clinica')
-        subdominio = request.POST.get('subdominio').lower().strip()
+        subdominio = request.POST.get('subdominio', '').lower().strip()
         
         if not nombre_clinica or not subdominio:
-            return render(request, 'clientes/finalizar_registro.html', {'error': 'Todos los campos son obligatorios'})
+            return render(request, 'clientes/finalizar_registro.html', {
+                'error': 'Todos los campos son obligatorios.',
+                'user_data': user_data
+            })
+        # Cálculos de host para redirección
+        host_completo = request.get_host()
+        puerto = ":" + host_completo.split(':')[1] if ':' in host_completo else ""
+        base_host = host_completo.split(':')[0].replace('localhost', '').strip('.')
+        if not base_host: base_host = "localhost"
+
+        # Validar disponibilidad de subdominio antes de intentar crear
+        clinica_existente = Clinica.objects.filter(schema_name=subdominio).first()
+        if clinica_existente:
+            if clinica_existente.email_contacto == user_data['email']:
+                # Si ya existe y es de este usuario, lo mandamos directo al dashboard
+                return redirect(f"http://{subdominio}.{base_host}{puerto}/")
+            
+            return render(request, 'clientes/finalizar_registro.html', {
+                'error': f'El subdominio "{subdominio}" ya está en uso. Por favor elige otro.',
+                'user_data': user_data
+            })
+
+        password_usuario = request.POST.get('password_clinica')
+        if not password_usuario:
+            password_usuario = secrets.token_urlsafe(16)
 
         try:
             with transaction.atomic():
                 nueva_clinica = Clinica.objects.create(
                     schema_name=subdominio,
-                    nombre_clinica=nombre_clinica
+                    nombre_clinica=nombre_clinica,
+                    email_contacto=user_data['email']
                 )
                 
-                host_completo = request.get_host()
-                puerto = ":" + host_completo.split(':')[1] if ':' in host_completo else ""
-                base_host = host_completo.split(':')[0].replace('localhost', '').strip('.')
-                
-                if not base_host: base_host = "localhost"
+                # Variantes de dominio para asegurar acceso en local
+                variantes = [
+                    f"{subdominio}.{base_host}",
+                    f"{subdominio}.localhost",
+                    f"{subdominio}.127.0.0.1",
+                    f"{subdominio}.127.0.0.1.nip.io",
+                ]
+
+                # Si el host tiene puerto, añadirlo también por si acaso
+                if puerto:
+                    variantes.append(f"{subdominio}.{base_host}{puerto}")
+
+                for i, d_name in enumerate(variantes):
+                    Dominio.objects.get_or_create(
+                        domain=d_name,
+                        tenant=nueva_clinica,
+                        defaults={'is_primary': (i == 0)}
+                    )
                 
                 domain_full = f"{subdominio}.{base_host}{puerto}"
-                Dominio.objects.create(domain=domain_full, tenant=nueva_clinica, is_primary=True)
 
                 with schema_context(subdominio):
-                    password_aleatoria = secrets.token_urlsafe(16)
                     user = User.objects.create_superuser(
                         username=user_data['email'],
-                        email=user_data['email'],
-                        password=password_aleatoria
+                        email=user_data['email']
                     )
+                    user.set_password(password_usuario)
                     user.first_name = user_data['nombre']
                     user.save()
 
@@ -288,7 +350,10 @@ def finalizar_registro_google(request):
             user.backend = 'django.contrib.auth.backends.ModelBackend'
             login(request, user)
 
-            del request.session['google_user_data']
+            # Limpiar datos de sesión de forma segura
+            request.session.pop('google_user_data', None)
+            
+            print(f"DEBUG: Registro exitoso. Redirigiendo a {domain_full}")
             return redirect(f"http://{domain_full}/")
 
         except Exception as e:

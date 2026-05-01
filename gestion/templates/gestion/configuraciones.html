@@ -4,7 +4,7 @@
 {% block title %}Configuración - {{ request.tenant.nombre_clinica }}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-[#f8fafc] px-4 py-8 md:px-8">
+<div class="min-h-screen px-4 py-8 md:px-8">
     <div class="max-w-6xl mx-auto">
         
         <!-- HEADER -->
@@ -31,7 +31,7 @@
             
             <!-- NAVEGACIÓN LATERAL (TABS) -->
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-4 sticky top-8">
+                <div class="sfs-card p-4 sticky top-8">
                     <nav class="flex flex-col gap-2" id="settings-tabs" role="tablist">
                         <button class="nav-link active flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all text-blue-600 bg-blue-50" id="general-tab" data-bs-toggle="pill" data-bs-target="#tab-general" type="button" role="tab">
                             <i class="fas fa-clinic-medical w-5"></i> General
@@ -51,6 +51,12 @@
                         <button class="nav-link flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all text-gray-400 hover:bg-gray-50" id="security-tab" data-bs-toggle="pill" data-bs-target="#tab-security" type="button" role="tab">
                             <i class="fas fa-shield-alt w-5"></i> Seguridad
                         </button>
+                        <button class="nav-link flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all text-gray-400 hover:bg-gray-50" id="appearance-tab" data-bs-toggle="pill" data-bs-target="#tab-appearance" type="button" role="tab">
+                            <i class="fas fa-palette w-5"></i> Apariencia
+                        </button>
+                        <button class="nav-link flex items-center gap-3 p-4 rounded-2xl text-sm font-bold transition-all text-gray-400 hover:bg-gray-50" id="maintenance-tab" data-bs-toggle="pill" data-bs-target="#tab-maintenance" type="button" role="tab">
+                            <i class="fas fa-tools w-5"></i> Mantenimiento
+                        </button>
                     </nav>
                 </div>
             </div>
@@ -62,7 +68,7 @@
                     
                     <!-- TAB GENERAL -->
                     <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div class="sfs-card p-10">
                             <h2 class="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
                                 Identidad de la Clínica
                             </h2>
@@ -111,7 +117,7 @@
 
                     <!-- TAB INTEGRACIONES -->
                     <div class="tab-pane fade" id="tab-integrations" role="tabpanel">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div class="sfs-card p-10">
                             <h2 class="text-xl font-black text-gray-900 mb-8">Conexiones Externas</h2>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -159,7 +165,7 @@
 
                     <!-- TAB CLÍNICA -->
                     <div class="tab-pane fade" id="tab-clinic" role="tabpanel">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div class="sfs-card p-10">
                             <h2 class="text-xl font-black text-gray-900 mb-8">Operativa y Horarios</h2>
                             
                             <div class="mb-10">
@@ -185,7 +191,7 @@
 
                     <!-- TAB FINANZAS -->
                     <div class="tab-pane fade" id="tab-finance" role="tabpanel">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div class="sfs-card p-10">
                             <h2 class="text-xl font-black text-gray-900 mb-8">Parámetros Financieros</h2>
                             
                             <div class="grid grid-cols-2 gap-6 mb-8">
@@ -209,7 +215,7 @@
 
                     <!-- TAB SUSCRIPCIÓN -->
                     <div class="tab-pane fade" id="tab-subscription" role="tabpanel">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div class="sfs-card p-10">
                             <h2 class="text-xl font-black text-gray-900 mb-8">Plan y Facturación</h2>
                             
                             <!-- Card Plan Actual -->
@@ -315,7 +321,7 @@
                     <div class="tab-pane fade" id="tab-security" role="tabpanel">
                         <div class="space-y-8">
                             <!-- Cambio de Contraseña -->
-                            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                            <div class="sfs-card p-10">
                                 <h2 class="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
                                     <i class="fas fa-key text-blue-500"></i>
                                     Cambiar Contraseña
@@ -344,7 +350,7 @@
                             </div>
 
                             <!-- Registro de Auditoría -->
-                            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                            <div class="sfs-card p-10">
                                 <h2 class="text-xl font-black text-gray-900 mb-8 flex items-center gap-2">
                                     <i class="fas fa-history text-blue-500"></i>
                                     Registro de Auditoría (Logs)
@@ -400,6 +406,140 @@
                         </div>
                     </div>
 
+                    <!-- TAB APARIENCIA -->
+                    <div class="tab-pane fade" id="tab-appearance" role="tabpanel">
+                        <div class="sfs-card p-10">
+                            <h2 class="text-xl font-black text-gray-900 mb-8">Personalización Visual</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <!-- Color de Marca -->
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Color de Identidad</label>
+                                    <div class="flex items-center gap-6 p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        {{ form.color_primario }}
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-700">Color Primario</p>
+                                            <p class="text-[10px] text-gray-400 uppercase">Se aplicará a botones y acentos</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Color Sidebar -->
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Color del Menú</label>
+                                    <div class="flex items-center gap-6 p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        {{ form.color_sidebar }}
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-700">Sidebar / Menú</p>
+                                            <p class="text-[10px] text-gray-400 uppercase">Personaliza el fondo lateral</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Color Fondo -->
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Color de Fondo</label>
+                                    <div class="flex items-center gap-6 p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        {{ form.color_fondo }}
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-700">Fondo General</p>
+                                            <p class="text-[10px] text-gray-400 uppercase">Ajusta el color del entorno</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Escala Interfaz -->
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Tamaño de la Interfaz (Escalado)</label>
+                                    <div class="p-8 bg-gray-50 rounded-3xl border border-gray-100">
+                                        <div class="flex justify-between items-center mb-4">
+                                            <span class="text-xs font-bold text-gray-400">80% (Compacto)</span>
+                                            <span class="text-sm font-black text-blue-600" id="escala-valor">{{ clinica_config.escala_interfaz|default:"100" }}%</span>
+                                            <span class="text-xs font-bold text-gray-400">120% (Grande)</span>
+                                        </div>
+                                        {{ form.escala_interfaz }}
+                                        <p class="text-[10px] text-gray-400 mt-4 text-center">Ajusta el zoom general para una mejor lectura en tu monitor.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Tema Oscuro -->
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Experiencia de Usuario</label>
+                                    <div class="flex items-center justify-between p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white">
+                                                <i class="fas fa-moon"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-bold text-gray-700">Modo Oscuro (Beta)</p>
+                                                <p class="text-[10px] text-gray-400 uppercase">Interfaz optimizada para la noche</p>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            {{ form.tema_oscuro }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tipografía -->
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 mb-4 block">Tipografía del Entorno</label>
+                                    <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                        {{ form.fuente_familia }}
+                                        <p class="text-[10px] text-gray-400 mt-4 ml-2">Selecciona la fuente que mejor se adapte al estilo de tu clínica.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB MANTENIMIENTO -->
+                    <div class="tab-pane fade" id="tab-maintenance" role="tabpanel">
+                        <div class="sfs-card p-10">
+                            <h2 class="text-xl font-black text-gray-900 mb-8">Gestión de Datos y Respaldo</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <!-- Backup Card -->
+                                <div class="p-8 rounded-[2rem] bg-blue-50 border border-blue-100 relative overflow-hidden group">
+                                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600/5 rounded-full blur-2xl group-hover:bg-blue-600/10 transition-all"></div>
+                                    <div class="relative">
+                                        <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg mb-6">
+                                            <i class="fas fa-database text-xl"></i>
+                                        </div>
+                                        <h3 class="text-lg font-black text-blue-900 mb-2">Respaldo Completo</h3>
+                                        <p class="text-xs text-blue-600/70 mb-8 leading-relaxed">
+                                            Descarga una copia instantánea de tu base de datos local (.sqlite3). 
+                                            Este archivo contiene toda la información de pacientes, citas y finanzas.
+                                        </p>
+                                        <a href="{% url 'descargar_respaldo' %}" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all group-hover:scale-105">
+                                            <i class="fas fa-cloud-download-alt"></i>
+                                            DESCARGAR DB ACTUAL
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Storage Card -->
+                                <div class="p-8 rounded-[2rem] bg-gray-50 border border-gray-100">
+                                    <div class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-lg mb-6">
+                                        <i class="fas fa-server text-xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-black text-gray-900 mb-2">Estado del Almacenamiento</h3>
+                                    <p class="text-xs text-gray-400 mb-6">Gestiona tus archivos multimedia y el espacio en la nube.</p>
+                                    
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-gray-400">
+                                            <span>Uso de Disco</span>
+                                            <span>45% / 2GB</span>
+                                        </div>
+                                        <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full bg-blue-500 rounded-full" style="width: 45%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mt-8 flex justify-end">
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-3 px-8 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center gap-3">
                             <i class="fas fa-save"></i>
@@ -449,6 +589,71 @@
                 e.target.classList.remove('text-gray-400');
             });
         });
+
+        // LIVE PREVIEW - INTERACTIVIDAD SFS (Refactorizada)
+        const primaryColorInput = document.querySelector('input[name="color_primario"]');
+        const sidebarColorInput = document.querySelector('input[name="color_sidebar"]');
+        const fondoColorInput = document.querySelector('input[name="color_fondo"]');
+        const escalaInput = document.querySelector('input[name="escala_interfaz"]');
+        const fuenteInput = document.querySelector('select[name="fuente_familia"]');
+
+        if (primaryColorInput) {
+            primaryColorInput.addEventListener('input', (e) => {
+                document.documentElement.style.setProperty('--color-primary', e.target.value);
+            });
+        }
+
+        if (sidebarColorInput) {
+            sidebarColorInput.addEventListener('input', (e) => {
+                document.documentElement.style.setProperty('--color-bg-sidebar', e.target.value);
+            });
+        }
+
+        if (fondoColorInput) {
+            fondoColorInput.addEventListener('input', (e) => {
+                document.documentElement.style.setProperty('--color-bg-main', e.target.value);
+            });
+        }
+
+        if (escalaInput) {
+            escalaInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('escala-valor').innerText = val + '%';
+                document.documentElement.style.setProperty('--app-scale', val + '%');
+            });
+        }
+
+        if (fuenteInput) {
+            fuenteInput.addEventListener('change', (e) => {
+                document.body.style.fontFamily = `'${e.target.value}', sans-serif`;
+                document.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+                    h.style.fontFamily = `'${e.target.value}', sans-serif`;
+                });
+            });
+        }
+
+        // INTERACTIVIDAD TOTAL SFS - ACTUALIZACIÓN DE TEXTOS EN TIEMPO REAL
+        const nombreInput = document.querySelector('input[name="nombre_clinica"]');
+        if (nombreInput) {
+            nombreInput.addEventListener('input', (e) => {
+                const text = e.target.value || 'Dental SaaS';
+                // Actualizar nombres en sidebar y headers
+                document.querySelectorAll('.clinica-nombre-preview').forEach(el => {
+                    el.innerText = text;
+                });
+            });
+        }
+
+        const darkThemeInput = document.querySelector('input[name="tema_oscuro"]');
+        if (darkThemeInput) {
+            darkThemeInput.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    document.body.classList.add('dark');
+                } else {
+                    document.body.classList.remove('dark');
+                }
+            });
+        }
     });
 </script>
 
@@ -461,10 +666,12 @@
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
     }
-    .form-switch .form-check-input {
-        width: 3em;
-        height: 1.5em;
-        cursor: pointer;
+    .dark-mode-preview .nav-link.active, body.dark-mode .nav-link.active {
+        background-color: #334155 !important;
+        color: #38bdf8 !important;
+    }
+    .dark-mode-preview .bg-gray-50, body.dark-mode .bg-gray-50 {
+        background-color: #0f172a !important;
     }
 </style>
 {% endblock %}

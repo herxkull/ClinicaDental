@@ -1,131 +1,150 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
 
-{% block title %}Gestión de Staff - Prismo Dental{% endblock %}
+{% block title %}Staff Médico - {{ request.tenant.nombre_clinica }}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-[#f8fafc] px-4 py-8 md:px-8">
-    <div class="max-w-7xl mx-auto">
+<div class="animate-fade-in">
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div>
+            <h1 class="text-4xl font-black text-text-base tracking-tighter">Staff Médico</h1>
+            <p class="text-sm font-bold text-text-muted uppercase tracking-widest mt-1">Gestión de especialistas y licencias de red</p>
+        </div>
         
-        <!-- HEADER -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-            <div>
-                <h1 class="text-3xl font-black text-gray-900 tracking-tight">Staff Médico</h1>
-                <p class="text-sm font-bold text-gray-400 uppercase tracking-widest">Control de especialistas y licencias</p>
+        <div class="flex items-center gap-4">
+            <div class="sfs-card px-6 py-3 flex flex-col justify-center">
+                <p class="text-[10px] font-black text-text-muted uppercase mb-1 tracking-tighter">Capacidad del Plan</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-32 h-1.5 bg-brand-border rounded-full overflow-hidden">
+                        <div class="h-full bg-brand-primary transition-all duration-700" style="width: {{ porcentaje_uso }}%"></div>
+                    </div>
+                    <span class="text-xs font-black text-text-base">{{ count }} / {{ max_drs }}</span>
+                </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <div class="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
-                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Licencias de Doctor</p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-blue-600 transition-all" style="width: {{ porcentaje_uso }}%"></div>
-                        </div>
-                        <span class="text-sm font-black text-gray-900">{{ count }} / {{ max_drs }}</span>
-                    </div>
-                </div>
-                
-                {% if count < max_drs %}
-                <button data-bs-toggle="modal" data-bs-target="#modalNuevoDoctor" class="bg-gray-900 hover:bg-black text-white font-black py-4 px-8 rounded-2xl shadow-xl transition-all flex items-center gap-2">
-                    <i class="fas fa-user-plus text-xs"></i> NUEVO DOCTOR
-                </button>
-                {% else %}
-                <div class="bg-amber-50 text-amber-600 px-6 py-4 rounded-2xl border border-amber-100 flex items-center gap-3">
-                    <i class="fas fa-crown text-sm"></i>
-                    <span class="text-xs font-black uppercase">Plan al límite</span>
-                </div>
-                {% endif %}
+            {% if count < max_drs %}
+            <button data-bs-toggle="modal" data-bs-target="#modalNuevoDoctor" 
+                    class="bg-text-base text-brand-bg hover:scale-105 active:scale-95 font-black py-4 px-8 rounded-2xl shadow-2xl transition-all flex items-center gap-3">
+                <i class="fas fa-plus-circle text-xs"></i> NUEVO DOCTOR
+            </button>
+            {% else %}
+            <div class="bg-amber-500/10 text-amber-500 px-6 py-4 rounded-2xl border border-amber-500/20 flex items-center gap-3">
+                <i class="fas fa-crown text-sm"></i>
+                <span class="text-[10px] font-black uppercase">Límite de Plan</span>
             </div>
+            {% endif %}
         </div>
+    </div>
 
-        <!-- GRID DE DOCTORES -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for doc in doctores %}
-            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 hover:shadow-xl transition-all group relative overflow-hidden">
-                <!-- Color Indicator Bar -->
-                <div class="absolute top-0 left-0 w-full h-2" style="background-color: {{ doc.color_agenda|default:'#3b82f6' }}"></div>
-                
-                <div class="flex items-start justify-between mb-6">
-                    <div class="w-16 h-16 rounded-3xl flex items-center justify-center text-2xl font-black text-white" style="background-color: {{ doc.color_agenda|default:'#3b82f6' }}">
-                        {{ doc.nombre|slice:":1" }}
-                    </div>
-                    <div class="flex gap-2">
-                        <form method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este doctor?');" class="inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="doctor_id" value="{{ doc.id }}">
-                            <input type="hidden" name="eliminar" value="1">
-                            <button type="submit" class="w-10 h-10 rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
-                                <i class="fas fa-trash-alt text-xs"></i>
-                            </button>
-                        </form>
-                    </div>
+    <!-- GRID DE DOCTORES -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for doc in doctores %}
+        <div class="sfs-card p-8 hover:shadow-2xl hover:-translate-y-1 transition-all group relative overflow-hidden border-t-4" 
+             style="border-top-color: {{ doc.color_agenda|default:'#3b82f6' }}">
+            
+            <div class="flex items-start justify-between mb-8">
+                <div class="w-16 h-16 rounded-3xl flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-opacity-20" 
+                     style="background-color: {{ doc.color_agenda|default:'#3b82f6' }}; box-shadow: 0 10px 15px -3px {{ doc.color_agenda|default:'#3b82f6' }}40">
+                    {{ doc.nombre|slice:":1"|upper }}
                 </div>
-
-                <div class="space-y-1">
-                    <h3 class="text-xl font-black text-gray-900">Dr. {{ doc.nombre }}</h3>
-                    <p class="text-sm font-bold text-blue-600 uppercase tracking-widest">{{ doc.especialidad|default:"General" }}</p>
-                </div>
-
-                <div class="mt-6 pt-6 border-t border-gray-50 space-y-3">
-                    <div class="flex items-center gap-3 text-gray-500">
-                        <i class="fas fa-phone text-xs w-4"></i>
-                        <span class="text-sm font-medium">{{ doc.telefono|default:"No registrado" }}</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-gray-500">
-                        <i class="fas fa-envelope text-xs w-4"></i>
-                        <span class="text-sm font-medium">{{ doc.email|default:"No registrado" }}</span>
-                    </div>
+                <div class="flex gap-2">
+                    <form method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este doctor?');" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="doctor_id" value="{{ doc.id }}">
+                        <input type="hidden" name="eliminar" value="1">
+                        <button type="submit" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
-            {% endfor %}
+
+            <div class="space-y-1">
+                <h3 class="text-2xl font-black text-text-base tracking-tight">Dr. {{ doc.nombre }}</h3>
+                <p class="text-xs font-black text-brand-primary uppercase tracking-widest">{{ doc.especialidad|default:"General" }}</p>
+            </div>
+
+            <div class="mt-8 pt-8 border-t border-brand-border space-y-4">
+                <div class="flex items-center gap-4 text-text-muted">
+                    <div class="w-8 h-8 rounded-lg bg-brand-border/50 flex items-center justify-center">
+                        <i class="fas fa-phone text-[10px]"></i>
+                    </div>
+                    <span class="text-sm font-bold">{{ doc.telefono|default:"Sin teléfono" }}</span>
+                </div>
+                <div class="flex items-center gap-4 text-text-muted">
+                    <div class="w-8 h-8 rounded-lg bg-brand-border/50 flex items-center justify-center">
+                        <i class="fas fa-envelope text-[10px]"></i>
+                    </div>
+                    <span class="text-sm font-bold truncate">{{ doc.email|default:"Sin email" }}</span>
+                </div>
+            </div>
+            
+            <div class="absolute bottom-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full -mr-16 -mb-16 group-hover:scale-110 transition-transform"></div>
         </div>
+        {% empty %}
+        <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-50">
+            <i class="fas fa-user-md text-6xl mb-4"></i>
+            <p class="font-black uppercase tracking-widest text-sm">No hay doctores registrados</p>
+        </div>
+        {% endfor %}
     </div>
 </div>
 
 <!-- MODAL NUEVO DOCTOR -->
 <div class="modal fade" id="modalNuevoDoctor" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-[2.5rem] border-0 shadow-2xl overflow-hidden">
-            <div class="bg-gray-900 p-8 text-white">
-                <h5 class="text-xl font-black">Nuevo Especialista</h5>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Completa los datos del staff</p>
+        <div class="modal-content rounded-[2.5rem] border-0 shadow-2xl overflow-hidden bg-brand-card">
+            <div class="p-10 pb-0">
+                <div class="flex justify-between items-center mb-2">
+                    <h5 class="text-2xl font-black text-text-base">Nuevo Especialista</h5>
+                    <button type="button" class="text-text-muted hover:text-text-base transition-colors" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Configura el perfil del staff</p>
             </div>
-            <form method="POST" class="p-8 space-y-6">
+            
+            <form method="POST" class="p-10 space-y-6">
                 {% csrf_token %}
                 
                 <div>
-                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-2">Nombre Completo</label>
-                    <input type="text" name="nombre" class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold focus:ring-2 focus:ring-blue-500" placeholder="Ej: Dr. Julian Estrada" required>
+                    <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Nombre Completo</label>
+                    <input type="text" name="nombre" class="w-full" placeholder="Ej: Dr. Julian Estrada" required>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-2">Especialidad</label>
-                        <input type="text" name="especialidad" class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold focus:ring-2 focus:ring-blue-500" placeholder="Ej: Endodoncia">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Especialidad</label>
+                        <input type="text" name="especialidad" class="w-full" placeholder="Ej: Ortodoncia">
                     </div>
                     <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-2">Color Agenda</label>
-                        <input type="color" name="color_agenda" value="#3b82f6" class="w-full h-14 bg-gray-50 border-none rounded-2xl p-1 cursor-pointer">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Color Agenda</label>
+                        <div class="flex items-center gap-3 h-12 bg-brand-border/20 rounded-2xl px-4">
+                            <input type="color" name="color_agenda" value="#3b82f6" class="w-8 h-8 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden">
+                            <span class="text-[10px] font-black text-text-muted uppercase">Punto de Identificación</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-2">Teléfono</label>
-                        <input type="text" name="telefono" class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold focus:ring-2 focus:ring-blue-500">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Teléfono</label>
+                        <input type="text" name="telefono" class="w-full" placeholder="+504 ...">
                     </div>
                     <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-2">Email</label>
-                        <input type="email" name="email" class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 font-bold focus:ring-2 focus:ring-blue-500">
+                        <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Email</label>
+                        <input type="email" name="email" class="w-full" placeholder="correo@ejemplo.com">
                     </div>
                 </div>
 
-                <div class="flex gap-4 pt-4">
-                    <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-black py-4 rounded-2xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">CANCELAR</button>
-                    <button type="submit" class="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">REGISTRAR</button>
+                <div class="flex gap-4 pt-6">
+                    <button type="button" class="flex-1 bg-brand-border text-text-base font-black py-4 rounded-2xl hover:bg-brand-border/80 transition-all uppercase tracking-tighter text-xs" data-bs-dismiss="modal">CANCELAR</button>
+                    <button type="submit" class="flex-1 bg-text-base text-brand-bg font-black py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all uppercase tracking-tighter text-xs">REGISTRAR STAFF</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 {% endblock %}
+

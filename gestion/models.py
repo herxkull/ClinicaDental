@@ -234,6 +234,18 @@ class ConfiguracionClinica(models.Model):
     whatsapp_numero = models.CharField(max_length=20, blank=True)
     whatsapp_recordatorios_activos = models.BooleanField(default=False)
 
+    # Apariencia (Nivel SFS)
+    color_primario = models.CharField(max_length=7, default='#2563eb', help_text="Color principal de la interfaz")
+    color_sidebar = models.CharField(max_length=7, default='#0f172a', help_text="Color de fondo del menú lateral")
+    color_fondo = models.CharField(max_length=7, default='#f8fafc', help_text="Color de fondo general")
+    escala_interfaz = models.IntegerField(default=100, help_text="Escala de la interfaz en porcentaje")
+    tema_oscuro = models.BooleanField(default=False)
+    fuente_familia = models.CharField(max_length=50, default='Inter', choices=[
+        ('Inter', 'Inter (Moderna)'),
+        ('Outfit', 'Outfit (Premium)'),
+        ('Roboto', 'Roboto (Clásica)'),
+    ])
+
     def __str__(self):
         return f"Configuración de {self.nombre_comercial or 'la Clínica'}"
 

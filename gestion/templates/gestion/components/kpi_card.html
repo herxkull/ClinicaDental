@@ -1,14 +1,22 @@
-<div class="bg-white p-6 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 transition-all hover:translate-y-[-4px]">
-    <div class="flex items-center justify-between mb-4">
-        <div class="w-12 h-12 bg-{{ color }}-50 text-{{ color }}-600 rounded-2xl flex items-center justify-center text-xl">
+<div class="sfs-card p-6 transition-all hover:scale-[1.02] hover:shadow-2xl relative overflow-hidden group">
+    <div class="flex items-center justify-between mb-5 relative z-10">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl shadow-lg transition-transform group-hover:rotate-12" 
+             style="background-color: var(--color-bg-main); color: var(--color-primary); border: 1px solid var(--color-border);">
             <i class="fas fa-{{ icon }}"></i>
         </div>
         {% if trend %}
-        <span class="text-xs font-bold {% if trend > 0 %}text-green-500{% else %}text-red-500{% endif %} bg-opacity-10 px-2 py-1 rounded-lg">
-            {{ trend|floatformat:1 }}% <i class="fas fa-arrow-{% if trend > 0 %}up{% else %}down{% endif %} ml-1"></i>
+        <span class="text-[10px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5 
+                    {% if trend > 0 %}bg-green-500/10 text-green-500{% else %}bg-red-500/10 text-red-500{% endif %}">
+            {{ trend|floatformat:1 }}% <i class="fas fa-arrow-{% if trend > 0 %}up{% else %}down{% endif %} text-[8px]"></i>
         </span>
         {% endif %}
     </div>
-    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{{ title }}</h3>
-    <p class="text-2xl font-black text-gray-900">{{ value }}</p>
+    
+    <div class="relative z-10">
+        <h3 class="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-2">{{ title }}</h3>
+        <p class="text-3xl font-black text-text-base tracking-tighter">{{ value }}</p>
+    </div>
+    
+    <!-- Decorative background element -->
+    <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-brand-primary/5 rounded-full blur-2xl group-hover:bg-brand-primary/10 transition-colors"></div>
 </div>

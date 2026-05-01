@@ -4,8 +4,8 @@
 {% block title %}Dashboard Inteligencia - Prismo Dental{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-[#f8fafc] px-4 py-8 md:px-8">
-    <div class="max-w-7xl mx-auto">
+<div class="min-h-screen px-4 py-8 md:px-8">
+    <div class="max-w-[1600px] mx-auto">
         
         <!-- HEADER DINÁMICO CON FILTRO -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
@@ -17,7 +17,7 @@
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <!-- Selector de Periodo Asíncrono -->
                 <div class="relative group">
-                    <select id="periodo-selector" class="appearance-none bg-white border border-gray-100 text-gray-900 font-bold py-3 px-6 pr-10 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer">
+                    <select id="periodo-selector" class="appearance-none bg-brand-card border border-brand-border text-text-base font-bold py-3 px-6 pr-10 rounded-2xl shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all cursor-pointer">
                         <option value="hoy">Hoy</option>
                         <option value="semana">Esta Semana</option>
                         <option value="mes" selected>Este Mes</option>
@@ -46,7 +46,7 @@
             <!-- IZQUIERDA: GRÁFICOS -->
             <div class="lg:col-span-8 space-y-8">
                 <!-- Rentabilidad -->
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8">
+                <div class="sfs-card p-8">
                     <div class="flex justify-between items-center mb-8">
                         <h3 class="text-xl font-black text-gray-900">Rendimiento Mensual</h3>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Análisis de Flujo</p>
@@ -56,7 +56,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- PRÓXIMAS CITAS (CARD STYLE) -->
-                    <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8">
+                    <div class="sfs-card p-8">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-lg font-black text-gray-900">Agenda de Hoy</h3>
                             <a href="{% url 'lista_citas' %}" class="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Ver todo</a>
@@ -100,7 +100,7 @@
                     </div>
 
                     <!-- TOP TRATAMIENTOS -->
-                    <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8">
+                    <div class="sfs-card p-8">
                         <h3 class="text-lg font-black text-gray-900 mb-6">Top Tratamientos</h3>
                         <div id="chart-tratamientos" style="min-height: 300px;"></div>
                     </div>
@@ -111,7 +111,10 @@
             <div class="lg:col-span-4 space-y-8">
                 {% if alertas_inventario > 0 %}
                 <div class="bg-red-600 rounded-[2.5rem] shadow-2xl shadow-red-500/30 p-8 text-white relative overflow-hidden">
-                    <h3 class="text-lg font-black mb-4">Stock Insuficiente</h3>
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                    <h3 class="text-lg font-black mb-4 flex items-center gap-2">
+                        <i class="fas fa-exclamation-triangle"></i> Stock Insuficiente
+                    </h3>
                     <div class="space-y-3">
                         {% for prod in productos_criticos|slice:":3" %}
                         <div class="flex justify-between items-center bg-white/10 p-3 rounded-2xl backdrop-blur-md">
@@ -123,7 +126,7 @@
                 </div>
                 {% endif %}
 
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8">
+                <div class="sfs-card p-8">
                     <h3 class="text-lg font-black text-gray-900 mb-6">Acciones</h3>
                     <div class="grid grid-cols-1 gap-4">
                         <button data-bs-toggle="modal" data-bs-target="#modalNuevaCitaGeneral" class="w-full bg-gray-900 text-white font-black py-4 rounded-3xl hover:bg-black transition-all">NUEVA CITA</button>
@@ -150,6 +153,13 @@ let chartTratamientos = null;
 let chartRentabilidad = null;
 let dataContainer = null;
 
+function getChartTheme() {
+    return {
+        mode: 'light',
+        foreColor: '#6b7280'
+    };
+}
+
 function renderCharts() {
     if (!dataContainer) dataContainer = document.getElementById('dashboard-data');
     if (!dataContainer) return;
@@ -165,11 +175,12 @@ function renderCharts() {
                 if (seriesT.length > 0) {
                     chartTratamientos = new ApexCharts(chartTratContainer, {
                         series: seriesT,
-                        chart: { type: 'donut', height: 300, fontFamily: 'Inter' },
+                        chart: { type: 'donut', height: 300, fontFamily: 'Inter', ...getChartTheme() },
                         labels: labelsT,
                         colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
                         legend: { position: 'bottom', fontWeight: 800 },
-                        plotOptions: { pie: { donut: { size: '70%' } } }
+                        plotOptions: { pie: { donut: { size: '70%' } } },
+                        theme: { mode: getChartTheme().mode }
                     });
                     chartTratamientos.render();
                 } else {
@@ -190,13 +201,14 @@ function renderCharts() {
                         { name: 'Ingresos', data: ingresos.map(n => parseFloat(n)) }, 
                         { name: 'Gastos Mat.', data: gastos.map(n => parseFloat(n)) }
                     ],
-                    chart: { type: 'area', height: 350, toolbar: { show: false }, fontFamily: 'Inter' },
+                    chart: { type: 'area', height: 350, toolbar: { show: false }, fontFamily: 'Inter', ...getChartTheme() },
                     colors: ['#3b82f6', '#ef4444'],
                     stroke: { curve: 'smooth', width: 3 },
                     fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0 } },
-                    xaxis: { categories: labelsP, labels: { style: { fontWeight: 700 } } },
-                    yaxis: { labels: { formatter: (v) => '$' + v.toFixed(0), style: { fontWeight: 700 } } },
-                    legend: { position: 'top', horizontalAlign: 'right', fontWeight: 800 }
+                    xaxis: { categories: labelsP, labels: { style: { fontWeight: 700, colors: getChartTheme().foreColor } } },
+                    yaxis: { labels: { formatter: (v) => '$' + v.toFixed(0), style: { fontWeight: 700, colors: getChartTheme().foreColor } } },
+                    legend: { position: 'top', horizontalAlign: 'right', fontWeight: 800 },
+                    theme: { mode: getChartTheme().mode }
                 });
                 chartRentabilidad.render();
             }

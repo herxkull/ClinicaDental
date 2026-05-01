@@ -13,14 +13,16 @@ class TrialExpirationMiddleware:
         if not tenant or tenant.schema_name == 'public':
             return self.get_response(request)
 
-        # Rutas permitidas durante el proceso de pago
-        exempt_urls = [
-            reverse('plan_expirado'), 
-            reverse('facturacion_planes'),
-            reverse('subir_comprobante'),
-            reverse('checkout_2checkout'),
-            '/admin/', '/static/', '/media/', '/logout/', '/accounts/'
-        ]
+        # Rutas permitidas durante el proceso de pago (manejo seguro de reverse)
+        exempt_urls = ['/admin/', '/static/', '/media/', '/logout/', '/accounts/']
+        try:
+            exempt_urls.append(reverse('plan_expirado'))
+            exempt_urls.append(reverse('facturacion_planes'))
+            exempt_urls.append(reverse('subir_comprobante'))
+            exempt_urls.append(reverse('checkout_2checkout'))
+        except:
+            # En el esquema público estas URLs podrían no existir
+            pass
         
         path = request.path
         if any(path.startswith(url) for url in exempt_urls):

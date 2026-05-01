@@ -69,14 +69,25 @@ document.addEventListener('submit', function(event) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'ok') {
-                location.reload();
+            if (data.status === 'ok' || data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    text: 'Los cambios se aplicaron correctamente.',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
             } else {
                 // Inyecta los errores rojos en la caja correcta según el formulario
                 if (form.id === 'formEditarPaciente') {
-                    document.getElementById('contenidoModalPaciente').innerHTML = data.html_form;
+                    document.getElementById('contenidoModalEdicion').innerHTML = data.html_form || 'Error al procesar formulario';
                 } else if (form.id === 'form-cita-modal') {
-                    document.getElementById('contenidoModalCita').innerHTML = data.html_form;
+                    document.getElementById('contenidoModalCita').innerHTML = data.html_form || 'Error al procesar formulario';
+                }
+                
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = '<i class="fas fa-save me-1"></i> Intentar de nuevo';
                 }
             }
         })

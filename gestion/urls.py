@@ -48,4 +48,5 @@ urlpatterns = [
     path('pagos/<int:pago_id>/ticket/', views.imprimir_ticket_pago, name='imprimir_ticket'),
     path('pacientes/<int:pk>/editar-rapido/', views.editar_paciente_rapido, name='editar_paciente_rapido'),
     path('staff/', views.gestion_doctores, name='gestion_doctores'),
+    path('configuracion/respaldo/', views.descargar_respaldo, name='descargar_respaldo'),
 ]

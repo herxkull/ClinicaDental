@@ -8,12 +8,12 @@
     </button>
 </div>
 
-<form id="formNuevaCita" class="p-8">
+<form id="form-cita-modal" class="p-8" action="{% url 'modal_nueva_cita' paciente.id %}">
     {% csrf_token %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Doctor Responsable</label>
-            <select name="doctor" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all">
+            <select name="doctor" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" required>
                 <option value="">Seleccione un doctor...</option>
                 {% for doc in doctores %}
                     <option value="{{ doc.id }}">Dr. {{ doc.nombre }} ({{ doc.especialidad }})</option>
@@ -22,7 +22,7 @@
         </div>
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Tratamiento Principal</label>
-            <select name="tratamiento" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all">
+            <select name="tratamiento" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" required>
                 <option value="">Seleccione tratamiento...</option>
                 {% for t in tratamientos %}
                     <option value="{{ t.id }}">{{ t.nombre }} - ${{ t.precio_venta }}</option>
@@ -34,48 +34,20 @@
     <div class="grid grid-cols-2 gap-6 mb-8">
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Fecha</label>
-            <input type="date" name="fecha" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" value="{% now 'Y-m-d' %}">
+            <input type="date" name="fecha" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" value="{% now 'Y-m-d' %}" required>
         </div>
         <div>
             <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Hora</label>
-            <input type="time" name="hora" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all">
+            <input type="time" name="hora" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" required>
         </div>
     </div>
 
     <div class="mb-10">
         <label class="block text-[10px] font-black text-gray-400 uppercase mb-2">Motivo de Consulta</label>
-        <textarea name="motivo" rows="3" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Escriba el motivo de la cita..."></textarea>
+        <textarea name="motivo" rows="3" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Escriba el motivo de la cita..." required></textarea>
     </div>
 
     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-3xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3 text-lg">
         <i class="fas fa-calendar-check"></i> CONFIRMAR CITA
     </button>
 </form>
-
-<script>
-    document.getElementById('formNuevaCita').onsubmit = async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const response = await fetch('{% url "modal_nueva_cita" paciente.id %}', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': '{{ csrf_token }}' }
-        });
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Cita Agendada',
-                text: 'La cita se ha registrado correctamente.',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => location.reload());
-        } else {
-            const data = await response.json();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Por favor verifique los campos obligatorios.'
-            });
-        }
-    };
-</script>

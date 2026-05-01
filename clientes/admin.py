@@ -15,9 +15,9 @@ admin.site.site_title = "Admin Maestro"
 admin.site.index_title = "Métricas de Crecimiento"
 
 # Inyectar métricas en el index original
-def custom_index(request, extra_context=None):
-    if not request.user.is_superuser:
-        return redirect('/logout/') # Seguridad para el esquema público
+def custom_index(self, request, extra_context=None):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return redirect('admin:login')
         
     mrr = Suscripcion.objects.filter(estado_pago__in=['APROBADO', 'CORTESIA']).count() * 49.99
     registros_hoy = Clinica.objects.filter(trial_start_date__gte=timezone.now() - timedelta(days=1)).count()
@@ -30,7 +30,7 @@ def custom_index(request, extra_context=None):
     ]
     # Usamos el index original pero con nuestro contexto
     from django.contrib.admin.sites import AdminSite
-    return AdminSite.index(admin.site, request, extra_context)
+    return AdminSite.index(self, request, extra_context)
 
 # Sobreescribir el index del sitio por defecto
 admin.site.index = custom_index.__get__(admin.site, admin.site.__class__)
@@ -144,8 +144,9 @@ class SuscripcionAdmin(admin.ModelAdmin):
     @admin.display(description='Aprobar/Rechazar')
     def fast_actions(self, obj):
         if obj.estado_pago == 'VALIDACION':
-            approve_url = reverse('admin:approve_sub', args=[obj.pk])
-            reject_url = reverse('admin:reject_sub', args=[obj.pk])
+            # Nombres de URL estándar de Django Admin para vistas personalizadas: admin:app_model_nombre
+            approve_url = reverse('admin:clientes_suscripcion_approve_sub', args=[obj.pk])
+            reject_url = reverse('admin:clientes_suscripcion_reject_sub', args=[obj.pk])
             return format_html(
                 '<a href="{}" title="Aprobar" style="color: #10b981; font-size: 1.2rem; margin-right: 10px;">✅</a>'
                 '<a href="{}" title="Rechazar" style="color: #ef4444; font-size: 1.2rem;">❌</a>',
@@ -156,8 +157,8 @@ class SuscripcionAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('approve/<int:sub_id>/', self.admin_site.admin_view(self.approve_sub_view), name='approve_sub'),
-            path('reject/<int:sub_id>/', self.admin_site.admin_view(self.reject_sub_view), name='reject_sub'),
+            path('approve/<int:sub_id>/', self.admin_site.admin_view(self.approve_sub_view), name='clientes_suscripcion_approve_sub'),
+            path('reject/<int:sub_id>/', self.admin_site.admin_view(self.reject_sub_view), name='clientes_suscripcion_reject_sub'),
         ]
         return custom_urls + urls
 

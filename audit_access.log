@@ -25,3 +25,26 @@
 [2026-04-30 00:22:03,313] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 45.0 para Carmen Vargas
 [2026-04-30 00:30:14,043] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
 [2026-04-30 00:31:29,652] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Carlos Garcia | Monto: 450.00
+[2026-04-30 12:35:33,416] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Lucia Torres | Monto: 80.00
+[2026-04-30 12:35:44,622] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ana Rodriguez | Monto: 100.00
+[2026-04-30 12:36:00,438] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Lucia Torres | Monto: 80.00
+[2026-04-30 12:39:50,451] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Sofia Sanchez | Monto: 450.00
+[2026-04-30 12:40:00,213] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Miguel Ramirez | Monto: 80.00
+[2026-04-30 13:03:19,255] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Miguel Ramirez | Monto: 80.00
+[2026-04-30 13:07:37,839] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 615.0 para Ana Rodriguez (Abono General)
+[2026-04-30 13:12:10,639] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 610.0 para Sofia Sanchez (Abono General)
+[2026-04-30 15:39:45,474] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 15:43:35,153] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: BACKUP_DOWNLOAD | DETAILS: Usuario descargó respaldo de base de datos
+[2026-04-30 15:58:15,003] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 16:13:20,034] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 16:13:33,695] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 16:27:29,055] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 16:34:58,678] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 16:36:54,492] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 17:23:12,777] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 17:24:15,335] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 17:28:03,018] [INFO] [gestion.audit] [Tenant:Kimetsu] [User:hersanhs15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 19:36:49,942] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 20:18:49,788] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ernesto Chavarría | Monto: 220.00
+[2026-04-30 20:19:07,656] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Carlos Duarte | Monto: 80.00
+[2026-04-30 20:23:34,251] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Luisa Morales | Monto: 0.00

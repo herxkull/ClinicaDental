@@ -17,26 +17,38 @@ document.addEventListener('DOMContentLoaded', function() {
         buttonText: {
             today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día'
         },
-        events: CALENDARIO_CONFIG.urlEventos,
         eventDisplay: 'block',
 
-        // 1. REPROGRAMAR (DRAG & DROP)
+        // 1. FUENTE DE EVENTOS CON FILTRO
+        eventSources: [
+            {
+                url: CALENDARIO_CONFIG.urlEventos,
+                extraParams: function() {
+                    const doctorFilter = document.getElementById('doctorFilter');
+                    return {
+                        doctor_id: doctorFilter ? doctorFilter.value : 'all'
+                    };
+                }
+            }
+        ],
+
+        // 2. REPROGRAMAR (DRAG & DROP)
         eventDrop: function(info) {
             actualizarCita(info.event);
         },
 
-        // 2. AJUSTAR DURACIÓN (RESIZE)
+        // 3. AJUSTAR DURACIÓN (RESIZE)
         eventResize: function(info) {
             actualizarCita(info.event);
         },
 
-        // 3. QUICK VIEW (CLICK)
+        // 4. QUICK VIEW (CLICK)
         eventClick: function(info) {
             info.jsEvent.preventDefault(); // Evita navegar si tiene URL
             mostrarQuickView(info.event);
         },
 
-        // 4. NUEVA CITA DESDE GRID
+        // 5. NUEVA CITA DESDE GRID
         select: function(info) {
             abrirModalNuevaCita(info.startStr, info.allDay);
         }
@@ -52,18 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
             calendar.refetchEvents();
         });
     }
-
-    // Modificamos la carga de eventos para incluir el filtro
-    calendar.setOption('eventSources', [
-        {
-            url: CALENDARIO_CONFIG.urlEventos,
-            extraParams: function() {
-                return {
-                    doctor_id: doctorFilter ? doctorFilter.value : 'all'
-                };
-            }
-        }
-    ]);
 });
 
 // FUNCIÓN PARA ACTUALIZAR EN DB

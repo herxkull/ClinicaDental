@@ -17,6 +17,12 @@ class ConfiguracionClinicaForm(forms.ModelForm):
             'pie_pagina_recibo': forms.Textarea(attrs={'class': 'form-control rounded-2xl border-gray-200 focus:ring-blue-500', 'rows': 2}),
             'whatsapp_numero': forms.TextInput(attrs={'class': 'form-control rounded-2xl border-gray-200 focus:ring-blue-500'}),
             'whatsapp_recordatorios_activos': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'color_primario': forms.TextInput(attrs={'class': 'form-control rounded-2xl border-gray-200', 'type': 'color'}),
+            'color_sidebar': forms.TextInput(attrs={'class': 'form-control rounded-2xl border-gray-200', 'type': 'color'}),
+            'color_fondo': forms.TextInput(attrs={'class': 'form-control rounded-2xl border-gray-200', 'type': 'color'}),
+            'escala_interfaz': forms.NumberInput(attrs={'class': 'form-range', 'type': 'range', 'min': '80', 'max': '120', 'step': '5'}),
+            'tema_oscuro': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'fuente_familia': forms.Select(attrs={'class': 'form-select rounded-2xl border-gray-200'}),
         }
 
 class PacienteForm(forms.ModelForm):

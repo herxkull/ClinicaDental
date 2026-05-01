@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from .models import GoogleCalendarConfig, Cita
 
-SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
 def get_calendar_service(config):
     """Obtiene el servicio de Google Calendar usando las credenciales del modelo"""
@@ -13,15 +13,20 @@ def get_calendar_service(config):
         print("DEBUG: GoogleCalendarConfig o credentials_json están vacíos.")
         return None
     
-    creds = Credentials.from_authorized_user_info(config.credentials_json, SCOPES)
+    saved_scopes = config.credentials_json.get('scopes', SCOPES)
+    creds = Credentials.from_authorized_user_info(config.credentials_json, saved_scopes)
     
     if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        import json
-        config.credentials_json = json.loads(creds.to_json())
-        config.save()
+        try:
+            creds.refresh(Request())
+            import json
+            config.credentials_json = json.loads(creds.to_json())
+            config.save()
+        except Exception as e:
+            print(f"Error refreshing credentials: {e}")
         
     return build('calendar', 'v3', credentials=creds)
+
 
 def sync_cita_to_google(cita):
     """Sincroniza una cita individual con Google Calendar"""

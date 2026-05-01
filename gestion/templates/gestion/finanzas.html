@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- ENCABEZADO CON DROPDOWN DE EXPORTACIÓN -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -42,34 +42,34 @@
 
     <!-- MÉTRICAS ENTERPRISE (4 CARDS) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <!-- Ingresos Totales -->
+        <!-- Ingresos del Periodo -->
         <div class="card-gradient-blue rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Totales (Caja)</p>
+                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Periodo</p>
                 <h2 class="text-3xl font-extrabold mt-2 font-display">${{ ingresos_totales|floatformat:2 }}</h2>
-                <p class="text-[10px] text-blue-200 mt-2">Flujo de efectivo real</p>
+                <p class="text-[10px] text-blue-200 mt-2">Filtro seleccionado</p>
             </div>
-            <i class="fas fa-wallet absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-calendar-check absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
-        <!-- Revenue Share: Ganancia Clínica -->
-        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica (Espacio)</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
-                <p class="text-[10px] text-gray-400 mt-2">Parte proporcional neta</p>
-            </div>
-            <i class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
-        </div>
-
-        <!-- Revenue Share: Pago a Doctores -->
+        <!-- Ingresos Históricos -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group">
             <div class="relative z-10">
-                <p class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Compromisos Doctores</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ pagos_a_doctores|floatformat:2 }}</h2>
-                <p class="text-[10px] text-gray-400 mt-2">Pendiente de liquidar</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos Históricos</p>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ ingresos_historicos|floatformat:2 }}</h2>
+                <p class="text-[10px] text-gray-400 mt-2">Acumulado total</p>
             </div>
-            <i class="fas fa-user-md absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-archive absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+        </div>
+
+        <!-- Ganancia Clínica -->
+        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica</p>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
+                <p class="text-[10px] text-gray-400 mt-2">Neto para la clínica</p>
+            </div>
+            <i class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
         <!-- Deuda Pendiente -->
@@ -139,7 +139,7 @@
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mostrando últimos 50 movimientos</span>
         </div>
         
-        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="sticky-header">
                     <tr>

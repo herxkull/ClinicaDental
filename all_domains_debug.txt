@@ -1,0 +1,4 @@
+Clinica: peluca -> ['peluca.localhost', 'peluca.127.0.0.1', 'peluca.127.0.0.1.nip.io']
+Clinica: public -> ['localhost', '127.0.0.1']
+Clinica: kimet -> ['kimet.localhost:8000', 'kimet.localhost', 'kimet.127.0.0.1', 'kimet.127.0.0.1:8000']
+Clinica: roeden -> ['roeden.localhost:8000']

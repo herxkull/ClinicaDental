@@ -135,22 +135,7 @@ document.getElementById('formCheckout').addEventListener('submit', async functio
                     confirmButton: 'rounded-2xl font-black px-8 py-3'
                 }
             }).then(() => {
-                // Actualizar KPIs y Gráficos vía AJAX
-                actualizarKpisDashboard();
-                
-                // Actualizar la fila de la cita visualmente
-                const row = document.getElementById(`cita-row-${citaId}`);
-                if (row) {
-                    const badge = row.querySelector('.rounded-full');
-                    const btn = row.querySelector('button');
-                    if (badge) {
-                        badge.innerText = 'COMPLETADA';
-                        badge.className = 'px-2 py-0.5 rounded-full text-[8px] font-black uppercase text-white bg-green-500';
-                    }
-                    if (btn) {
-                        btn.outerHTML = '<i class="fas fa-check-circle text-green-500 text-lg"></i>';
-                    }
-                }
+                window.location.reload();
             });
         } else {
             throw new Error(result.message || 'Error desconocido');
