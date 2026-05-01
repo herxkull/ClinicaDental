@@ -131,6 +131,7 @@ def google_callback(request):
             except IndexError:
                 pass
 
+    print(f"DEBUG CALLBACK OAUTH: client_id={repr(settings.GOOGLE_CLIENT_ID)}, client_secret={repr(settings.GOOGLE_CLIENT_SECRET)}")
     flow = Flow.from_client_config(
         {
             "web": {
@@ -231,7 +232,8 @@ def google_callback(request):
         return redirect('finalizar_registro_google')
 
     except Exception as e:
-        return render(request, 'clientes/registro.html', {'error': f"Error de autenticación: {str(e)}"})
+        debug_msg = f"{str(e)} (ID: {settings.GOOGLE_CLIENT_ID[:5] if settings.GOOGLE_CLIENT_ID else 'None'}... | Secret: {settings.GOOGLE_CLIENT_SECRET[:5] if settings.GOOGLE_CLIENT_SECRET else 'None'}...)"
+        return render(request, 'clientes/registro.html', {'error': f"Error de autenticación: {debug_msg}"})
 
 def finalizar_registro_google(request):
     """Paso final: Pedir Nombre de Clínica y Subdominio"""
