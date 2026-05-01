@@ -405,12 +405,14 @@ def registro_clinica(request):
                     host_completo = request.get_host()
                     host_sin_puerto = host_completo.split(':')[0]
                     
-                    # Variantes de dominio para asegurar acceso en local
+                    # Variantes de dominio para asegurar acceso en local y producción
                     variantes = [
                         f"{subdominio}.localhost",
                         f"{subdominio}.127.0.0.1",
                         f"{subdominio}.127.0.0.1.nip.io",
                     ]
+                    if "." in host_sin_puerto:
+                        variantes.append(f"{subdominio}.{host_sin_puerto}")
 
                     for i, d_name in enumerate(variantes):
                         Dominio.objects.get_or_create(
