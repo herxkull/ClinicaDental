@@ -5,34 +5,56 @@
 
 {% block extra_css %}
 <style>
-    .sticky-header th { position: sticky; top: 0; z-index: 10; background: #f9fafb; }
-    .card-gradient-blue { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
-    .card-gradient-green { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
-    .card-gradient-red { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); }
-    .card-gradient-purple { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); }
+    .sticky-header th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f9fafb;
+    }
+
+    .card-gradient-blue {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    }
+
+    .card-gradient-green {
+        background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+    }
+
+    .card-gradient-red {
+        background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+    }
+
+    .card-gradient-purple {
+        background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
+
     <!-- ENCABEZADO CON DROPDOWN DE EXPORTACIÓN -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Gestión Financiera</h1>
-            <p class="text-sm text-gray-500 font-medium">Análisis de rendimiento, flujo de caja y proyecciones de rentabilidad.</p>
+            <p class="text-sm text-gray-500 font-medium">Análisis de rendimiento, flujo de caja y proyecciones de
+                rentabilidad.</p>
         </div>
         <div class="flex gap-3 w-full md:w-auto">
             <div class="relative group">
-                <button class="w-full md:w-auto bg-gray-900 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-black transition-all flex items-center justify-center">
+                <button
+                    class="w-full md:w-auto bg-gray-900 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-black transition-all flex items-center justify-center">
                     <i class="fas fa-file-export mr-2 text-xs text-brand-400"></i> Exportar
                     <i class="fas fa-chevron-down ml-2 text-[10px] opacity-50"></i>
                 </button>
-                <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 hidden group-hover:block z-50 overflow-hidden">
-                    <a href="#" onclick="window.print()" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                <div
+                    class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 hidden group-hover:block z-50 overflow-hidden">
+                    <a href="#" onclick="window.print()"
+                        class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                         <i class="fas fa-file-pdf mr-3 text-red-500"></i> Formato PDF (Pro)
                     </a>
-                    <a href="{% url 'exportar_excel' %}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
+                    <a href="{% url 'exportar_excel' %}"
+                        class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
                         <i class="fas fa-file-excel mr-3 text-green-600"></i> Data pura (Excel)
                     </a>
                 </div>
@@ -49,27 +71,32 @@
                 <h2 class="text-3xl font-extrabold mt-2 font-display">${{ ingresos_totales|floatformat:2 }}</h2>
                 <p class="text-[10px] text-blue-200 mt-2">Filtro seleccionado</p>
             </div>
-            <i class="fas fa-calendar-check absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i
+                class="fas fa-calendar-check absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
         <!-- Ingresos Históricos -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group">
             <div class="relative z-10">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos Históricos</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ ingresos_historicos|floatformat:2 }}</h2>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{
+                    ingresos_historicos|floatformat:2 }}</h2>
                 <p class="text-[10px] text-gray-400 mt-2">Acumulado total</p>
             </div>
-            <i class="fas fa-archive absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+            <i
+                class="fas fa-archive absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
         </div>
 
         <!-- Ganancia Clínica -->
         <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
             <div class="relative z-10">
                 <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{
+                    ingresos_alquiler_espacio|floatformat:2 }}</h2>
                 <p class="text-[10px] text-gray-400 mt-2">Neto para la clínica</p>
             </div>
-            <i class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i
+                class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
         <!-- Deuda Pendiente -->
@@ -79,7 +106,8 @@
                 <h2 class="text-3xl font-extrabold mt-2 font-display">${{ deuda_total|floatformat:2 }}</h2>
                 <p class="text-[10px] text-red-200 mt-2">Cartera activa</p>
             </div>
-            <i class="fas fa-hand-holding-usd absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i
+                class="fas fa-hand-holding-usd absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
     </div>
 
@@ -112,20 +140,24 @@
         <form method="GET" class="flex flex-col lg:flex-row gap-4">
             <div class="relative flex-grow">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="text" name="q" value="{{ search_query|default:'' }}" 
-                       placeholder="Buscar por paciente o concepto..." 
-                       class="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                <input type="text" name="q" value="{{ search_query|default:'' }}"
+                    placeholder="Buscar por paciente o concepto..."
+                    class="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium">
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
-                <input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
-                <select name="metodo" class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}"
+                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                <input type="date" name="fecha_fin" value="{{ fecha_fin }}"
+                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                <select name="metodo"
+                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
                     <option value="">Método Pago</option>
                     <option value="EFECTIVO">💵 Efectivo</option>
                     <option value="TRANSFERENCIA">📱 Transferencia</option>
                     <option value="TARJETA">💳 Tarjeta</option>
                 </select>
-                <button type="submit" class="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center px-6">
+                <button type="submit"
+                    class="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center px-6">
                     <i class="fas fa-filter mr-2"></i> Filtrar
                 </button>
             </div>
@@ -136,14 +168,16 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-8 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
             <h3 class="font-bold text-gray-900 text-lg">Historial de Transacciones</h3>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mostrando últimos 50 movimientos</span>
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mostrando últimos 50
+                movimientos</span>
         </div>
-        
+
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="sticky-header">
                     <tr>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Fecha / Tipo</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Fecha / Tipo
+                        </th>
                         <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Paciente</th>
                         <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Concepto</th>
                         <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Método</th>
@@ -157,45 +191,56 @@
                     <tr class="hover:bg-gray-50/50 transition-colors {% if mov.es_mora %}bg-red-50/30{% endif %}">
                         <td class="px-8 py-5">
                             <p class="text-sm font-bold text-gray-900">{{ mov.fecha|date:"d M, Y" }}</p>
-                            <p class="text-[10px] {% if mov.tipo == 'INGRESO' %}text-green-500{% else %}text-red-500{% endif %} font-bold uppercase">{{ mov.tipo }}</p>
+                            <p
+                                class="text-[10px] {% if mov.tipo == 'INGRESO' %}text-green-500{% else %}text-red-500{% endif %} font-bold uppercase">
+                                {{ mov.tipo }}</p>
                         </td>
                         <td class="px-8 py-5">
                             <a href="{% url 'detalle_paciente' mov.paciente.pk %}" class="flex items-center group">
-                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 mr-3 group-hover:bg-brand-500 group-hover:text-white transition-all text-xs">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 mr-3 group-hover:bg-brand-500 group-hover:text-white transition-all text-xs">
                                     {{ mov.paciente.nombre|slice:":1" }}
                                 </div>
-                                <span class="font-bold text-gray-700 group-hover:text-brand-600 transition-colors">{{ mov.paciente.nombre }}</span>
+                                <span class="font-bold text-gray-700 group-hover:text-brand-600 transition-colors">{{
+                                    mov.paciente.nombre }}</span>
                             </a>
                         </td>
                         <td class="px-8 py-5 text-sm text-gray-500 italic">{{ mov.concepto }}</td>
                         <td class="px-8 py-5">
-                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">{{ mov.metodo }}</span>
+                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">{{
+                                mov.metodo }}</span>
                         </td>
                         <td class="px-8 py-5">
-                            <span class="font-display font-bold {% if mov.tipo == 'INGRESO' %}text-green-600{% else %}text-red-600{% endif %}">
+                            <span
+                                class="font-display font-bold {% if mov.tipo == 'INGRESO' %}text-green-600{% else %}text-red-600{% endif %}">
                                 {% if mov.tipo == 'INGRESO' %}+{% else %}-{% endif %} ${{ mov.monto|floatformat:2 }}
                             </span>
                         </td>
                         <td class="px-8 py-5">
                             {% if mov.estado == 'COMPLETO' %}
-                                <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-widest">Liquidado</span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-widest">Liquidado</span>
                             {% else %}
-                                <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-widest animate-pulse">Pendiente</span>
+                            <span
+                                class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-widest animate-pulse">Pendiente</span>
                             {% endif %}
                         </td>
                         <td class="px-8 py-5">
                             <div class="flex gap-2">
                                 {% if mov.tipo == 'INGRESO' %}
-                                    <a href="{% url 'imprimir_ticket' mov.id %}" target="_blank" class="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Ver Recibo">
-                                        <i class="fas fa-receipt"></i>
-                                    </a>
+                                <a href="{% url 'imprimir_ticket' mov.id %}" target="_blank"
+                                    class="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Ver Recibo">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
                                 {% else %}
-                                    <button class="p-2 text-gray-200 cursor-not-allowed" disabled title="No disponible para deudas">
-                                        <i class="fas fa-receipt"></i>
-                                    </button>
+                                <button class="p-2 text-gray-200 cursor-not-allowed" disabled
+                                    title="No disponible para deudas">
+                                    <i class="fas fa-receipt"></i>
+                                </button>
                                 {% endif %}
                                 {% if mov.es_mora %}
-                                <button class="p-2 text-red-400 hover:text-red-600 transition-colors" title="Enviar Recordatorio"><i class="fas fa-bell"></i></button>
+                                <button class="p-2 text-red-400 hover:text-red-600 transition-colors"
+                                    title="Enviar Recordatorio"><i class="fas fa-bell"></i></button>
                                 {% endif %}
                             </div>
                         </td>
@@ -224,7 +269,7 @@
         dataTratamientos: JSON.parse('{{ data_tratamientos_json|safe }}')
     };
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Configuración común
         Chart.defaults.font.family = 'Inter';
         Chart.defaults.color = '#94a3b8';
