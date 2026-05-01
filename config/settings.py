@@ -267,7 +267,15 @@ def _clean_env(val):
     return val.strip().strip("'").strip('"')
 
 GOOGLE_CLIENT_ID = _clean_env(os.getenv('GOOGLE_OAUTH_CLIENT_ID') or os.getenv('GOOGLE_CLIENT_ID'))
-GOOGLE_CLIENT_SECRET = _clean_env(os.getenv('GOOGLE_OAUTH_CLIENT_SECRET') or os.getenv('GOOGLE_CLIENT_SECRET'))
+GOOGLE_CLIENT_SECRET = _clean_env(
+    os.getenv('GOOGLE_OAUTH_CLIENT_SECRET') or 
+    os.getenv('GOOGLE_CLIENT_SECRET') or 
+    os.getenv('GOOGLE_OAUTH_SECRET') or 
+    os.getenv('GOOGLE_SECRET') or 
+    os.getenv('GOOGLE_CLIENTSECRET') or 
+    os.getenv('GOOGLE_OAUTH_CLIENT_SEC') or 
+    os.getenv('GOOGLE_CLIENT_SEC')
+)
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8000/google/callback/')
 
 # CONFIGURACIÓN 2CHECKOUT
