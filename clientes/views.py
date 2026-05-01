@@ -53,7 +53,8 @@ def google_init(request):
     if 'localhost' in host_full or '127.0.0.1' in host_full or 'nip.io' in host_full:
         base_url = "http://localhost:8000"
     else:
-        base_url = f"https://{settings.TENANT_USERS_DOMAIN}"
+        schema = "https" if request.is_secure() else "http"
+        base_url = f"{schema}://{host_full}"
     
     redirect_uri = f"{base_url}{reverse('google_callback')}"
     flow.redirect_uri = redirect_uri
@@ -148,7 +149,8 @@ def google_callback(request):
     if 'localhost' in host_full or '127.0.0.1' in host_full or 'nip.io' in host_full:
         base_url = "http://localhost:8000"
     else:
-        base_url = f"https://{settings.TENANT_USERS_DOMAIN}"
+        schema = "https" if request.is_secure() else "http"
+        base_url = f"{schema}://{host_full}"
     
     flow.redirect_uri = f"{base_url}{reverse('google_callback')}"
 
