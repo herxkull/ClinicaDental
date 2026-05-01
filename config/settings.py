@@ -261,8 +261,13 @@ MULTITENANT_RELATIVE_MEDIA_ROOT = "" # Los archivos se guardarÃ¡n en MEDIA_ROO
 
 
 # CONFIGURACIÓN GOOGLE CALENDAR (Cargada de forma segura desde .env)
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_OAUTH_CLIENT_SECRET')
+def _clean_env(val):
+    if not val:
+        return val
+    return val.strip().strip("'").strip('"')
+
+GOOGLE_CLIENT_ID = _clean_env(os.getenv('GOOGLE_OAUTH_CLIENT_ID') or os.getenv('GOOGLE_CLIENT_ID'))
+GOOGLE_CLIENT_SECRET = _clean_env(os.getenv('GOOGLE_OAUTH_CLIENT_SECRET') or os.getenv('GOOGLE_CLIENT_SECRET'))
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8000/google/callback/')
 
 # CONFIGURACIÓN 2CHECKOUT
