@@ -278,3 +278,4 @@ TWO_CHECKOUT_BUY_LINK = os.getenv('TWO_CHECKOUT_BUY_LINK')
 CURRENCY = os.getenv('CURRENCY', 'USD')
 # Desactivar COOP en desarrollo para evitar bloqueos por origen no confiable
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
