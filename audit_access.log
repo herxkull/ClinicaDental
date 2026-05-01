@@ -48,3 +48,26 @@
 [2026-04-30 20:18:49,788] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ernesto Chavarría | Monto: 220.00
 [2026-04-30 20:19:07,656] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Carlos Duarte | Monto: 80.00
 [2026-04-30 20:23:34,251] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Luisa Morales | Monto: 0.00
+[2026-04-30 23:09:50,250] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:09:57,095] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:10:00,809] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:10:03,650] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:10:05,993] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:10:09,162] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Juan Carlos Rivas (ID: 28)
+[2026-04-30 23:11:27,718] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 195.0 para Juan Carlos Rivas (Abono General)
+[2026-04-30 23:14:31,997] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-04-30 23:53:33,325] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: CREAR_RECEPCIONISTA | DETAILS: Recepcionista test_recep creada por doctor
+[2026-04-30 23:54:15,900] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test_recep eliminada por doctor
+[2026-05-01 00:03:17,850] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: CREAR_RECEPCIONISTA | DETAILS: Recepcionista test_recep creada por doctor
+[2026-05-01 00:06:04,424] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test_recep eliminada por doctor
+[2026-05-01 00:06:27,711] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: CREAR_RECEPCIONISTA | DETAILS: Recepcionista test creada por doctor
+[2026-05-01 00:08:27,400] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Héctor Zelaya | Monto: 220.00
+[2026-05-01 00:08:40,447] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Juan Carlos Rivas | Monto: 150.00
+[2026-05-01 00:14:01,790] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: José Martí | Monto: 150.00
+[2026-05-01 00:14:17,545] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Juan Carlos Rivas | Monto: 80.00
+[2026-05-01 00:14:32,541] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Jorge Isaacs | Monto: 220.00
+[2026-05-01 00:23:44,940] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: CREAR_RECEPCIONISTA | DETAILS: Recepcionista test2 creada por doctor
+[2026-05-01 00:24:08,405] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: CREAR_RECEPCIONISTA | DETAILS: Recepcionista test3 creada por doctor
+[2026-05-01 00:24:47,955] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test3 eliminada por doctor
+[2026-05-01 00:25:01,916] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test2 eliminada por doctor
+[2026-05-01 00:37:47,187] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales

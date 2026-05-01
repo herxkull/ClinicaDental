@@ -268,7 +268,7 @@
                                         {% if cita.estado == 'COMPLETADA' %}
                                             <span class="bg-green-100 text-green-700 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter border border-green-200">Finalizada</span>
                                         {% else %}
-                                            <a href="https://wa.me/{{ paciente.telefono|cut:' ' }}?text=Hola%20{{ paciente.nombre }},%20te%20recordamos%20tu%20cita%20de%20{{ cita.tratamiento.nombre|urlencode }}%20el%20{{ cita.fecha|date:'d/m/Y' }}%20a%20las%20{{ cita.fecha|date:'H:i' }}." 
+                                            <a href="https://wa.me/{{ paciente.telefono|cut:' ' }}?text=Hola%20{{ paciente.nombre }},%20te%20recordamos%20tu%20cita%20de%20{{ cita.tratamiento.nombre|urlencode }}%20el%20{{ cita.fecha|date:'d/m/Y' }}%20a%20las%20{{ cita.hora|time:'H:i' }}." 
                                                target="_blank"
                                                class="bg-green-500 hover:bg-green-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm flex items-center gap-1 transition-all">
                                                 <i class="fab fa-whatsapp"></i> Recordar

@@ -54,14 +54,14 @@
                     <div id="chart-rentabilidad" style="min-height: 350px;"></div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     <!-- PRÓXIMAS CITAS (CARD STYLE) -->
-                    <div class="sfs-card p-8">
-                        <div class="flex justify-between items-center mb-6">
+                    <div class="sfs-card p-8 h-[520px] flex flex-col lg:col-span-3">
+                        <div class="flex justify-between items-center mb-6 shrink-0">
                             <h3 class="text-lg font-black text-gray-900">Agenda de Hoy</h3>
                             <a href="{% url 'lista_citas' %}" class="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Ver todo</a>
                         </div>
-                        <div class="space-y-4">
+                        <div class="space-y-4 overflow-y-auto pr-1 flex-grow scrollbar-thin">
                             {% for cita in citas_proximas %}
                             <div id="cita-row-{{ cita.id }}" class="flex items-center gap-4 p-4 rounded-3xl bg-gray-50/50 border border-gray-50 hover:bg-white hover:shadow-lg transition-all group relative">
                                 <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-xs">
@@ -100,9 +100,9 @@
                     </div>
 
                     <!-- TOP TRATAMIENTOS -->
-                    <div class="sfs-card p-8">
-                        <h3 class="text-lg font-black text-gray-900 mb-6">Top Tratamientos</h3>
-                        <div id="chart-tratamientos" style="min-height: 300px;"></div>
+                    <div class="sfs-card p-8 h-[520px] flex flex-col justify-between lg:col-span-2">
+                        <h3 class="text-lg font-black text-gray-900 mb-6 shrink-0">Top Tratamientos</h3>
+                        <div id="chart-tratamientos" class="flex-grow flex items-center justify-center" style="min-height: 300px; width: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -259,6 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-{% include 'gestion/includes/modal_cita_general.html' %}
+{% include 'gestion/includes/modal_cita_general.html' with pacientes_all=pacientes_all tratamientos_all=tratamientos_all doctores_all=doctores_all %}
 {% include 'gestion/includes/modal_checkout.html' %}
 {% endblock %}

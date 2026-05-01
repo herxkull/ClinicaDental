@@ -58,7 +58,7 @@
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-2">
                                     <div class="w-2 h-2 rounded-full" style="background-color: {{ t.doctor_referencia.color_agenda|default:'#3b82f6' }}"></div>
-                                    <span class="text-xs font-bold text-gray-700">Dr. {{ t.doctor_referencia.nombre|default:"General" }}</span>
+                                    <span class="text-xs font-bold text-gray-700">{{ t.doctor_referencia.nombre|default:"General" }}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-5">
@@ -156,7 +156,7 @@
                     <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
                         <option value="">Doctor General (Clínica)</option>
                         {% for doc in doctores %}
-                            <option value="{{ doc.id }}" {% if t.doctor_referencia_id == doc.id %}selected{% endif %}>Dr. {{ doc.nombre }}</option>
+                            <option value="{{ doc.id }}" {% if t.doctor_referencia_id == doc.id %}selected{% endif %}>{{ doc.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -236,7 +236,7 @@
                     <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
                         <option value="">Doctor General (Clínica)</option>
                         {% for doc in doctores %}
-                            <option value="{{ doc.id }}">Dr. {{ doc.nombre }}</option>
+                            <option value="{{ doc.id }}">{{ doc.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>

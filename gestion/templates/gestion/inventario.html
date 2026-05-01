@@ -113,7 +113,7 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex flex-col">
-                            <span class="font-black text-gray-900 text-base">{{ p.cantidad_actual }}</span>
+                            <span class="font-black text-base {% if p.necesita_reabastecimiento %}text-red-600{% else %}text-gray-900{% endif %}">{{ p.cantidad_actual }}</span>
                             <span class="text-[9px] text-gray-400 font-bold uppercase">Mín: {{ p.stock_minimo }}</span>
                         </div>
                     </td>

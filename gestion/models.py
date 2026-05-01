@@ -167,6 +167,14 @@ class Producto(models.Model):
     barcode = models.CharField(max_length=100, blank=True, null=True, unique=True)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
 
+    @property
+    def total_valor_stock(self):
+        return self.cantidad_actual * self.costo_unitario
+
+    @property
+    def necesita_reabastecimiento(self):
+        return self.cantidad_actual <= self.stock_minimo
+
     def __str__(self):
         return f"[{self.categoria}] {self.nombre} (Stock: {self.cantidad_actual})"
 
@@ -187,14 +195,6 @@ class MovimientoInventario(models.Model):
 
     class Meta:
         ordering = ['-fecha']
-
-    @property
-    def total_valor_stock(self):
-        return self.cantidad_actual * self.costo_unitario
-
-    @property
-    def necesita_reabastecimiento(self):
-        return self.cantidad_actual <= self.stock_minimo
 
 
 class MaterialTratamiento(models.Model):

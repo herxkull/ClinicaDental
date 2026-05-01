@@ -33,10 +33,24 @@ class Clinica(TenantMixin):
         return timezone.now() > self.trial_end_date if self.trial_end_date else False
 
     @property
+    def fecha_vencimiento_activa(self):
+        """Devuelve la fecha de vencimiento de la suscripción activa o de prueba."""
+        from django.utils import timezone
+        sub_activa = self.suscripciones.filter(
+            estado_pago__in=['APROBADO', 'CORTESIA'],
+            fecha_vencimiento__gt=timezone.now()
+        ).order_by('-fecha_vencimiento').first()
+        
+        if sub_activa:
+            return sub_activa.fecha_vencimiento
+        return self.trial_end_date
+
+    @property
     def dias_restantes(self):
         from django.utils import timezone
-        if not self.trial_end_date: return 0
-        diff = self.trial_end_date - timezone.now()
+        target_date = self.fecha_vencimiento_activa
+        if not target_date: return 0
+        diff = target_date - timezone.now()
         return max(0, diff.days)
 
     @property
@@ -82,6 +96,26 @@ class Suscripcion(models.Model):
     
     # 2Checkout Reference
     external_reference = models.CharField(max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        
+        # Si se aprueba o se da cortesía y no tiene fecha de vencimiento, le ponemos 30 días
+        if self.estado_pago in ['APROBADO', 'CORTESIA']:
+            if not self.fecha_vencimiento:
+                self.fecha_vencimiento = timezone.now() + timezone.timedelta(days=30)
+            
+            # Sincronizar el plan y el estado en la clínica
+            self.clinica.is_trial = False
+            self.clinica.plan = self.plan_tipo.lower()
+            self.clinica.save()
+            
+        elif self.estado_pago == 'TRIAL':
+            self.clinica.is_trial = True
+            self.clinica.plan = self.plan_tipo.lower()
+            self.clinica.save()
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.clinica.nombre_clinica} - {self.plan_tipo} ({self.estado_pago})"

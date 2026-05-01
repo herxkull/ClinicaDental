@@ -42,13 +42,16 @@
         {% for doc in doctores %}
         <div class="sfs-card p-8 hover:shadow-2xl hover:-translate-y-1 transition-all group relative overflow-hidden border-t-4" 
              style="border-top-color: {{ doc.color_agenda|default:'#3b82f6' }}">
-            
             <div class="flex items-start justify-between mb-8">
                 <div class="w-16 h-16 rounded-3xl flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-opacity-20" 
                      style="background-color: {{ doc.color_agenda|default:'#3b82f6' }}; box-shadow: 0 10px 15px -3px {{ doc.color_agenda|default:'#3b82f6' }}40">
                     {{ doc.nombre|slice:":1"|upper }}
                 </div>
                 <div class="flex gap-2">
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#modalEditarDoctor{{ doc.id }}" 
+                            class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center">
+                        <i class="fas fa-edit text-xs"></i>
+                    </button>
                     <form method="POST" onsubmit="return confirm('¿Estás seguro de eliminar a este doctor?');" class="inline">
                         {% csrf_token %}
                         <input type="hidden" name="doctor_id" value="{{ doc.id }}">
@@ -61,7 +64,7 @@
             </div>
 
             <div class="space-y-1">
-                <h3 class="text-2xl font-black text-text-base tracking-tight">Dr. {{ doc.nombre }}</h3>
+                <h3 class="text-2xl font-black text-text-base tracking-tight">{{ doc.nombre }}</h3>
                 <p class="text-xs font-black text-brand-primary uppercase tracking-widest">{{ doc.especialidad|default:"General" }}</p>
             </div>
 
@@ -82,13 +85,70 @@
             
             <div class="absolute bottom-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full -mr-16 -mb-16 group-hover:scale-110 transition-transform"></div>
         </div>
+
+        <!-- MODAL EDITAR DOCTOR -->
+        <div class="modal fade" id="modalEditarDoctor{{ doc.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-[2.5rem] border-0 shadow-2xl overflow-hidden bg-brand-card">
+                    <div class="p-10 pb-0">
+                        <div class="flex justify-between items-center mb-2">
+                            <h5 class="text-2xl font-black text-text-base">Editar Especialista</h5>
+                            <button type="button" class="text-text-muted hover:text-text-base transition-colors" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <p class="text-[10px] font-black text-text-muted uppercase tracking-widest">Actualiza el perfil del staff</p>
+                    </div>
+                    
+                    <form method="POST" class="p-10 space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="doctor_id" value="{{ doc.id }}">
+                        
+                        <div>
+                            <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Nombre Completo</label>
+                            <input type="text" name="nombre" value="{{ doc.nombre }}" class="w-full" placeholder="Ej: Dr. Julian Estrada" required>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Especialidad</label>
+                                <input type="text" name="especialidad" value="{{ doc.especialidad|default:'' }}" class="w-full" placeholder="Ej: Ortodoncia">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Color Agenda</label>
+                                <div class="flex items-center gap-3 h-12 bg-brand-border/20 rounded-2xl px-4">
+                                    <input type="color" name="color_agenda" value="{{ doc.color_agenda|default:'#3b82f6' }}" class="w-8 h-8 border-0 bg-transparent cursor-pointer rounded-lg overflow-hidden">
+                                    <span class="text-[10px] font-black text-text-muted uppercase">Punto de Identificación</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Teléfono</label>
+                                <input type="text" name="telefono" value="{{ doc.telefono|default:'' }}" class="w-full" placeholder="+504 ...">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 block ml-2">Email</label>
+                                <input type="email" name="email" value="{{ doc.email|default:'' }}" class="w-full" placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4 pt-6">
+                            <button type="button" class="flex-1 bg-brand-border text-text-base font-black py-4 rounded-2xl hover:bg-brand-border/80 transition-all uppercase tracking-tighter text-xs" data-bs-dismiss="modal">CANCELAR</button>
+                            <button type="submit" class="flex-1 bg-text-base text-brand-bg font-black py-4 rounded-2xl shadow-xl hover:scale-[1.02] transition-all uppercase tracking-tighter text-xs">GUARDAR CAMBIOS</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         {% empty %}
         <div class="col-span-full py-20 flex flex-col items-center justify-center opacity-50">
             <i class="fas fa-user-md text-6xl mb-4"></i>
             <p class="font-black uppercase tracking-widest text-sm">No hay doctores registrados</p>
         </div>
         {% endfor %}
-    </div>
+    </div> </div>
 </div>
 
 <!-- MODAL NUEVO DOCTOR -->

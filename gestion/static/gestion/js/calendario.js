@@ -20,17 +20,25 @@ document.addEventListener('DOMContentLoaded', function() {
         eventDisplay: 'block',
 
         // 1. FUENTE DE EVENTOS CON FILTRO
-        eventSources: [
-            {
-                url: CALENDARIO_CONFIG.urlEventos,
-                extraParams: function() {
-                    const doctorFilter = document.getElementById('doctorFilter');
-                    return {
-                        doctor_id: doctorFilter ? doctorFilter.value : 'all'
-                    };
-                }
-            }
-        ],
+        events: function(info, successCallback, failureCallback) {
+            const doctorFilter = document.getElementById('doctorFilter');
+            const docId = doctorFilter ? doctorFilter.value : 'all';
+            
+            // Construir la URL con parámetros
+            let url = CALENDARIO_CONFIG.urlEventos + '?doctor_id=' + encodeURIComponent(docId);
+            if (info.startStr) url += '&start=' + encodeURIComponent(info.startStr);
+            if (info.endStr) url += '&end=' + encodeURIComponent(info.endStr);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    successCallback(data);
+                })
+                .catch(error => {
+                    console.error('Error al cargar eventos:', error);
+                    failureCallback(error);
+                });
+        },
 
         // 2. REPROGRAMAR (DRAG & DROP)
         eventDrop: function(info) {

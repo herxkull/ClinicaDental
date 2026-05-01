@@ -170,6 +170,7 @@ class SuscripcionAdmin(admin.ModelAdmin):
             sub.save()
             c = sub.clinica
             c.is_trial = False
+            c.plan = sub.plan_tipo.lower()
             c.trial_end_date = sub.fecha_vencimiento
             c.save()
             self.message_user(request, f"Suscripción de {c.nombre_clinica} aprobada.")
@@ -193,6 +194,7 @@ class SuscripcionAdmin(admin.ModelAdmin):
             
             c = sub.clinica
             c.is_trial = False
+            c.plan = sub.plan_tipo.lower()
             c.trial_end_date = vencimiento
             c.save()
         self.message_user(request, "Meses de cortesía activados correctamente.")
@@ -206,6 +208,7 @@ class SuscripcionAdmin(admin.ModelAdmin):
             obj.save()
             clinica = obj.clinica
             clinica.is_trial = False
+            clinica.plan = obj.plan_tipo.lower()
             clinica.trial_end_date = obj.fecha_vencimiento
             clinica.save()
         super().save_model(request, obj, form, change)
@@ -217,6 +220,7 @@ class SuscripcionAdmin(admin.ModelAdmin):
             sub.save()
             c = sub.clinica
             c.is_trial = False
+            c.plan = sub.plan_tipo.lower()
             c.trial_end_date = sub.fecha_vencimiento
             c.save()
         self.message_user(request, "Suscripciones activadas.")

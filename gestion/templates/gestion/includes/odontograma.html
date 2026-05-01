@@ -24,11 +24,11 @@
         <span class="text-[10px] font-black px-3 py-1 bg-brand-card rounded-full border border-brand-border shadow-sm text-text-base" id="estado-guardado">Sincronizado</span>
     </div>
     
-    <div class="overflow-auto py-4">
-        <div class="min-w-[800px] flex flex-col items-center gap-12">
-            <div class="flex justify-center gap-3" id="arcada-superior"></div>
-            <div class="w-full border-t border-dashed border-gray-200"></div>
-            <div class="flex justify-center gap-3" id="arcada-inferior"></div>
+    <div class="overflow-x-auto py-6">
+        <div class="min-w-[1024px] flex flex-col items-center gap-12 select-none">
+            <div class="flex flex-nowrap justify-center gap-2 lg:gap-3" id="arcada-superior"></div>
+            <div class="w-full border-t border-dashed border-gray-100"></div>
+            <div class="flex flex-nowrap justify-center gap-2 lg:gap-3" id="arcada-inferior"></div>
         </div>
     </div>
 </div>
@@ -75,15 +75,15 @@
 <style>
     .diente-svg { width: 52px; height: 52px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
     .diente-svg:hover { transform: translateY(-5px) scale(1.15); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
-    .cara { fill: var(--color-bg-card); stroke: var(--color-border); stroke-width: 1; transition: all 0.2s; }
-    .cara:hover { stroke: var(--color-primary); stroke-width: 2; opacity: 0.9; }
-    .estado-sano { fill: var(--color-bg-card); }
+    .cara { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1; transition: all 0.2s; }
+    .cara:hover { stroke: #3b82f6; stroke-width: 2; opacity: 0.9; }
+    .estado-sano { fill: #ffffff; }
     .estado-caries { fill: #ef4444; stroke: #dc2626; }
     .estado-obturacion { fill: #3b82f6; stroke: #2563eb; }
     .estado-corona { fill: #fbbf24; stroke: #f59e0b; }
     .diente-ausente { opacity: 0.2; filter: grayscale(100%) blur(1px); }
-    .diente-numero { font-size: 11px; font-weight: 900; margin-top: 8px; color: var(--color-text-muted); font-family: 'Inter', sans-serif; }
-    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 52px; position: relative; }
+    .diente-numero { font-size: 11px; font-weight: 900; margin-top: 8px; color: #64748b; font-family: 'Inter', sans-serif; }
+    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 52px; flex-shrink: 0; position: relative; }
     
     /* Popover/Tooltip minimal */
     .diente-tooltip {

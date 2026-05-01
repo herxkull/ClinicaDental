@@ -165,6 +165,7 @@ def dashboard(request):
         'chart_gastos_data': json.dumps(chart_gastos_data),
         'pacientes_all': Paciente.objects.all().order_by('nombre'),
         'tratamientos_all': Tratamiento.objects.all().order_by('nombre'),
+        'doctores_all': DoctorColaborador.objects.filter(is_active=True).order_by('nombre'),
     }
     return render(request, 'gestion/dashboard.html', context)
 
@@ -346,7 +347,7 @@ def editar_paciente_rapido(request, pk):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO
+@grupo_requerido('Doctor', 'Recepcionista') # <--- PROTEGIDO
 def exportar_pacientes_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -408,7 +409,7 @@ def estado_cuenta_pdf(request, pk):
 # ==========================================
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (SÃ³lo doctor escribe en el JSON masivo)
+@grupo_requerido('Doctor', 'Recepcionista')
 def api_odontograma(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     if request.method == "POST":
@@ -425,7 +426,7 @@ def api_odontograma(request, paciente_id):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO (ClÃ­nico)
+@grupo_requerido('Doctor', 'Recepcionista')
 @require_POST
 def actualizar_diente(request, paciente_id):
     try:
@@ -508,7 +509,7 @@ def calendario(request):
 def citas_json(request):
     # 1. Citas locales (DentalSaaS)
     doctor_id = request.GET.get('doctor_id', 'all')
-    citas = Cita.objects.select_related('paciente', 'tratamiento').all()
+    citas = Cita.objects.select_related('paciente', 'tratamiento', 'doctor').all()
     
     if doctor_id != 'all':
         citas = citas.filter(doctor_id=doctor_id)
@@ -518,13 +519,20 @@ def citas_json(request):
         start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
         nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
 
+        color = '#3b82f6'
+        if cita.doctor and cita.doctor.color_agenda:
+            color = cita.doctor.color_agenda
+        elif cita.tratamiento and cita.tratamiento.color:
+            color = cita.tratamiento.color
+
         eventos.append({
             'id': f"local_{cita.id}",
             'title': f"{cita.paciente.nombre}",
             'start': start_dt,
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
-            'backgroundColor': cita.tratamiento.color if cita.tratamiento else '#3b82f6',
-            'borderColor': cita.tratamiento.color if cita.tratamiento else '#3b82f6',
+            'backgroundColor': color,
+            'borderColor': color,
+            'color': color,
             'extendedProps': {
                 'tratamiento_nombre': nombre_tratamiento,
                 'motivo': cita.motivo,
@@ -651,18 +659,20 @@ def modal_nueva_cita(request, paciente_id):
 
 @login_required
 @require_POST
-@grupo_requerido('Doctor')
+@grupo_requerido('Doctor', 'Recepcionista')
 def guardar_cita_calendario(request):
     paciente_id = request.POST.get('paciente')
     tratamiento_id = request.POST.get('tratamiento')
+    doctor_id = request.POST.get('doctor')
     fecha = request.POST.get('fecha')
     hora = request.POST.get('hora')
     motivo = request.POST.get('motivo')
 
     paciente = get_object_or_404(Paciente, pk=paciente_id)
     tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id) if tratamiento_id else None
+    doctor = get_object_or_404(DoctorColaborador, pk=doctor_id) if doctor_id else None
 
-    cita = Cita.objects.create(paciente=paciente, tratamiento=tratamiento, fecha=fecha, hora=hora, motivo=motivo)
+    cita = Cita.objects.create(paciente=paciente, tratamiento=tratamiento, doctor=doctor, fecha=fecha, hora=hora, motivo=motivo)
     
     # Sincronización con Google
     try:
@@ -824,7 +834,7 @@ def lista_tratamientos(request):
 
 
 @login_required
-@grupo_requerido('Doctor') # <--- PROTEGIDO
+@grupo_requerido('Doctor', 'Recepcionista') # <--- PROTEGIDO
 def gestionar_tratamiento(request, pk=None):
     if pk:
         tratamiento = get_object_or_404(Tratamiento, pk=pk)
@@ -925,7 +935,7 @@ def inventario(request):
     return render(request, 'gestion/inventario.html', context)
 
 @login_required
-@grupo_requerido('Doctor')
+@grupo_requerido('Doctor', 'Recepcionista')
 @require_POST
 def registrar_movimiento(request):
     producto_id = request.POST.get('producto_id')
@@ -979,7 +989,7 @@ def historial_movimientos(request, producto_id=None):
 
 
 @login_required
-@grupo_requerido('Doctor')
+@grupo_requerido('Doctor', 'Recepcionista')
 @require_POST
 def crear_producto(request):
     Producto.objects.create(
@@ -1051,7 +1061,10 @@ def reporte_finanzas(request):
     pagos_a_doctores = 0
     
     for pago in pagos_con_doctor:
-        porcentaje_clinica = pago.cita.tratamiento.comision_clinica_porcentaje
+        if pago.cita and pago.cita.tratamiento:
+            porcentaje_clinica = pago.cita.tratamiento.comision_clinica_porcentaje
+        else:
+            porcentaje_clinica = 30 # Porcentaje por defecto si no hay tratamiento
         parte_clinica = (pago.monto * porcentaje_clinica) / 100
         ingresos_alquiler_espacio += parte_clinica
         pagos_a_doctores += (pago.monto - parte_clinica)
@@ -1315,6 +1328,7 @@ def google_calendar_callback(request):
 @login_required
 @grupo_requerido('Doctor')
 def panel_configuracion(request):
+    from django.contrib.auth.models import User, Group
     request.tenant.refresh_from_db() # Forzar actualización de datos desde el esquema público
     config, created = ConfiguracionClinica.objects.get_or_create(id=1)
     google_config = GoogleCalendarConfig.objects.filter(id=1).first()
@@ -1325,6 +1339,51 @@ def panel_configuracion(request):
         tenant = request.tenant
         tenant.auto_renovacion = auto_renov
         tenant.save()
+
+        # Manejo de Crear Recepcionista
+        if 'crear_recepcionista' in request.POST:
+            username = request.POST.get('r_username')
+            first_name = request.POST.get('r_first_name')
+            last_name = request.POST.get('r_last_name')
+            password = request.POST.get('r_password')
+            
+            clinica = request.tenant
+            max_recepcionistas = 1 if clinica.plan == 'basico' else 3
+            current_count = User.objects.filter(groups__name='Recepcionista').distinct().count()
+            
+            if not username or not password:
+                messages.error(request, 'Usuario y contraseña son requeridos.')
+            elif current_count >= max_recepcionistas:
+                messages.error(request, f'El plan actual ({clinica.plan.capitalize()}) permite un máximo de {max_recepcionistas} recepcionista(s).')
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, 'El nombre de usuario ya está en uso.')
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                    password=password
+                )
+                group, _ = Group.objects.get_or_create(name='Recepcionista')
+                user.groups.add(group)
+                messages.success(request, f'Recepcionista {username} creada con éxito.')
+                log_audit(request, "CREAR_RECEPCIONISTA", f"Recepcionista {username} creada por doctor")
+            return redirect('/configuracion/#tab-recepcionistas')
+
+        # Manejo de Eliminar Recepcionista
+        if 'eliminar_recepcionista' in request.POST:
+            r_id = request.POST.get('r_id')
+            try:
+                user_to_delete = User.objects.get(id=r_id)
+                if not user_to_delete.is_superuser:
+                    user_to_delete.delete()
+                    messages.success(request, 'Recepcionista eliminada con éxito.')
+                    log_audit(request, "ELIMINAR_RECEPCIONISTA", f"Recepcionista {user_to_delete.username} eliminada por doctor")
+                else:
+                    messages.error(request, 'No puedes eliminar a un usuario administrador.')
+            except User.DoesNotExist:
+                messages.error(request, 'No se encontró la recepcionista.')
+            return redirect('/configuracion/#tab-recepcionistas')
 
         # 2. Manejo de Cambio de Contraseña
         if 'cambiar_password' in request.POST:
@@ -1371,7 +1430,9 @@ def panel_configuracion(request):
         'google_config': google_config,
         'suscripciones': request.tenant.suscripciones.all().order_by('-fecha_inicio'),
         'dias': ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'],
-        'audit_logs': LogActividad.objects.all()[:50] # Últimos 50 logs
+        'audit_logs': LogActividad.objects.all()[:50], # Últimos 50 logs
+        'recepcionistas': User.objects.filter(groups__name='Recepcionista').distinct(),
+        'max_recepcionistas': 1 if request.tenant.plan == 'basico' else 3
     }
     return render(request, 'gestion/configuraciones.html', context)
 
@@ -1381,7 +1442,7 @@ def panel_configuracion(request):
 def gestion_doctores(request):
     """CRUD de Staff con límites por plan"""
     clinica = request.tenant
-    max_drs = 2 if clinica.plan == 'basico' else 5
+    max_drs = 3 if clinica.plan == 'basico' else 5
     doctores = DoctorColaborador.objects.all()
     count = doctores.count()
 
@@ -1393,7 +1454,19 @@ def gestion_doctores(request):
             doctor = get_object_or_404(DoctorColaborador, pk=doctor_id)
             nombre = doctor.nombre
             doctor.delete()
-            messages.success(request, f"Dr. {nombre} eliminado correctamente.")
+            messages.success(request, f"{nombre} eliminado correctamente.")
+            return redirect('gestion_doctores')
+
+        # Editar
+        if doctor_id:
+            doctor = get_object_or_404(DoctorColaborador, pk=doctor_id)
+            doctor.nombre = request.POST.get('nombre')
+            doctor.especialidad = request.POST.get('especialidad')
+            doctor.telefono = request.POST.get('telefono')
+            doctor.email = request.POST.get('email')
+            doctor.color_agenda = request.POST.get('color_agenda', '#3b82f6')
+            doctor.save()
+            messages.success(request, f"{doctor.nombre} actualizado correctamente.")
             return redirect('gestion_doctores')
 
         # Crear
@@ -1414,7 +1487,7 @@ def gestion_doctores(request):
             email=email,
             color_agenda=color
         )
-        messages.success(request, f"Dr. {nombre} registrado exitosamente.")
+        messages.success(request, f"{nombre} registrado exitosamente.")
         return redirect('gestion_doctores')
 
     return render(request, 'gestion/staff.html', {

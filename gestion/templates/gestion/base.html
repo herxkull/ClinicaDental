@@ -1,4 +1,5 @@
 {% load static %}
+{% load auth_extras %}
 <!DOCTYPE html>
 <html lang="es" class="h-full bg-gray-50">
 <head>
@@ -161,19 +162,21 @@
 
             <div class="pt-6">
                 <p class="px-3 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Admin</p>
-                
-                <a href="{% url 'lista_tratamientos' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'tratamiento' in request.path %}sidebar-item-active{% endif %}">
+                                 <a href="{% url 'lista_tratamientos' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'tratamiento' in request.path %}sidebar-item-active{% endif %}">
                     <i class="fas fa-hand-holding-medical w-5"></i> Tratamientos
                 </a>
 
+                {% if request.user.is_superuser or not request.user|tiene_grupo:"Recepcionista" %}
                 <a href="{% url 'gestion_doctores' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'staff' in request.path %}sidebar-item-active{% endif %}">
                     <i class="fas fa-user-md w-5"></i> Staff Médico
                 </a>
+                {% endif %}
                 
                 <a href="{% url 'inventario' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'inventario' in request.path %}sidebar-item-active{% endif %}">
                     <i class="fas fa-boxes-stacked w-5"></i> Inventario
                 </a>
                 
+                {% if request.user.is_superuser or not request.user|tiene_grupo:"Recepcionista" %}
                 <a href="{% url 'reporte_finanzas' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'finanzas' in request.path %}sidebar-item-active{% endif %}">
                     <i class="fas fa-wallet w-5"></i> Finanzas
                 </a>
@@ -181,6 +184,7 @@
                 <a href="{% url 'panel_configuracion' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 hover:text-white {% if 'configuracion' in request.path %}sidebar-item-active{% endif %}">
                     <i class="fas fa-cog w-5"></i> Configuración
                 </a>
+                {% endif %}
             </div>
         </nav>
 

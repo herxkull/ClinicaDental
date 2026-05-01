@@ -25,7 +25,7 @@
                 <select id="doctorFilter" class="w-full md:w-64 appearance-none bg-brand-card border border-brand-border pl-12 pr-10 py-4 rounded-2xl text-sm font-bold text-text-base shadow-sm focus:ring-2 focus:ring-brand-primary transition-all cursor-pointer">
                     <option value="all">Todos los Especialistas</option>
                     {% for d in doctores %}
-                        <option value="{{ d.id }}">Dr. {{ d.nombre }}</option>
+                        <option value="{{ d.id }}">{{ d.nombre }}</option>
                     {% endfor %}
                 </select>
                 <i class="fas fa-user-md absolute left-5 top-1/2 -translate-y-1/2 text-text-muted text-xs"></i>
@@ -55,7 +55,7 @@
     </div>
 </div>
 
-{% include 'gestion/includes/modal_cita_general.html' with pacientes_all=pacientes tratamientos_all=tratamientos %}
+{% include 'gestion/includes/modal_cita_general.html' with pacientes_all=pacientes tratamientos_all=tratamientos doctores_all=doctores %}
 {% endblock %}
 
 {% block extra_js %}
