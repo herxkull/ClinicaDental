@@ -45,7 +45,7 @@ from .decorators import grupo_requerido
 from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica, MovimientoInventario, DoctorColaborador, LogActividad
 from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm, ConfiguracionClinicaForm
 
-# Inicializar Logger de AuditorÃ­a
+# Inicializar Logger de Auditori­a
 audit_log = logging.getLogger('gestion.audit')
 
 def log_audit(request, action, details=""):
