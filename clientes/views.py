@@ -623,3 +623,32 @@ def aprobar_pago_manual(request, sub_id):
     
     messages.success(request, f"Acceso aprobado para {clinica.nombre_clinica}")
     return redirect('admin_pagos_pendientes')
+
+def acceso_doctor(request):
+    """Acceso para que los doctores encuentren su clínica mediante su correo o Google."""
+    error = None
+    if request.method == 'POST':
+        email_busqueda = request.POST.get('email', '').strip().lower()
+        if email_busqueda:
+            clinica = Clinica.objects.filter(email_contacto__iexact=email_busqueda).first()
+            if clinica:
+                host_completo = request.get_host()
+                # Extraer puerto si existe (ej: localhost:8000)
+                puerto = ":" + host_completo.split(':')[1] if ':' in host_completo else ""
+                # Extraer base host
+                base_host = host_completo.split(':')[0].replace('localhost', '').strip('.')
+                if not base_host: base_host = "localhost"
+                
+                # Construir la URL del subdominio de la clínica
+                # Si estamos en localhost, redirige a clinica.localhost:8000
+                schema = "https" if request.is_secure() else "http"
+                if base_host == "localhost":
+                    return redirect(f"{schema}://{clinica.schema_name}.localhost{puerto}/")
+                else:
+                    return redirect(f"{schema}://{clinica.schema_name}.{base_host}{puerto}/")
+            else:
+                error = "No se encontró ninguna clínica asociada a este correo electrónico."
+        else:
+            error = "Por favor, ingresa un correo válido."
+
+    return render(request, 'clientes/acceso_doctor.html', {'error': error})

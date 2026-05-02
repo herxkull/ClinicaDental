@@ -15,6 +15,7 @@ urlpatterns = [
     path('2checkout/ipn/', views.ipn_2checkout, name='ipn_2checkout'),
     path('admin/pagos/', views.admin_pagos_pendientes, name='admin_pagos_pendientes'),
     path('admin/pagos/aprobar/<int:sub_id>/', views.aprobar_pago_manual, name='aprobar_pago_manual'),
+    path('acceso/', views.acceso_doctor, name='acceso_doctor'),
     path('', views.home_publico, name='home_publico'), # La raíz del SaaS
 ]
 
