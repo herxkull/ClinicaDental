@@ -60,11 +60,10 @@ def google_init(request):
     flow.redirect_uri = redirect_uri
 
     print(f"DEBUG OAUTH (FORCED LOCALHOST): redirect_uri={redirect_uri}")
-
-    # Forzar flexibilidad en desarrollo
+    # Forzar flexibilidad de scopes siempre
+    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
     if settings.DEBUG:
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-        os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
     # Robustez: Si el middleware falló o venimos de un subdominio, buscamos el tenant
     tenant_slug = request.GET.get('tenant')
@@ -157,6 +156,9 @@ def google_callback(request):
 
     # Restaurar el verificador de código para PKCE de forma ultra-segura
     flow.code_verifier = code_verifier or request.session.get('google_auth_code_verifier')
+
+    # Forzar flexibilidad de scopes siempre
+    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
     try:
         flow.fetch_token(authorization_response=request.build_absolute_uri())
