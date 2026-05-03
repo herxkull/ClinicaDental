@@ -221,7 +221,7 @@
             <!-- PANE: ODONTOGRAMA PRO / PREMIUM -->
             <div id="pane-odontograma" class="tab-pane-tailwind animate-in fade-in zoom-in-95">
                 <div class="bg-brand-card rounded-3xl shadow-md border border-brand-border p-8">
-                    {% if request.tenant.plan == 'pro' or request.tenant.plan == 'premium' %}
+                    {% if request.tenant.plan|lower == 'pro' or request.tenant.plan|lower == 'premium' or request.tenant.plan|lower != 'basico' %}
                         {% include 'gestion/includes/odontograma_premium.html' %}
                     {% else %}
                         {% include 'gestion/includes/odontograma.html' %}
