@@ -76,13 +76,13 @@
         </div>
 
         <!-- VISTA DE DIENTES (ANATÓMICA) -->
-        <div class="bg-white p-6 md:p-10 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
-            <div class="min-w-[1100px] flex flex-col items-center gap-12 select-none">
+        <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
+            <div class="min-w-[920px] flex flex-col items-center gap-8 select-none">
                 <!-- Arcade Superior (Anatómico - Raíz Arriba) -->
-                <div class="flex flex-nowrap justify-center gap-4" id="premium-superior"></div>
+                <div class="flex flex-nowrap justify-center gap-2" id="premium-superior"></div>
                 <div class="w-full border-t border-dashed border-slate-200"></div>
                 <!-- Arcade Inferior (Anatómico - Raíz Abajo) -->
-                <div class="flex flex-nowrap justify-center gap-4" id="premium-inferior"></div>
+                <div class="flex flex-nowrap justify-center gap-2" id="premium-inferior"></div>
             </div>
         </div>
     </div>
@@ -277,7 +277,7 @@
                 return `
                 <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
                     <span class="text-[10px] font-black text-slate-400 mb-1 select-none">#${num}</span>
-                    <svg class="w-16 h-28 md:w-20 md:h-32" viewBox="0 0 50 80" data-diente="${num}">
+                    <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
                         <!-- Tooth Root (Upper) -->
                         <path d="M 16,35 C 16,10 25,0 34,35" class="linea-root" data-cara="root" />
                         
@@ -298,7 +298,7 @@
             } else {
                 return `
                 <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
-                    <svg class="w-16 h-28 md:w-20 md:h-32" viewBox="0 0 50 80" data-diente="${num}">
+                    <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
                         <!-- Tooth Crown (Lower) -->
                         <!-- Top -->
                         <path d="M 12,20 C 15,10 35,10 38,20 L 33,26 C 30,22 20,22 17,26 Z" class="cara-premium" data-cara="top" />
