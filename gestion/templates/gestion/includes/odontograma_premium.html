@@ -119,190 +119,340 @@
             </button>
         </div>
 
-        <!-- TABLA COMPLETA DE MEDICIONES PREMIUM -->
-        <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
-            
-            <!-- Tabla Cuadrantes Superiores (1-2) -->
-            <div class="mb-4 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <i class="fas fa-arrow-circle-up text-blue-500"></i> Arcada Superior (Cuadrantes 1 y 2)
+        <!-- BARRA DE HERRAMIENTAS PREMIUM -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-2 items-center justify-between">
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn-periodonto-tool px-4 py-2.5 bg-orange-600 text-white text-xs font-black uppercase rounded-xl border border-orange-500 flex items-center gap-2 shadow-md shadow-orange-100 cursor-pointer">
+                    <i class="fas fa-pencil-alt"></i> Marcar
+                </button>
+                <button type="button" class="btn-periodonto-tool px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase transition-all cursor-pointer">
+                    <i class="fas fa-tooth text-slate-400"></i> Diente
+                </button>
+                <button type="button" class="btn-periodonto-tool px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase transition-all cursor-pointer">
+                    <i class="fas fa-tint text-red-500"></i> Sangrado
+                </button>
+                <button type="button" class="btn-periodonto-tool px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase transition-all cursor-pointer">
+                    <i class="fas fa-circle text-emerald-500"></i> Placa
+                </button>
+                <button type="button" class="btn-periodonto-tool px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase transition-all cursor-pointer">
+                    <i class="fas fa-ruler-vertical text-amber-500"></i> Profund.
+                </button>
             </div>
-            <table class="w-full text-left border-collapse select-none min-w-[1200px] mb-8">
-                <thead class="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                        <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[180px]">Parámetro</th>
-                        <!-- Hardcoded numbers to fully prevent splitting bugs -->
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">18</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">17</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">16</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">15</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">14</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">13</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">12</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">11</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">21</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">22</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">23</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">24</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">25</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">26</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">27</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">28</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-xs">
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Sangrado / BOP</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Placa</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Profundidad (mm)</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <!-- Advanced Pro Parameters -->
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Margen Gingival</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="text" data-periodonto="margen-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Movilidad</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <select data-periodonto="mov-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                </select>
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Furca / Recesión</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <select data-periodonto="furca-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20">
-                                    <option value="0">0</option>
-                                    <option value="I">I</option>
-                                    <option value="II">II</option>
-                                    <option value="III">III</option>
-                                </select>
-                            </td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
-            
-            <div class="my-8 border-t border-dashed border-slate-200"></div>
+            <button type="button" onclick="reiniciarPeriodontogramaPro()" class="px-4 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100 font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer">
+                <i class="fas fa-redo"></i> Reiniciar
+            </button>
+        </div>
 
-            <!-- Tabla Cuadrantes Inferiores (3-4) -->
-            <div class="mb-4 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <i class="fas fa-arrow-circle-down text-blue-500"></i> Arcada Inferior (Cuadrantes 3 y 4)
+        <!-- GRÁFICO PERIODONTAL: MAXILAR SUPERIOR -->
+        <div class="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden select-none">
+            <!-- Orange banner like the image -->
+            <div class="bg-[#ca6a15] text-white font-black px-6 py-4 flex justify-between items-center text-sm uppercase tracking-wider select-none">
+                <span><i class="fas fa-chart-bar me-2"></i> PERIODONTOGRAMA</span>
+                <span>Maxilar superior - Cuadrantes 1 - 2</span>
             </div>
-            <table class="w-full text-left border-collapse select-none min-w-[1200px]">
-                <thead class="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                        <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[180px]">Parámetro</th>
-                        <!-- Hardcoded numbers to fully prevent splitting bugs -->
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">48</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">47</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">46</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">45</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">44</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">43</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">42</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">41</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">31</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">32</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">33</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">34</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">35</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">36</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">37</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">38</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-xs">
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Sangrado / BOP</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-inf-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Placa</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-inf-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Profundidad (mm)</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <!-- Advanced Pro Parameters -->
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Margen Gingival</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <input type="text" data-periodonto="margen-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Movilidad</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <select data-periodonto="mov-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                </select>
-                            </td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Furca / Recesión</td>
-                        {% for i in "0123456789ABCDEF"|make_list %}
-                            <td class="p-1 border border-slate-100">
-                                <select data-periodonto="furca-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20">
-                                    <option value="0">0</option>
-                                    <option value="I">I</option>
-                                    <option value="II">II</option>
-                                    <option value="III">III</option>
-                                </select>
-                            </td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
+
+            <div class="p-4 md:p-6 overflow-x-auto">
+                <table class="w-full text-left border-collapse select-none min-w-[1250px]">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[160px]">Parámetro</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">18</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">17</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">16</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">15</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">14</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">13</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">12</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">11</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">21</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">22</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">23</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">24</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">25</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">26</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">27</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">28</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 text-xs">
+                        <!-- SECTION A: VESTIBULAR (TOP ROWS) -->
+                        <tr class="bg-amber-50/20">
+                            <td class="px-4 py-2 font-black text-slate-400 uppercase text-[9px] tracking-wider" colspan="17">Aspecto Vestibular</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">SANGRADO</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PLACA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">MOVILIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <select data-periodonto="mov-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">FURCA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <select data-periodonto="furca-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                        <option value="0">0</option>
+                                        <option value="I">I</option>
+                                        <option value="II">II</option>
+                                        <option value="III">III</option>
+                                    </select>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">M. GINGIVAL</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="text" data-periodonto="margen-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PROFUNDIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <!-- SECTION B: GRAPHIC SECTION (PALATINA VIEWS MIDDLE SEPARATOR) -->
+                        <tr class="bg-slate-50">
+                            <td class="px-4 py-3 font-black text-slate-500 uppercase tracking-widest bg-slate-100 border-r border-slate-200">Palatina</td>
+                            {% for num in "18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28"|slice:":"|default:"18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28" %}
+                                {% if num|length > 0 %}
+                                {% endif %}
+                            {% endfor %}
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">18</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">17</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">16</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">15</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">14</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">13</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">12</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">11</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">21</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">22</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">23</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">24</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">25</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">26</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">27</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">28</td>
+                        </tr>
+
+                        <!-- SECTION C: PALATINA (BOTTOM ROWS) -->
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PROFUNDIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-pal-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">M. GINGIVAL</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="text" data-periodonto="margen-pal-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PLACA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-pal-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">SANGRADO</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-pal-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GRÁFICO PERIODONTAL: MAXILAR INFERIOR -->
+        <div class="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden select-none">
+            <!-- Orange banner like the image -->
+            <div class="bg-[#ca6a15] text-white font-black px-6 py-4 flex justify-between items-center text-sm uppercase tracking-wider select-none">
+                <span><i class="fas fa-chart-bar me-2"></i> PERIODONTOGRAMA</span>
+                <span>Maxilar inferior - Cuadrantes 4 - 3</span>
+            </div>
+
+            <div class="p-4 md:p-6 overflow-x-auto">
+                <table class="w-full text-left border-collapse select-none min-w-[1250px]">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[160px]">Parámetro</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">48</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">47</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">46</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">45</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">44</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">43</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">42</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">41</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">31</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">32</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">33</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">34</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">35</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">36</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">37</th>
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 bg-blue-50/40 border border-slate-100">38</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 text-xs">
+                        <!-- SECTION A: LINGUAL (TOP ROWS) -->
+                        <tr class="bg-amber-50/20">
+                            <td class="px-4 py-2 font-black text-slate-400 uppercase text-[9px] tracking-wider" colspan="17">Aspecto Lingual</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">SANGRADO</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-inf-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PLACA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-inf-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">M. GINGIVAL</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="text" data-periodonto="margen-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PROFUNDIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-inf-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+
+                        <!-- SECTION B: GRAPHIC SECTION (LINGUAL VIEWS MIDDLE SEPARATOR) -->
+                        <tr class="bg-slate-50">
+                            <td class="px-4 py-3 font-black text-slate-500 uppercase tracking-widest bg-slate-100 border-r border-slate-200">Lingual</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">48</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">47</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">46</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">45</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">44</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">43</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">42</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">41</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">31</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">32</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">33</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">34</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">35</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">36</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">37</td>
+                            <td class="p-1 text-center font-black text-slate-300 border border-slate-100">38</td>
+                        </tr>
+
+                        <!-- SECTION C: VESTIBULAR (BOTTOM ROWS) -->
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PROFUNDIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="number" min="0" max="9" onchange="calculatePeriodontoMetrics()" data-periodonto="prof-inf-vest-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-black rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none input-prof-mm mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">M. GINGIVAL</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="text" data-periodonto="margen-inf-vest-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">MOVILIDAD</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <select data-periodonto="mov-inf-vest-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">FURCA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <select data-periodonto="furca-inf-vest-{{ forloop.counter0 }}" class="w-12 h-8 text-center text-xs font-bold rounded-xl border border-slate-200 bg-slate-50/40 focus:bg-white focus:ring-2 focus:ring-blue-500/20 mx-auto block">
+                                        <option value="0">0</option>
+                                        <option value="I">I</option>
+                                        <option value="II">II</option>
+                                        <option value="III">III</option>
+                                    </select>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">PLACA</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="placa-inf-vest-{{ forloop.counter0 }}" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-700 bg-slate-50/40 border-r border-slate-100">SANGRADO</td>
+                            {% for i in "0123456789ABCDEF"|make_list %}
+                                <td class="p-1 border border-slate-100">
+                                    <input type="checkbox" onchange="calculatePeriodontoMetrics()" data-periodonto="sangrado-inf-vest-{{ forloop.counter0 }}" class="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500 mx-auto block cursor-pointer">
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -536,8 +686,8 @@
             document.querySelectorAll('#vista-periodontograma-premium input[type="checkbox"]').forEach(el => {
                 const param = el.getAttribute('data-periodonto');
                 if (param) {
-                    if (param.startsWith('sangrado') && el.checked) bopCount++;
-                    if (param.startsWith('placa') && el.checked) plaqueCount++;
+                    if ((param.startsWith('sangrado') || param.startsWith('sangrado-pal') || param.startsWith('sangrado-inf-vest')) && el.checked) bopCount++;
+                    if ((param.startsWith('placa') || param.startsWith('placa-pal') || param.startsWith('placa-inf-vest')) && el.checked) plaqueCount++;
                 }
             });
 
@@ -557,6 +707,16 @@
             document.getElementById('metric-bop').innerText = bopPercent + '%';
             document.getElementById('metric-placa').innerText = plaquePercent + '%';
             document.getElementById('metric-bolsas').innerText = bolsasCount;
+        };
+
+        window.reiniciarPeriodontogramaPro = function() {
+            if (confirm('¿Estás seguro de que deseas vaciar todas las mediciones de este periodontograma?')) {
+                document.querySelectorAll('#vista-periodontograma-premium input[type="checkbox"]').forEach(el => el.checked = false);
+                document.querySelectorAll('#vista-periodontograma-premium input[type="number"], #vista-periodontograma-premium input[type="text"]').forEach(el => el.value = '');
+                document.querySelectorAll('#vista-periodontograma-premium select').forEach(el => el.value = '0');
+                calculatePeriodontoMetrics();
+                alert('Periodontograma vaciado correctamente. Haz clic en "Guardar Mediciones" para sincronizar.');
+            }
         };
 
         window.guardarPeriodontogramaEnServidor = function() {

@@ -19,18 +19,19 @@ body {
 .sidebar {
     background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     min-height: 100vh;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar .nav-link {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     border-radius: 8px;
     margin: 5px 15px;
     transition: all 0.3s;
 }
 
-.sidebar .nav-link:hover, .sidebar .nav-link.active {
-    background: rgba(255,255,255,0.1);
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.1);
     color: white;
 }
 
@@ -42,7 +43,7 @@ body {
     color: white;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -64,15 +65,23 @@ body {
     text-align: center;
 }
 
-.status-lista { background-color: var(--success-bg); color: var(--success-text); }
-.status-pendiente { background-color: var(--warning-bg); color: var(--warning-text); border: 1px solid #ffeeba; }
+.status-lista {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+}
+
+.status-pendiente {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border: 1px solid #ffeeba;
+}
 
 /* Tabla Premium */
 .table-container {
     background: white;
     border-radius: 15px;
     padding: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 /* ========================================= */
@@ -83,14 +92,17 @@ body {
     background-color: #212529;
     color: white;
 }
+
 .sidebar a {
     color: #adb5bd;
     text-decoration: none;
     padding: 10px;
     display: block;
     border-radius: 5px;
-    transition: all 0.3s ease; /* Le damos un efecto suave al pasar el mouse */
+    transition: all 0.3s ease;
+    /* Le damos un efecto suave al pasar el mouse */
 }
+
 .sidebar a:hover {
     background-color: #343a40;
     color: white;

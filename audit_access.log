@@ -71,3 +71,13 @@
 [2026-05-01 00:24:47,955] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test3 eliminada por doctor
 [2026-05-01 00:25:01,916] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: ELIMINAR_RECEPCIONISTA | DETAILS: Recepcionista test2 eliminada por doctor
 [2026-05-01 00:37:47,187] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-05-03 02:58:37,953] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-05-03 02:58:40,252] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: UPDATE_CONFIG | DETAILS: Actualización de parámetros generales
+[2026-05-03 03:03:33,580] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Ernesto Chavarría | Monto: 80.00
+[2026-05-03 03:03:57,755] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Jorge Isaacs | Monto: 150.00
+[2026-05-03 03:20:39,694] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
+[2026-05-03 03:20:48,413] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
+[2026-05-03 03:20:50,324] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
+[2026-05-03 03:20:55,448] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
+[2026-05-03 03:29:06,396] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Carlos Duarte (ID: 21)
+[2026-05-03 03:47:12,664] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Héctor Zelaya | Monto: 80.00
