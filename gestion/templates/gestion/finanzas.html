@@ -79,8 +79,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group">
             <div class="relative z-10">
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos Históricos</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{
-                    ingresos_historicos|floatformat:2 }}</h2>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ ingresos_historicos|floatformat:2 }}</h2>
                 <p class="text-[10px] text-gray-400 mt-2">Acumulado total</p>
             </div>
             <i
@@ -91,8 +90,7 @@
         <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
             <div class="relative z-10">
                 <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{
-                    ingresos_alquiler_espacio|floatformat:2 }}</h2>
+                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
                 <p class="text-[10px] text-gray-400 mt-2">Neto para la clínica</p>
             </div>
             <i
@@ -201,14 +199,12 @@
                                     class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 mr-3 group-hover:bg-brand-500 group-hover:text-white transition-all text-xs">
                                     {{ mov.paciente.nombre|slice:":1" }}
                                 </div>
-                                <span class="font-bold text-gray-700 group-hover:text-brand-600 transition-colors">{{
-                                    mov.paciente.nombre }}</span>
+                                <span class="font-bold text-gray-700 group-hover:text-brand-600 transition-colors">{{ mov.paciente.nombre }}</span>
                             </a>
                         </td>
                         <td class="px-8 py-5 text-sm text-gray-500 italic">{{ mov.concepto }}</td>
                         <td class="px-8 py-5">
-                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">{{
-                                mov.metodo }}</span>
+                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">{{ mov.metodo }}</span>
                         </td>
                         <td class="px-8 py-5">
                             <span
