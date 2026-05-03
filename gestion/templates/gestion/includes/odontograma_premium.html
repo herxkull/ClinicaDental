@@ -18,7 +18,7 @@
         <div class="flex bg-slate-100 p-1.5 rounded-2xl gap-2 w-full md:w-auto">
             <button type="button" onclick="cambiarVistaPremium('odontograma')" id="btn-vista-odontograma"
                     class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer bg-white text-blue-600 shadow-sm border border-slate-200/50">
-                <i class="fas fa-tooth"></i><span>Odontograma Elite</span>
+                <i class="fas fa-tooth"></i><span>Odontograma Premium (Anatómico)</span>
             </button>
             <button type="button" onclick="cambiarVistaPremium('periodontograma')" id="btn-vista-periodontograma"
                     class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer text-slate-400 hover:text-slate-600">
@@ -36,30 +36,17 @@
     <!-- ======================================================= -->
     <!-- PANEL 1: ODONTOGRAMA PREMIUM                            -->
     <!-- ======================================================= -->
-    <div id="vista-odontograma-premium" class="space-y-6 animate-in fade-in duration-300">
-        <!-- SELECTOR DE DENTICIÓN -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-            <div class="flex gap-2">
-                <button type="button" onclick="switchDenticion('permanente')" id="btn-denticion-permanente"
-                        class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-black text-xs rounded-2xl tracking-wider uppercase shadow-md shadow-blue-500/10 hover:bg-blue-700 transition-all cursor-pointer">
-                    <i class="fas fa-user"></i> Dentición Permanente (Adulto)
-                </button>
-                <button type="button" onclick="switchDenticion('temporal')" id="btn-denticion-temporal"
-                        class="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-black text-xs rounded-2xl tracking-wider uppercase transition-all cursor-pointer">
-                    <i class="fas fa-child"></i> Dentición Temporal (Infantil)
-                </button>
-            </div>
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <i class="fas fa-crown text-amber-500 text-sm"></i> Nivel Premium Elite Activo
-            </span>
-        </div>
-
-        <!-- BARRA DE HERRAMIENTAS / TRATAMIENTOS ELITE -->
+    <div id="vista-odontograma-premium" class="space-y-8 animate-in fade-in duration-300">
+        <!-- BARRA DE HERRAMIENTAS / TRATAMIENTOS -->
         <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4">
-            <span class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <i class="fas fa-paint-brush text-slate-300"></i> Herramientas de Diagnóstico y Tratamiento Avanzado:
-            </span>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <i class="fas fa-tools text-slate-300"></i> Selecciona un tratamiento y haz clic en la cara o en la raíz del diente:
+                </span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Anatomía Dental Premium</span>
+            </div>
 
+            <!-- BOTONES DE TRATAMIENTOS -->
             <div class="flex flex-wrap gap-2">
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all active-tratamiento select-none cursor-pointer" data-estado="sano">
                     <span class="w-3.5 h-3.5 bg-white border border-slate-300 rounded-full"></span> Sano
@@ -73,17 +60,14 @@
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="corona">
                     <span class="w-3.5 h-3.5 bg-amber-400 rounded-full"></span> Corona
                 </button>
-                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="sellante">
-                    <span class="w-3.5 h-3.5 border-2 border-dashed border-emerald-500 bg-emerald-50 rounded-full"></span> Sellante
+                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="implante">
+                    <span class="w-3.5 h-3.5 bg-purple-500 rounded-full"></span> Implante
                 </button>
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="endodoncia">
                     <span class="w-3.5 h-3.5 border-2 border-dashed border-red-500 bg-white rounded-full"></span> Endodoncia
                 </button>
-                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="implante">
-                    <span class="w-3.5 h-3.5 bg-purple-500 rounded-full"></span> Implante
-                </button>
-                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="ortodoncia">
-                    <span class="w-3.5 h-3.5 border-2 border-blue-600 bg-blue-100 rounded-sm"></span> Ortodoncia
+                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="extraccion">
+                    <span class="w-3.5 h-3.5 text-red-600 flex items-center justify-center font-black">X</span> Extracción
                 </button>
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="ausente">
                     <span class="w-3.5 h-3.5 bg-slate-900 rounded-full"></span> Ausente
@@ -91,13 +75,13 @@
             </div>
         </div>
 
-        <!-- VISTA DE DIENTES (DENTICIÓN SELECCIONADA) -->
+        <!-- VISTA DE DIENTES (ANATÓMICA) -->
         <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
             <div class="min-w-[920px] flex flex-col items-center gap-8 select-none">
-                <!-- Arcade Superior -->
+                <!-- Arcade Superior (Anatómico - Raíz Arriba) -->
                 <div class="flex flex-nowrap justify-center gap-2" id="premium-superior"></div>
                 <div class="w-full border-t border-dashed border-slate-200"></div>
-                <!-- Arcade Inferior -->
+                <!-- Arcade Inferior (Anatómico - Raíz Abajo) -->
                 <div class="flex flex-nowrap justify-center gap-2" id="premium-inferior"></div>
             </div>
         </div>
@@ -120,27 +104,13 @@
 
         <!-- CONTENEDOR DE LA TABLA COMPLETA -->
         <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
-            <!-- Tabla Superior -->
             <table class="w-full text-left border-collapse select-none min-w-[1100px]">
                 <thead class="bg-slate-50/80 border-b border-slate-100">
                     <tr>
                         <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[160px]">Parámetro</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">18</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">17</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">16</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">15</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">14</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">13</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">12</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">11</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">21</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">22</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">23</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">24</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">25</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">26</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">27</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">28</th>
+                        {% for num in "18 17 16 15 14 13 12 11 21 22 23 24 25 26 27 28"|make_list|slice:":16" %}
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">{{ num }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
@@ -191,22 +161,11 @@
                 <thead class="bg-slate-50/80 border-b border-slate-100">
                     <tr>
                         <th class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[160px]">Parámetro</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">48</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">47</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">46</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">45</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">44</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">43</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">42</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">41</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">31</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">32</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">33</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">34</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">35</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">36</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">37</th>
-                        <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase bg-blue-50/30 border border-slate-100">38</th>
+                        {% for i in "0123456789ABCDEF"|make_list %}
+                            <th class="px-2 py-3 text-[10px] font-black text-center text-slate-600 uppercase tracking-wider bg-blue-50/30 border border-slate-100">
+                                {% if forloop.counter == 1 %}48{% elif forloop.counter == 2 %}47{% elif forloop.counter == 3 %}46{% elif forloop.counter == 4 %}45{% elif forloop.counter == 5 %}44{% elif forloop.counter == 6 %}43{% elif forloop.counter == 7 %}42{% elif forloop.counter == 8 %}41{% elif forloop.counter == 9 %}31{% elif forloop.counter == 10 %}32{% elif forloop.counter == 11 %}33{% elif forloop.counter == 12 %}34{% elif forloop.counter == 13 %}35{% elif forloop.counter == 14 %}36{% elif forloop.counter == 15 %}37{% elif forloop.counter == 16 %}38{% endif %}
+                            </th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
@@ -255,102 +214,105 @@
 
 <style>
     .active-tratamiento {
-        background-color: #2563eb !important;
+        background-color: #3b82f6 !important;
         color: #ffffff !important;
-        border-color: #1d4ed8 !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        border-color: #2563eb !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
     }
-    .cara-premium-elite {
+    .cara-premium {
         fill: #ffffff;
         stroke: #cbd5e1;
         stroke-width: 1.25;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
     }
-    .cara-premium-elite:hover {
-        stroke: #2563eb;
+    .cara-premium:hover {
+        stroke: #1d4ed8;
         stroke-width: 2.25;
         opacity: 0.95;
     }
-    .estado-sano-elite { fill: #ffffff; }
-    .estado-caries-elite { fill: #ef4444; stroke: #dc2626; }
-    .estado-obturacion-elite { fill: #3b82f6; stroke: #2563eb; }
-    .estado-corona-elite { fill: #f59e0b; stroke: #d97706; }
-    .estado-sellante-elite { fill: #10b981; stroke: #059669; }
-    .estado-ausente-elite { opacity: 0.15; filter: grayscale(100%) blur(1px); pointer-events: none; }
+    .estado-sano-premium { fill: #ffffff; }
+    .estado-caries-premium { fill: #ef4444; stroke: #dc2626; }
+    .estado-obturacion-premium { fill: #3b82f6; stroke: #2563eb; }
+    .estado-corona-premium { fill: #f59e0b; stroke: #d97706; }
+    .estado-implante-premium { fill: #8b5cf6; stroke: #6d28d9; }
+    .estado-ausente-premium { opacity: 0.15; filter: grayscale(100%) blur(1px); pointer-events: none; }
     
-    .linea-root-elite {
+    .linea-root {
         fill: #f8fafc;
         stroke: #94a3b8;
         stroke-width: 1.5;
         transition: all 0.2s;
         cursor: pointer;
     }
-    .linea-root-elite:hover {
+    .linea-root:hover {
         stroke: #3b82f6;
         fill: #eff6ff;
     }
-    .root-endodoncia-elite {
+    .root-endodoncia {
         stroke: #ef4444 !important;
         stroke-width: 2.5px !important;
         stroke-dasharray: 4,4;
     }
-    .root-ortodoncia-elite {
-        stroke: #2563eb !important;
-        stroke-width: 3px !important;
-    }
-    .root-implante-elite {
-        stroke: #8b5cf6 !important;
+    .root-extraccion {
+        stroke: #b91c1c !important;
         stroke-width: 3px !important;
     }
 </style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const arcadaPermanenteSuperior = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
-        const arcadaPermanenteInferior = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
-
-        const arcadaTemporalSuperior = [55,54,53,52,51, 61,62,63,64,65];
-        const arcadaTemporalInferior = [85,84,83,82,81, 71,72,73,74,75];
+        const arcadaSuperior = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
+        const arcadaInferior = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
 
         let datosOdontograma = {};
-        let tratamientoActivo = 'sano';
-        let denticionActiva = 'permanente';
+        let tratamientoActivo = 'sano'; // Por defecto Sano
 
         const pacienteId = CONFIG_ODONTOGRAMA.pacienteId;
         const apiUrl = `/paciente/${pacienteId}/odontograma/api/`;
 
-        function crearDientePremiumEliteSVG(num, esSuperior) {
+        // Crear los SVG interactivos Premium - Anatomía Completa (Raíz y Corona)
+        function crearDientePremiumAnatomicoSVG(num, esSuperior) {
             if (esSuperior) {
                 return `
-                <div class="flex flex-col items-center select-none" id="elite-wrapper-${num}">
+                <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
                     <span class="text-[10px] font-black text-slate-400 mb-1 select-none">#${num}</span>
                     <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
                         <!-- Tooth Root (Upper) -->
-                        <path d="M 16,35 C 16,10 25,0 34,35" class="linea-root-elite" data-cara="root" />
+                        <path d="M 16,35 C 16,10 25,0 34,35" class="linea-root" data-cara="root" />
                         
                         <!-- Tooth Crown (Upper) -->
-                        <path d="M 12,40 C 15,30 35,30 38,40 L 33,46 C 30,42 20,42 17,46 Z" class="cara-premium-elite" data-cara="top" />
-                        <path d="M 38,40 C 45,42 45,58 38,60 L 33,54 C 36,53 36,47 33,46 Z" class="cara-premium-elite" data-cara="right" />
-                        <path d="M 38,60 C 35,70 15,70 12,60 L 17,54 C 20,58 30,58 33,54 Z" class="cara-premium-elite" data-cara="bottom" />
-                        <path d="M 12,60 C 5,58 5,42 12,40 L 17,46 C 14,47 14,53 17,54 Z" class="cara-premium-elite" data-cara="left" />
-                        <path d="M 17,46 L 33,46 L 33,54 L 17,54 Z" class="cara-premium-elite" data-cara="center" />
+                        <!-- Top -->
+                        <path d="M 12,40 C 15,30 35,30 38,40 L 33,46 C 30,42 20,42 17,46 Z" class="cara-premium" data-cara="top" />
+                        <!-- Right -->
+                        <path d="M 38,40 C 45,42 45,58 38,60 L 33,54 C 36,53 36,47 33,46 Z" class="cara-premium" data-cara="right" />
+                        <!-- Bottom -->
+                        <path d="M 38,60 C 35,70 15,70 12,60 L 17,54 C 20,58 30,58 33,54 Z" class="cara-premium" data-cara="bottom" />
+                        <!-- Left -->
+                        <path d="M 12,60 C 5,58 5,42 12,40 L 17,46 C 14,47 14,53 17,54 Z" class="cara-premium" data-cara="left" />
+                        <!-- Center -->
+                        <path d="M 17,46 L 33,46 L 33,54 L 17,54 Z" class="cara-premium" data-cara="center" />
                     </svg>
                 </div>
                 `;
             } else {
                 return `
-                <div class="flex flex-col items-center select-none" id="elite-wrapper-${num}">
+                <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
                     <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
                         <!-- Tooth Crown (Lower) -->
-                        <path d="M 12,20 C 15,10 35,10 38,20 L 33,26 C 30,22 20,22 17,26 Z" class="cara-premium-elite" data-cara="top" />
-                        <path d="M 38,20 C 45,22 45,38 38,40 L 33,34 C 36,33 36,27 33,26 Z" class="cara-premium-elite" data-cara="right" />
-                        <path d="M 38,40 C 35,50 15,50 12,40 L 17,34 C 20,38 30,38 33,34 Z" class="cara-premium-elite" data-cara="bottom" />
-                        <path d="M 12,40 C 5,38 5,22 12,20 L 17,26 C 14,27 14,33 17,34 Z" class="cara-premium-elite" data-cara="left" />
-                        <path d="M 17,26 L 33,26 L 33,34 L 17,34 Z" class="cara-premium-elite" data-cara="center" />
+                        <!-- Top -->
+                        <path d="M 12,20 C 15,10 35,10 38,20 L 33,26 C 30,22 20,22 17,26 Z" class="cara-premium" data-cara="top" />
+                        <!-- Right -->
+                        <path d="M 38,20 C 45,22 45,38 38,40 L 33,34 C 36,33 36,27 33,26 Z" class="cara-premium" data-cara="right" />
+                        <!-- Bottom -->
+                        <path d="M 38,40 C 35,50 15,50 12,40 L 17,34 C 20,38 30,38 33,34 Z" class="cara-premium" data-cara="bottom" />
+                        <!-- Left -->
+                        <path d="M 12,40 C 5,38 5,22 12,20 L 17,26 C 14,27 14,33 17,34 Z" class="cara-premium" data-cara="left" />
+                        <!-- Center -->
+                        <path d="M 17,26 L 33,26 L 33,34 L 17,34 Z" class="cara-premium" data-cara="center" />
                         
                         <!-- Tooth Root (Lower) -->
-                        <path d="M 16,45 C 16,70 25,80 34,45" class="linea-root-elite" data-cara="root" />
+                        <path d="M 16,45 C 16,70 25,80 34,45" class="linea-root" data-cara="root" />
                     </svg>
                     <span class="text-[10px] font-black text-slate-400 mt-1 select-none">#${num}</span>
                 </div>
@@ -358,48 +320,23 @@
             }
         }
 
-        window.switchDenticion = function(tipo) {
-            denticionActiva = tipo;
-            const btnP = document.getElementById('btn-denticion-permanente');
-            const btnT = document.getElementById('btn-denticion-temporal');
+        const divSup = document.getElementById('premium-superior');
+        const divInf = document.getElementById('premium-inferior');
 
-            if (tipo === 'permanente') {
-                btnP.className = "flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-black text-xs rounded-2xl tracking-wider uppercase shadow-md shadow-blue-500/10 hover:bg-blue-700 transition-all cursor-pointer";
-                btnT.className = "flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-black text-xs rounded-2xl tracking-wider uppercase transition-all cursor-pointer";
-            } else {
-                btnP.className = "flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-black text-xs rounded-2xl tracking-wider uppercase transition-all cursor-pointer";
-                btnT.className = "flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-black text-xs rounded-2xl tracking-wider uppercase shadow-md shadow-blue-500/10 hover:bg-blue-700 transition-all cursor-pointer";
-            }
-            construirSuiteDientes();
-            renderizarElite();
-        };
-
-        function construirSuiteDientes() {
-            const divSup = document.getElementById('premium-superior');
-            const divInf = document.getElementById('premium-inferior');
-            if (!divSup || !divInf) return;
-
-            divSup.innerHTML = "";
-            divInf.innerHTML = "";
-
-            if (denticionActiva === 'permanente') {
-                arcadaPermanenteSuperior.forEach(num => divSup.innerHTML += crearDientePremiumEliteSVG(num, true));
-                arcadaPermanenteInferior.forEach(num => divInf.innerHTML += crearDientePremiumEliteSVG(num, false));
-            } else {
-                arcadaTemporalSuperior.forEach(num => divSup.innerHTML += crearDientePremiumEliteSVG(num, true));
-                arcadaTemporalInferior.forEach(num => divInf.innerHTML += crearDientePremiumEliteSVG(num, false));
-            }
+        if (divSup && divInf) {
+            arcadaSuperior.forEach(num => divSup.innerHTML += crearDientePremiumAnatomicoSVG(num, true));
+            arcadaInferior.forEach(num => divInf.innerHTML += crearDientePremiumAnatomicoSVG(num, false));
         }
 
-        construirSuiteDientes();
-
+        // Cargar datos
         fetch(apiUrl)
             .then(res => res.json())
             .then(data => {
                 datosOdontograma = data;
-                renderizarElite();
+                renderizarSuitePremium();
             });
 
+        // Eventos en Botones de Tratamiento
         document.querySelectorAll('.btn-tratamiento-premium').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.btn-tratamiento-premium').forEach(b => b.classList.remove('active-tratamiento'));
@@ -408,9 +345,10 @@
             });
         });
 
+        // Delegación de eventos para las caras o raíces
         document.addEventListener('click', function(e) {
             const path = e.target;
-            if (path.classList && (path.classList.contains('cara-premium-elite') || path.classList.contains('linea-root-elite'))) {
+            if (path.classList && (path.classList.contains('cara-premium') || path.classList.contains('linea-root'))) {
                 const numDiente = path.closest('svg').getAttribute('data-diente');
                 const cara = path.getAttribute('data-cara');
 
@@ -429,46 +367,47 @@
                     datosOdontograma.dientes[numDiente][cara] = tratamientoActivo;
                 }
 
-                renderizarElite();
-                guardarEliteEnServidor();
+                renderizarSuitePremium();
+                guardarOdontogramaPremiumEnServidor();
             }
         });
 
-        function renderizarElite() {
+        function renderizarSuitePremium() {
             const dientesData = datosOdontograma.dientes || datosOdontograma || {};
 
             document.querySelectorAll('#premium-dental-suite svg').forEach(svg => {
                 const num = svg.getAttribute('data-diente');
-                const wrapper = document.getElementById(`elite-wrapper-${num}`);
+                const wrapper = document.getElementById(`premium-wrapper-${num}`);
                 if (!wrapper) return;
 
-                svg.querySelectorAll('.cara-premium-elite').forEach(cara => {
-                    cara.className.baseVal = 'cara-premium-elite estado-sano-elite';
+                // Resetear estilos base
+                svg.querySelectorAll('.cara-premium').forEach(cara => {
+                    cara.className.baseVal = 'cara-premium estado-sano-premium';
                 });
-                svg.querySelectorAll('.linea-root-elite').forEach(root => {
-                    root.className.baseVal = 'linea-root-elite';
+                svg.querySelectorAll('.linea-root').forEach(root => {
+                    root.className.baseVal = 'linea-root';
                 });
-                wrapper.classList.remove('estado-ausente-elite');
+                wrapper.classList.remove('estado-ausente-premium');
 
                 if (dientesData[num]) {
                     if (dientesData[num]['ausente']) {
-                        wrapper.classList.add('estado-ausente-elite');
+                        wrapper.classList.add('estado-ausente-premium');
                     } else {
                         for (const [cara, estado] of Object.entries(dientesData[num])) {
                             if (cara === 'root') {
                                 const rPath = svg.querySelector(`[data-cara="root"]`);
                                 if (rPath) {
                                     if (estado === 'endodoncia') {
-                                        rPath.className.baseVal = 'linea-root-elite root-endodoncia-elite';
-                                    } else if (estado === 'ortodoncia') {
-                                        rPath.className.baseVal = 'linea-root-elite root-ortodoncia-elite';
+                                        rPath.className.baseVal = 'linea-root root-endodoncia';
+                                    } else if (estado === 'extraccion') {
+                                        rPath.className.baseVal = 'linea-root root-extraccion';
                                     } else if (estado === 'implante') {
-                                        rPath.className.baseVal = 'linea-root-elite root-implante-elite';
+                                        rPath.className.baseVal = 'linea-root root-extraccion';
                                     }
                                 }
                             } else if (cara !== 'ausente') {
                                 const poly = svg.querySelector(`[data-cara="${cara}"]`);
-                                if (poly) poly.className.baseVal = `cara-premium-elite estado-${estado}-elite`;
+                                if (poly) poly.className.baseVal = `cara-premium estado-${estado}-premium`;
                             }
                         }
                     }
@@ -505,10 +444,10 @@
                 }
             });
 
-            guardarEliteEnServidor();
+            guardarOdontogramaPremiumEnServidor();
         };
 
-        function guardarEliteEnServidor() {
+        function guardarOdontogramaPremiumEnServidor() {
             const badge = document.getElementById('estado-premium-sync');
             badge.className = "inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse";
             badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';

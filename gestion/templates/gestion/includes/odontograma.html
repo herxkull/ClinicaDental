@@ -12,219 +12,102 @@
     }
 </script>
 
-<div class="space-y-8 select-none" id="basic-dental-suite">
-    <!-- BARRA DE HERRAMIENTAS / TRATAMIENTOS -->
-    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                <i class="fas fa-tools text-slate-300"></i> Odontograma Anatómico (Básico)
-            </span>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[10px] font-black uppercase tracking-wider" id="estado-basic-sync">
-                <i class="fas fa-check-circle"></i> Sincronizado
-            </span>
-        </div>
+<!-- ========================================== -->
+<!-- 2. ARCHIVO JAVASCRIPT EXTERNO -->
+<!-- ========================================== -->
+<script src="{% static 'gestion/js/odontograma.js' %}"></script>
 
-        <!-- BOTONES DE TRATAMIENTOS -->
-        <div class="flex flex-wrap gap-2">
-            <button type="button" class="btn-tratamiento-basic flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all active-tratamiento select-none cursor-pointer" data-estado="sano">
-                <span class="w-3.5 h-3.5 bg-white border border-slate-300 rounded-full"></span> Sano
-            </button>
-            <button type="button" class="btn-tratamiento-basic flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="caries">
-                <span class="w-3.5 h-3.5 bg-red-500 rounded-full"></span> Caries
-            </button>
-            <button type="button" class="btn-tratamiento-basic flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="obturacion">
-                <span class="w-3.5 h-3.5 bg-blue-500 rounded-full"></span> Obturado
-            </button>
-            <button type="button" class="btn-tratamiento-basic flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="ausente">
-                <span class="w-3.5 h-3.5 bg-slate-900 rounded-full"></span> Ausente
-            </button>
+<!-- Contenedor del Odontograma -->
+<div class="sfs-card p-6 md:p-10 relative overflow-hidden">
+    <div class="flex justify-between items-center mb-10">
+        <h5 class="text-xs font-black text-text-muted uppercase tracking-widest"><i class="fas fa-tooth me-2"></i> Mapeo Dental Interactivo</h5>
+        <span class="text-[10px] font-black px-3 py-1 bg-brand-card rounded-full border border-brand-border shadow-sm text-text-base" id="estado-guardado">Sincronizado</span>
+    </div>
+    
+    <div class="overflow-x-auto py-6">
+        <div class="min-w-[1024px] flex flex-col items-center gap-12 select-none">
+            <div class="flex flex-nowrap justify-center gap-2 lg:gap-3" id="arcada-superior"></div>
+            <div class="w-full border-t border-dashed border-gray-100"></div>
+            <div class="flex flex-nowrap justify-center gap-2 lg:gap-3" id="arcada-inferior"></div>
         </div>
     </div>
+</div>
 
-    <!-- VISTA DE DIENTES (ANATÓMICA BÁSICA) -->
-    <div class="bg-white p-4 md:p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
-        <div class="min-w-[920px] flex flex-col items-center gap-8 select-none">
-            <!-- Arcade Superior -->
-            <div class="flex flex-nowrap justify-center gap-2" id="basic-superior"></div>
-            <div class="w-full border-t border-dashed border-slate-200"></div>
-            <!-- Arcade Inferior -->
-            <div class="flex flex-nowrap justify-center gap-2" id="basic-inferior"></div>
+<!-- Modal para seleccionar el estado clínico -->
+<div class="modal fade" id="modalEstadoDiente" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-[2rem] shadow-2xl overflow-hidden">
+            <div class="modal-header border-0 bg-gray-900 text-white p-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fas fa-tooth"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title font-black text-sm">Diente <span id="modal-diente-id"></span></h6>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest" id="modal-cara-nombre"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-6 bg-white space-y-3">
+                <button class="w-full btn-estado bg-gray-50 hover:bg-gray-100 text-gray-700 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border border-gray-100" data-estado="sano">
+                    <span class="w-3 h-3 rounded-full bg-white border border-gray-300"></span> SANO / LIMPIAR
+                </button>
+                <button class="w-full btn-estado bg-red-50 hover:bg-red-100 text-red-600 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border border-red-100" data-estado="caries">
+                    <span class="w-3 h-3 rounded-full bg-red-500 shadow-sm"></span> CARIES (ROJO)
+                </button>
+                <button class="w-full btn-estado bg-blue-50 hover:bg-blue-100 text-blue-600 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border border-blue-100" data-estado="obturacion">
+                    <span class="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></span> OBTURADO (AZUL)
+                </button>
+                <button class="w-full btn-estado bg-yellow-50 hover:bg-yellow-100 text-yellow-600 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 border border-yellow-100" data-estado="corona">
+                    <span class="w-3 h-3 rounded-full bg-yellow-400 shadow-sm"></span> CORONA (AMARILLO)
+                </button>
+                <div class="pt-4 border-t border-gray-50">
+                    <button class="w-full btn-estado bg-gray-900 hover:bg-black text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-gray-200" data-estado="ausente">
+                        <i class="fas fa-eye-slash text-xs"></i> DIENTE AUSENTE
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .active-tratamiento {
-        background-color: #3b82f6 !important;
-        color: #ffffff !important;
-        border-color: #2563eb !important;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-    }
-    .cara-basic {
-        fill: #ffffff;
-        stroke: #cbd5e1;
-        stroke-width: 1.25;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-    }
-    .cara-basic:hover {
-        stroke: #1d4ed8;
-        stroke-width: 2.25;
-        opacity: 0.95;
-    }
-    .estado-sano-basic { fill: #ffffff; }
-    .estado-caries-basic { fill: #ef4444; stroke: #dc2626; }
-    .estado-obturacion-basic { fill: #3b82f6; stroke: #2563eb; }
-    .estado-ausente-basic { opacity: 0.15; filter: grayscale(100%) blur(1px); pointer-events: none; }
+    .diente-svg { width: 52px; height: 52px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
+    .diente-svg:hover { transform: translateY(-5px) scale(1.15); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+    .cara { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1; transition: all 0.2s; }
+    .cara:hover { stroke: #3b82f6; stroke-width: 2; opacity: 0.9; }
+    .estado-sano { fill: #ffffff; }
+    .estado-caries { fill: #ef4444; stroke: #dc2626; }
+    .estado-obturacion { fill: #3b82f6; stroke: #2563eb; }
+    .estado-corona { fill: #fbbf24; stroke: #f59e0b; }
+    .diente-ausente { opacity: 0.2; filter: grayscale(100%) blur(1px); }
+    .diente-numero { font-size: 11px; font-weight: 900; margin-top: 8px; color: #64748b; font-family: 'Inter', sans-serif; }
+    .diente-wrapper { display: flex; flex-direction: column; align-items: center; min-width: 52px; flex-shrink: 0; position: relative; }
     
-    .linea-root-basic {
-        fill: #f8fafc;
-        stroke: #94a3b8;
-        stroke-width: 1.5;
+    /* Popover/Tooltip minimal */
+    .diente-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-10px);
+        background: #1e293b;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
         transition: all 0.2s;
+        z-index: 50;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .diente-wrapper:hover .diente-tooltip {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-20px);
     }
 </style>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const arcadaSuperior = [18,17,16,15,14,13,12,11, 21,22,23,24,25,26,27,28];
-        const arcadaInferior = [48,47,46,45,44,43,42,41, 31,32,33,34,35,36,37,38];
 
-        let datosOdontograma = {};
-        let tratamientoActivo = 'sano';
-
-        const pacienteId = CONFIG_ODONTOGRAMA.pacienteId;
-        const apiUrl = `/paciente/${pacienteId}/odontograma/api/`;
-
-        function crearDienteBasicAnatomicoSVG(num, esSuperior) {
-            if (esSuperior) {
-                return `
-                <div class="flex flex-col items-center select-none" id="basic-wrapper-${num}">
-                    <span class="text-[10px] font-black text-slate-400 mb-1 select-none">#${num}</span>
-                    <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
-                        <path d="M 16,35 C 16,10 25,0 34,35" class="linea-root-basic" data-cara="root" />
-                        <path d="M 12,40 C 15,30 35,30 38,40 L 33,46 C 30,42 20,42 17,46 Z" class="cara-basic" data-cara="top" />
-                        <path d="M 38,40 C 45,42 45,58 38,60 L 33,54 C 36,53 36,47 33,46 Z" class="cara-basic" data-cara="right" />
-                        <path d="M 38,60 C 35,70 15,70 12,60 L 17,54 C 20,58 30,58 33,54 Z" class="cara-basic" data-cara="bottom" />
-                        <path d="M 12,60 C 5,58 5,42 12,40 L 17,46 C 14,47 14,53 17,54 Z" class="cara-basic" data-cara="left" />
-                        <path d="M 17,46 L 33,46 L 33,54 L 17,54 Z" class="cara-basic" data-cara="center" />
-                    </svg>
-                </div>
-                `;
-            } else {
-                return `
-                <div class="flex flex-col items-center select-none" id="basic-wrapper-${num}">
-                    <svg class="w-11 h-18 sm:w-12 sm:h-20 md:w-14 md:h-24" viewBox="0 0 50 80" data-diente="${num}">
-                        <path d="M 12,20 C 15,10 35,10 38,20 L 33,26 C 30,22 20,22 17,26 Z" class="cara-basic" data-cara="top" />
-                        <path d="M 38,20 C 45,22 45,38 38,40 L 33,34 C 36,33 36,27 33,26 Z" class="cara-basic" data-cara="right" />
-                        <path d="M 38,40 C 35,50 15,50 12,40 L 17,34 C 20,38 30,38 33,34 Z" class="cara-basic" data-cara="bottom" />
-                        <path d="M 12,40 C 5,38 5,22 12,20 L 17,26 C 14,27 14,33 17,34 Z" class="cara-basic" data-cara="left" />
-                        <path d="M 17,26 L 33,26 L 33,34 L 17,34 Z" class="cara-basic" data-cara="center" />
-                        <path d="M 16,45 C 16,70 25,80 34,45" class="linea-root-basic" data-cara="root" />
-                    </svg>
-                    <span class="text-[10px] font-black text-slate-400 mt-1 select-none">#${num}</span>
-                </div>
-                `;
-            }
-        }
-
-        const divSup = document.getElementById('basic-superior');
-        const divInf = document.getElementById('basic-inferior');
-
-        if (divSup && divInf) {
-            arcadaSuperior.forEach(num => divSup.innerHTML += crearDienteBasicAnatomicoSVG(num, true));
-            arcadaInferior.forEach(num => divInf.innerHTML += crearDienteBasicAnatomicoSVG(num, false));
-        }
-
-        fetch(apiUrl)
-            .then(res => res.json())
-            .then(data => {
-                datosOdontograma = data;
-                renderizarBasic();
-            });
-
-        document.querySelectorAll('.btn-tratamiento-basic').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.btn-tratamiento-basic').forEach(b => b.classList.remove('active-tratamiento'));
-                this.classList.add('active-tratamiento');
-                tratamientoActivo = this.getAttribute('data-estado');
-            });
-        });
-
-        document.addEventListener('click', function(e) {
-            const path = e.target;
-            if (path.classList && (path.classList.contains('cara-basic'))) {
-                const numDiente = path.closest('svg').getAttribute('data-diente');
-                const cara = path.getAttribute('data-cara');
-
-                if (!datosOdontograma.dientes) {
-                    datosOdontograma.dientes = {};
-                }
-
-                if (!datosOdontograma.dientes[numDiente]) {
-                    datosOdontograma.dientes[numDiente] = {};
-                }
-
-                if (tratamientoActivo === 'ausente') {
-                    datosOdontograma.dientes[numDiente] = { ausente: true };
-                } else {
-                    datosOdontograma.dientes[numDiente]['ausente'] = false;
-                    datosOdontograma.dientes[numDiente][cara] = tratamientoActivo;
-                }
-
-                renderizarBasic();
-                guardarOdontogramaBasicEnServidor();
-            }
-        });
-
-        function renderizarBasic() {
-            const dientesData = datosOdontograma.dientes || datosOdontograma || {};
-
-            document.querySelectorAll('#basic-dental-suite svg').forEach(svg => {
-                const num = svg.getAttribute('data-diente');
-                const wrapper = document.getElementById(`basic-wrapper-${num}`);
-                if (!wrapper) return;
-
-                svg.querySelectorAll('.cara-basic').forEach(cara => {
-                    cara.className.baseVal = 'cara-basic estado-sano-basic';
-                });
-                wrapper.classList.remove('estado-ausente-basic');
-
-                if (dientesData[num]) {
-                    if (dientesData[num]['ausente']) {
-                        wrapper.classList.add('estado-ausente-basic');
-                    } else {
-                        for (const [cara, estado] of Object.entries(dientesData[num])) {
-                            if (cara !== 'ausente') {
-                                const poly = svg.querySelector(`[data-cara="${cara}"]`);
-                                if (poly) poly.className.baseVal = `cara-basic estado-${estado}-basic`;
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function guardarOdontogramaBasicEnServidor() {
-            const badge = document.getElementById('estado-basic-sync');
-            badge.className = "inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse";
-            badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': CONFIG_ODONTOGRAMA.csrfToken
-                },
-                body: JSON.stringify(datosOdontograma)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'ok') {
-                    badge.className = "inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-[10px] font-black uppercase tracking-wider";
-                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Sincronizado';
-                }
-            });
-        }
-    });
-</script>
