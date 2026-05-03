@@ -18,7 +18,7 @@
         <div class="flex bg-slate-100 p-1.5 rounded-2xl gap-2 w-full md:w-auto">
             <button type="button" onclick="cambiarVistaPremium('odontograma')" id="btn-vista-odontograma"
                     class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer bg-white text-blue-600 shadow-sm border border-slate-200/50">
-                <i class="fas fa-tooth"></i><span>Odontograma Premium</span>
+                <i class="fas fa-tooth"></i><span>Odontograma Premium (Anatómico)</span>
             </button>
             <button type="button" onclick="cambiarVistaPremium('periodontograma')" id="btn-vista-periodontograma"
                     class="flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer text-slate-400 hover:text-slate-600">
@@ -41,9 +41,9 @@
         <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                    <i class="fas fa-tools text-slate-300"></i> Selecciona un tratamiento y haz clic en la cara del diente:
+                    <i class="fas fa-tools text-slate-300"></i> Selecciona un tratamiento y haz clic en la cara o en la raíz del diente:
                 </span>
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Plan Premium Activo</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Anatomía Dental Premium</span>
             </div>
 
             <!-- BOTONES DE TRATAMIENTOS -->
@@ -63,20 +63,26 @@
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="implante">
                     <span class="w-3.5 h-3.5 bg-purple-500 rounded-full"></span> Implante
                 </button>
+                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="endodoncia">
+                    <span class="w-3.5 h-3.5 border-2 border-dashed border-red-500 bg-white rounded-full"></span> Endodoncia
+                </button>
+                <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="extraccion">
+                    <span class="w-3.5 h-3.5 text-red-600 flex items-center justify-center font-black">X</span> Extracción
+                </button>
                 <button type="button" class="btn-tratamiento-premium flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all select-none cursor-pointer" data-estado="ausente">
                     <span class="w-3.5 h-3.5 bg-slate-900 rounded-full"></span> Ausente
                 </button>
             </div>
         </div>
 
-        <!-- VISTA DE DIENTES -->
+        <!-- VISTA DE DIENTES (ANATÓMICA) -->
         <div class="bg-white p-6 md:p-10 rounded-3xl border border-slate-100 shadow-sm relative overflow-x-auto select-none">
-            <div class="min-w-[1000px] flex flex-col items-center gap-12 select-none">
-                <!-- Arcade Superior -->
-                <div class="flex flex-nowrap justify-center gap-3" id="premium-superior"></div>
+            <div class="min-w-[1100px] flex flex-col items-center gap-12 select-none">
+                <!-- Arcade Superior (Anatómico - Raíz Arriba) -->
+                <div class="flex flex-nowrap justify-center gap-4" id="premium-superior"></div>
                 <div class="w-full border-t border-dashed border-slate-200"></div>
-                <!-- Arcade Inferior -->
-                <div class="flex flex-nowrap justify-center gap-3" id="premium-inferior"></div>
+                <!-- Arcade Inferior (Anatómico - Raíz Abajo) -->
+                <div class="flex flex-nowrap justify-center gap-4" id="premium-inferior"></div>
             </div>
         </div>
     </div>
@@ -108,7 +114,6 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
-                    <!-- Filas Quadrants 1-2 (Superior) -->
                     <tr>
                         <td class="px-4 py-3 font-bold text-slate-700 uppercase bg-slate-50/50">Sangrado</td>
                         {% for i in "0123456789ABCDEF"|make_list %}
@@ -223,7 +228,7 @@
     }
     .cara-premium:hover {
         stroke: #1d4ed8;
-        stroke-width: 2.5;
+        stroke-width: 2.25;
         opacity: 0.95;
     }
     .estado-sano-premium { fill: #ffffff; }
@@ -231,7 +236,28 @@
     .estado-obturacion-premium { fill: #3b82f6; stroke: #2563eb; }
     .estado-corona-premium { fill: #f59e0b; stroke: #d97706; }
     .estado-implante-premium { fill: #8b5cf6; stroke: #6d28d9; }
-    .diente-ausente-premium { opacity: 0.2; filter: grayscale(100%) blur(1px); pointer-events: none; }
+    .estado-ausente-premium { opacity: 0.15; filter: grayscale(100%) blur(1px); pointer-events: none; }
+    
+    .linea-root {
+        fill: #f8fafc;
+        stroke: #94a3b8;
+        stroke-width: 1.5;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .linea-root:hover {
+        stroke: #3b82f6;
+        fill: #eff6ff;
+    }
+    .root-endodoncia {
+        stroke: #ef4444 !important;
+        stroke-width: 2.5px !important;
+        stroke-dasharray: 4,4;
+    }
+    .root-extraccion {
+        stroke: #b91c1c !important;
+        stroke-width: 3px !important;
+    }
 </style>
 
 <script>
@@ -245,33 +271,61 @@
         const pacienteId = CONFIG_ODONTOGRAMA.pacienteId;
         const apiUrl = `/paciente/${pacienteId}/odontograma/api/`;
 
-        // Crear los SVG interactivos Premium
-        function crearDientePremiumSVG(num) {
-            return `
-            <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
-                <span class="text-[10px] font-black text-slate-400 mb-1 select-none">#${num}</span>
-                <svg class="w-14 h-14 md:w-16 md:h-16" viewBox="0 0 50 50" data-diente="${num}">
-                    <!-- Superior -->
-                    <polygon points="2,2 48,2 35,15 15,15" class="cara-premium" data-cara="top" />
-                    <!-- Derecha -->
-                    <polygon points="48,2 48,48 35,35 35,15" class="cara-premium" data-cara="right" />
-                    <!-- Inferior -->
-                    <polygon points="2,48 48,48 35,35 15,35" class="cara-premium" data-cara="bottom" />
-                    <!-- Izquierda -->
-                    <polygon points="2,2 2,48 15,35 15,15" class="cara-premium" data-cara="left" />
-                    <!-- Centro -->
-                    <polygon points="15,15 35,15 35,35 15,35" class="cara-premium" data-cara="center" />
-                </svg>
-            </div>
-            `;
+        // Crear los SVG interactivos Premium - Anatomía Completa (Raíz y Corona)
+        function crearDientePremiumAnatomicoSVG(num, esSuperior) {
+            if (esSuperior) {
+                return `
+                <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
+                    <span class="text-[10px] font-black text-slate-400 mb-1 select-none">#${num}</span>
+                    <svg class="w-16 h-28 md:w-20 md:h-32" viewBox="0 0 50 80" data-diente="${num}">
+                        <!-- Tooth Root (Upper) -->
+                        <path d="M 16,35 C 16,10 25,0 34,35" class="linea-root" data-cara="root" />
+                        
+                        <!-- Tooth Crown (Upper) -->
+                        <!-- Top -->
+                        <path d="M 12,40 C 15,30 35,30 38,40 L 33,46 C 30,42 20,42 17,46 Z" class="cara-premium" data-cara="top" />
+                        <!-- Right -->
+                        <path d="M 38,40 C 45,42 45,58 38,60 L 33,54 C 36,53 36,47 33,46 Z" class="cara-premium" data-cara="right" />
+                        <!-- Bottom -->
+                        <path d="M 38,60 C 35,70 15,70 12,60 L 17,54 C 20,58 30,58 33,54 Z" class="cara-premium" data-cara="bottom" />
+                        <!-- Left -->
+                        <path d="M 12,60 C 5,58 5,42 12,40 L 17,46 C 14,47 14,53 17,54 Z" class="cara-premium" data-cara="left" />
+                        <!-- Center -->
+                        <path d="M 17,46 L 33,46 L 33,54 L 17,54 Z" class="cara-premium" data-cara="center" />
+                    </svg>
+                </div>
+                `;
+            } else {
+                return `
+                <div class="flex flex-col items-center select-none" id="premium-wrapper-${num}">
+                    <svg class="w-16 h-28 md:w-20 md:h-32" viewBox="0 0 50 80" data-diente="${num}">
+                        <!-- Tooth Crown (Lower) -->
+                        <!-- Top -->
+                        <path d="M 12,20 C 15,10 35,10 38,20 L 33,26 C 30,22 20,22 17,26 Z" class="cara-premium" data-cara="top" />
+                        <!-- Right -->
+                        <path d="M 38,20 C 45,22 45,38 38,40 L 33,34 C 36,33 36,27 33,26 Z" class="cara-premium" data-cara="right" />
+                        <!-- Bottom -->
+                        <path d="M 38,40 C 35,50 15,50 12,40 L 17,34 C 20,38 30,38 33,34 Z" class="cara-premium" data-cara="bottom" />
+                        <!-- Left -->
+                        <path d="M 12,40 C 5,38 5,22 12,20 L 17,26 C 14,27 14,33 17,34 Z" class="cara-premium" data-cara="left" />
+                        <!-- Center -->
+                        <path d="M 17,26 L 33,26 L 33,34 L 17,34 Z" class="cara-premium" data-cara="center" />
+                        
+                        <!-- Tooth Root (Lower) -->
+                        <path d="M 16,45 C 16,70 25,80 34,45" class="linea-root" data-cara="root" />
+                    </svg>
+                    <span class="text-[10px] font-black text-slate-400 mt-1 select-none">#${num}</span>
+                </div>
+                `;
+            }
         }
 
         const divSup = document.getElementById('premium-superior');
         const divInf = document.getElementById('premium-inferior');
 
         if (divSup && divInf) {
-            arcadaSuperior.forEach(num => divSup.innerHTML += crearDientePremiumSVG(num));
-            arcadaInferior.forEach(num => divInf.innerHTML += crearDientePremiumSVG(num));
+            arcadaSuperior.forEach(num => divSup.innerHTML += crearDientePremiumAnatomicoSVG(num, true));
+            arcadaInferior.forEach(num => divInf.innerHTML += crearDientePremiumAnatomicoSVG(num, false));
         }
 
         // Cargar datos
@@ -291,11 +345,12 @@
             });
         });
 
-        // Delegación de eventos para las caras de los dientes Premium
+        // Delegación de eventos para las caras o raíces
         document.addEventListener('click', function(e) {
-            if (e.target.classList && e.target.classList.contains('cara-premium')) {
-                const numDiente = e.target.closest('svg').getAttribute('data-diente');
-                const cara = e.target.getAttribute('data-cara');
+            const path = e.target;
+            if (path.classList && (path.classList.contains('cara-premium') || path.classList.contains('linea-root'))) {
+                const numDiente = path.closest('svg').getAttribute('data-diente');
+                const cara = path.getAttribute('data-cara');
 
                 if (!datosOdontograma.dientes) {
                     datosOdontograma.dientes = {};
@@ -318,7 +373,6 @@
         });
 
         function renderizarSuitePremium() {
-            // Cargar datos en los dientes Premium
             const dientesData = datosOdontograma.dientes || datosOdontograma || {};
 
             document.querySelectorAll('#premium-dental-suite svg').forEach(svg => {
@@ -326,17 +380,32 @@
                 const wrapper = document.getElementById(`premium-wrapper-${num}`);
                 if (!wrapper) return;
 
+                // Resetear estilos base
                 svg.querySelectorAll('.cara-premium').forEach(cara => {
                     cara.className.baseVal = 'cara-premium estado-sano-premium';
                 });
-                wrapper.classList.remove('diente-ausente-premium');
+                svg.querySelectorAll('.linea-root').forEach(root => {
+                    root.className.baseVal = 'linea-root';
+                });
+                wrapper.classList.remove('estado-ausente-premium');
 
                 if (dientesData[num]) {
                     if (dientesData[num]['ausente']) {
-                        wrapper.classList.add('diente-ausente-premium');
+                        wrapper.classList.add('estado-ausente-premium');
                     } else {
                         for (const [cara, estado] of Object.entries(dientesData[num])) {
-                            if (cara !== 'ausente') {
+                            if (cara === 'root') {
+                                const rPath = svg.querySelector(`[data-cara="root"]`);
+                                if (rPath) {
+                                    if (estado === 'endodoncia') {
+                                        rPath.className.baseVal = 'linea-root root-endodoncia';
+                                    } else if (estado === 'extraccion') {
+                                        rPath.className.baseVal = 'linea-root root-extraccion';
+                                    } else if (estado === 'implante') {
+                                        rPath.className.baseVal = 'linea-root root-extraccion';
+                                    }
+                                }
+                            } else if (cara !== 'ausente') {
                                 const poly = svg.querySelector(`[data-cara="${cara}"]`);
                                 if (poly) poly.className.baseVal = `cara-premium estado-${estado}-premium`;
                             }
