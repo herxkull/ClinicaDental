@@ -171,7 +171,7 @@ def google_callback(request):
         google_email = id_info.get('email').lower().strip()
         google_name = id_info.get('name')
 
-        request.session['google_user_data'] = {
+        google_user_data = {
             'email': google_email,
             'nombre': google_name,
             'token': credentials.token,
@@ -223,6 +223,9 @@ def google_callback(request):
                     )
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
                     login(request, user)
+                    
+                    # Guardar la información en la sesión DESPUÉS de hacer login para evitar que Django la borre al rotar la sesión.
+                    request.session['google_user_data'] = google_user_data
             
             host_completo = request.get_host()
             puerto = ":" + host_completo.split(':')[1] if ':' in host_completo else ""
@@ -231,6 +234,8 @@ def google_callback(request):
             
             return redirect(f"http://{schema_name}.{base_host}{puerto}/")
 
+        # Es un nuevo registro, guardamos en la sesión y enviamos a finalizar
+        request.session['google_user_data'] = google_user_data
         return redirect('finalizar_registro_google')
 
     except Exception as e:
