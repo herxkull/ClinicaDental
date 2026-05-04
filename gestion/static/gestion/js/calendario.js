@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         locale: 'es',
         editable: true, // Habilita Drag & Drop y Resize
         selectable: true,
+        dayMaxEvents: 3, // limita los eventos por celda para que no se desborden
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',

@@ -147,6 +147,22 @@
         box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1) !important;
         margin: 3px 6px !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        max-height: 2.5rem !important;
+    }
+    
+    .fc-event-main {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .fc-event-title {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
     }
     
     .fc-event:hover { transform: scale(1.05) translateY(-2px); filter: brightness(1.1); }
