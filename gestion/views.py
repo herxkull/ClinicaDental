@@ -150,7 +150,26 @@ def dashboard(request):
         chart_ingresos_data.append(ingresos_map.get((m, y), 0.0))
         chart_gastos_data.append(gastos_map.get((m, y), 0.0))
 
+    # --- CUENTAS POR COBRAR (Acción Rápida) ---
+    pacientes_con_saldo = []
+    for p in Paciente.objects.all():
+        citas_p = Cita.objects.filter(paciente=p)
+        total_trat = sum(float(c.tratamiento.precio_venta or 0) for c in citas_p if c.tratamiento)
+        total_pagos_p = float(Pago.objects.filter(paciente=p).aggregate(total=Sum('monto'))['total'] or 0)
+        saldo_p = total_trat - total_pagos_p
+        if saldo_p > 0:
+            ultima_cita = citas_p.order_by('-fecha').first()
+            fecha_ultimo = ultima_cita.fecha if ultima_cita else None
+            pacientes_con_saldo.append({
+                'paciente': p,
+                'saldo': saldo_p,
+                'fecha_ultimo': fecha_ultimo
+            })
+    pacientes_con_saldo.sort(key=lambda x: x['saldo'], reverse=True)
+    cuentas_por_cobrar = pacientes_con_saldo[:5]
+
     context = {
+        'cuentas_por_cobrar': cuentas_por_cobrar,
         'total_pacientes': total_pacientes,
         'citas_proximas': citas_proximas,
         'ingresos_totales': ingresos_totales,

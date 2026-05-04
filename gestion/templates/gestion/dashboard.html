@@ -126,6 +126,42 @@
                 </div>
                 {% endif %}
 
+                <!-- CUENTAS POR COBRAR (Acción Rápida) -->
+                <div class="sfs-card p-8">
+                    <div class="flex justify-between items-center mb-6 shrink-0">
+                        <h3 class="text-lg font-black text-gray-900">Cuentas por Cobrar</h3>
+                        <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">Acción Rápida</span>
+                    </div>
+                    <div class="space-y-4">
+                        {% for item in cuentas_por_cobrar %}
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-50 hover:bg-white hover:shadow-lg transition-all">
+                            <div class="flex-grow">
+                                <h4 class="text-sm font-black text-gray-900">{{ item.paciente.nombre }}</h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <p class="text-xs font-bold text-red-600">${{ item.saldo|floatformat:2 }}</p>
+                                    <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase">Último: {{ item.fecha_ultimo|date:"d M, Y"|default:"N/A" }}</span>
+                                </div>
+                            </div>
+                            <a href="https://wa.me/{{ item.paciente.telefono|cut:' ' }}?text=Hola%20{{ item.paciente.nombre|urlencode }},%20somos%20de%20la%20Cl%C3%ADnica%20{{ request.tenant.nombre_clinica|urlencode }}.%20Te%20escribimos%20para%20recordarte%20amablemente%20sobre%20un%20saldo%20pendiente%20de%20%24{{ item.saldo|floatformat:2 }}.%20%C2%BFTe%20gustar%C3%ADa%20que%20te%20enviemos%20un%20link%20de%20pago%3F"
+                               target="_blank"
+                               class="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center hover:bg-green-600 transition-all shadow-lg shadow-green-500/20"
+                               title="Recordar Pago vía WhatsApp">
+                                <i class="fab fa-whatsapp text-lg"></i>
+                            </a>
+                        </div>
+                        {% empty %}
+                        <div class="flex flex-col items-center justify-center py-6 text-center">
+                            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-3">
+                                <i class="fas fa-check-circle text-2xl"></i>
+                            </div>
+                            <p class="text-xs font-black text-gray-700 uppercase">¡Excelente!</p>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Todos los pacientes están al día.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <div class="sfs-card p-8">
                     <h3 class="text-lg font-black text-gray-900 mb-6">Acciones</h3>
                     <div class="grid grid-cols-1 gap-4">
