@@ -52,9 +52,10 @@ def sync_cita_to_google(cita):
         # Manejar formatos HH:MM o HH:MM:SS
         hora_obj = time.fromisoformat(hora_obj)
 
-    # Calculamos inicio y fin (1 hora después)
+    # Calculamos inicio y fin
     start_dt_obj = datetime.combine(fecha_obj, hora_obj)
-    end_dt_obj = start_dt_obj + timedelta(hours=1)
+    duracion = getattr(cita.tratamiento, 'duracion_estimada', 60) or 60
+    end_dt_obj = start_dt_obj + timedelta(minutes=duracion)
 
     event_data = {
         'summary': f"{prefix}{cita.paciente.nombre}",

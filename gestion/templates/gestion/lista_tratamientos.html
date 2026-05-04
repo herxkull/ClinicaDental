@@ -16,6 +16,17 @@
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 40px;
     }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .tab-btn.active {
+        border-color: #2563eb;
+        color: #2563eb;
+        font-weight: 900;
+    }
 </style>
 {% endblock %}
 
@@ -34,6 +45,18 @@
         </button>
     </div>
 
+    <!-- FILTROS DE CATEGORÍA -->
+    <div class="flex flex-wrap gap-2 mb-8">
+        <a href="?categoria=" class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all {% if not request.GET.categoria %}bg-blue-600 text-white{% else %}bg-white border border-gray-100 text-gray-500 hover:bg-gray-50{% endif %}">
+            TODOS
+        </a>
+        {% for cat in categorias_choices %}
+        <a href="?categoria={{ cat.0 }}" class="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all {% if request.GET.categoria == cat.0 %}bg-blue-600 text-white{% else %}bg-white border border-gray-100 text-gray-500 hover:bg-gray-50{% endif %}">
+            {{ cat.1 }}
+        </a>
+        {% endfor %}
+    </div>
+
     <!-- LISTADO PRO -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {% if tratamientos %}
@@ -42,6 +65,7 @@
                     <thead class="bg-gray-50/50 border-b border-gray-100">
                         <tr>
                             <th class="px-8 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
+                            <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duración</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Especialista</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Precio Público</th>
                             <th class="px-6 py-5 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Comisión Clínica</th>
@@ -52,8 +76,16 @@
                         {% for t in tratamientos %}
                         <tr class="hover:bg-gray-50/30 transition-colors">
                             <td class="px-8 py-5">
-                                <div class="font-bold text-gray-900">{{ t.nombre }}</div>
-                                <div class="text-[11px] text-gray-400 font-medium max-w-xs truncate">{{ t.descripcion|default:"Sin descripción" }}</div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-4 h-4 rounded-full border border-gray-100 shadow-sm flex-shrink-0" style="background-color: {{ t.color_etiqueta|default:t.color|default:'#3b82f6' }};"></div>
+                                    <div>
+                                        <div class="font-bold text-gray-900">{{ t.nombre }}</div>
+                                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{{ t.categoria|default:"Consulta General" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-5">
+                                <span class="text-xs font-bold text-gray-600 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100"><i class="fas fa-clock mr-1 text-blue-500"></i>{{ t.duracion_estimada }} min</span>
                             </td>
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-2">
@@ -63,6 +95,9 @@
                             </td>
                             <td class="px-6 py-5">
                                 <span class="font-display font-black text-gray-900 text-sm">$ {{ t.precio_venta|floatformat:2 }}</span>
+                                {% if t.aplica_impuestos %}
+                                <span class="text-[9px] font-black text-amber-600 uppercase tracking-widest block">+ Impuestos</span>
+                                {% endif %}
                             </td>
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-2">
@@ -89,8 +124,11 @@
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="font-bold text-gray-900">{{ t.nombre }}</h4>
-                            <p class="text-xs font-bold text-blue-600">$ {{ t.precio_venta|floatformat:2 }}</p>
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full" style="background-color: {{ t.color_etiqueta|default:t.color|default:'#3b82f6' }};"></div>
+                                <h4 class="font-bold text-gray-900">{{ t.nombre }}</h4>
+                            </div>
+                            <p class="text-xs font-bold text-blue-600 mt-1">$ {{ t.precio_venta|floatformat:2 }}</p>
                         </div>
                         <button data-bs-toggle="modal" data-bs-target="#modalEditar-{{ t.id }}" class="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center">
                             <i class="fas fa-sliders-h"></i>
@@ -124,7 +162,7 @@
     </div>
 </div>
 
-<!-- MODAL MAESTRO (PARA EDICIÓN Y CREACIÓN) -->
+<!-- MODAL MAESTRO (EDICIÓN) -->
 {% for t in tratamientos %}
 <div class="modal fade" id="modalEditar-{{ t.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -133,70 +171,124 @@
                 <h5 class="font-bold text-lg flex items-center"><i class="fas fa-sliders-h mr-3 text-blue-400"></i>Configurar Servicio</h5>
                 <button type="button" class="text-white hover:text-gray-400 transition-colors" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
+
+            <!-- TAB NAVIGATION -->
+            <div class="border-b border-gray-100 flex gap-1 px-8 pt-4 bg-gray-50/50">
+                <button type="button" class="tab-btn active px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all rounded-t-xl hover:bg-gray-100/60" onclick="switchTab(this, 'detalles-generales-edit-{{ t.id }}')">
+                    1. Detalles Generales
+                </button>
+                <button type="button" class="tab-btn px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all rounded-t-xl hover:bg-gray-100/60" onclick="switchTab(this, 'insumos-roi-edit-{{ t.id }}')">
+                    2. Insumos y Rentabilidad
+                </button>
+            </div>
+
             <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
                 <input type="hidden" name="tratamiento_id" value="{{ t.id }}">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Tratamiento <span class="text-red-500">*</span></label>
-                        <input type="text" name="nombre" value="{{ t.nombre }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" name="precio_venta" value="{{ t.precio_venta|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.1" name="comision_clinica_porcentaje" value="{{ t.comision_clinica_porcentaje|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
-                    </div>
-                </div>
-                
-                <div class="mb-8">
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
-                    <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
-                        <option value="">Doctor General (Clínica)</option>
-                        {% for doc in doctores %}
-                            <option value="{{ doc.id }}" {% if t.doctor_referencia_id == doc.id %}selected{% endif %}>{{ doc.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
 
-                <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">
-                    <div class="flex items-center justify-between mb-4">
-                        <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos y Materiales</h6>
-                        <div class="flex gap-4">
-                            <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
-                            <span class="text-[10px] font-bold text-green-600 bg-white px-2 py-1 rounded-lg border border-green-100 badge-margen">ROI: 0%</span>
+                <!-- TAB 1: DETALLES GENERALES -->
+                <div id="detalles-generales-edit-{{ t.id }}" class="tab-content active space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre <span class="text-red-500">*</span></label>
+                            <input type="text" name="nombre" value="{{ t.nombre }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" name="precio_venta" value="{{ t.precio_venta|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.1" name="comision_clinica_porcentaje" value="{{ t.comision_clinica_porcentaje|stringformat:'f' }}" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
                         </div>
                     </div>
-                    
-                    <div id="materiales-edit-{{ t.id }}" class="space-y-3 contenedor-materiales">
-                        {% for item in t.materiales.all %}
-                        <div class="flex gap-3 fila-material">
-                            <div class="flex-grow">
-                                <select name="producto_id" class="w-full select2-insumo" onchange="actualizarCalculos(this)">
-                                    <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }} (${{ item.producto.costo_unitario }})</option>
-                                </select>
-                            </div>
-                            <div class="w-24">
-                                <input type="number" name="cantidad" value="{{ item.cantidad_usada }}" 
-                                       class="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-center font-bold text-sm" 
-                                       min="1" oninput="actualizarCalculos(this)">
-                            </div>
-                            <button type="button" onclick="this.parentElement.remove(); actualizarCalculos(this);" 
-                                    class="w-12 h-12 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-xl transition-colors">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Categoría <span class="text-red-500">*</span></label>
+                            <select name="categoria" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                {% for cat in categorias_choices %}
+                                <option value="{{ cat.0 }}" {% if t.categoria == cat.0 %}selected{% endif %}>{{ cat.1 }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        {% endfor %}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
+                            <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                <option value="">Doctor General (Clínica)</option>
+                                {% for doc in doctores %}
+                                    <option value="{{ doc.id }}" {% if t.doctor_referencia_id == doc.id %}selected{% endif %}>{{ doc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
-                    <button type="button" onclick="agregarMaterial('materiales-edit-{{ t.id }}')" 
-                            class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">
-                        <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
-                    </button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Duración Estimada <span class="text-red-500">*</span></label>
+                            <select name="duracion_estimada" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                <option value="15" {% if t.duracion_estimada == 15 %}selected{% endif %}>15 min</option>
+                                <option value="30" {% if t.duracion_estimada == 30 %}selected{% endif %}>30 min</option>
+                                <option value="45" {% if t.duracion_estimada == 45 %}selected{% endif %}>45 min</option>
+                                <option value="60" {% if t.duracion_estimada == 60 %}selected{% endif %}>60 min</option>
+                                <option value="90" {% if t.duracion_estimada == 90 %}selected{% endif %}>90 min</option>
+                                <option value="120" {% if t.duracion_estimada == 120 %}selected{% endif %}>120 min</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Color Etiqueta</label>
+                            <div class="flex items-center gap-3 bg-gray-50 px-5 py-2.5 rounded-xl">
+                                <input type="color" name="color_etiqueta" value="{{ t.color_etiqueta|default:t.color|default:'#3b82f6' }}" class="w-10 h-10 border-0 bg-transparent cursor-pointer rounded overflow-hidden">
+                                <span class="text-xs font-bold text-gray-500">Haz clic para personalizar el color</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" name="aplica_impuestos" id="impuestos-{{ t.id }}" {% if t.aplica_impuestos %}checked{% endif %} class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="impuestos-{{ t.id }}" class="text-xs font-bold text-gray-700 uppercase tracking-widest cursor-pointer select-none">¿Aplica Impuestos?</label>
+                    </div>
                 </div>
 
-                <div class="flex gap-4">
+                <!-- TAB 2: INSUMOS Y MATERIALES -->
+                <div id="insumos-roi-edit-{{ t.id }}" class="tab-content space-y-6">
+                    <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos y Materiales</h6>
+                            <div class="flex gap-4">
+                                <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
+                                <span class="text-[10px] font-bold text-green-600 bg-white px-2 py-1 rounded-lg border border-green-100 badge-margen">ROI: 0%</span>
+                            </div>
+                        </div>
+                        
+                        <div id="materiales-edit-{{ t.id }}" class="space-y-3 contenedor-materiales">
+                            {% for item in t.materiales.all %}
+                            <div class="flex gap-3 fila-material">
+                                <div class="flex-grow">
+                                    <select name="producto_id" class="w-full select2-insumo" onchange="actualizarCalculos(this)">
+                                        <option value="{{ item.producto.id }}" selected>{{ item.producto.nombre }} (${{ item.producto.costo_unitario }})</option>
+                                    </select>
+                                </div>
+                                <div class="w-24">
+                                    <input type="number" name="cantidad" value="{{ item.cantidad_usada }}" 
+                                           class="w-full px-4 py-3 bg-white border border-gray-100 rounded-xl text-center font-bold text-sm" 
+                                           min="1" oninput="actualizarCalculos(this)">
+                                </div>
+                                <button type="button" onclick="this.parentElement.remove(); actualizarCalculos(this);" 
+                                        class="w-12 h-12 flex items-center justify-center text-red-400 hover:bg-red-50 rounded-xl transition-colors">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" onclick="agregarMaterial('materiales-edit-{{ t.id }}')" 
+                                class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">
+                            <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-8">
                     <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Guardar Configuración</button>
                 </div>
@@ -214,48 +306,102 @@
                 <h5 class="font-bold text-lg flex items-center"><i class="fas fa-plus-circle mr-3 text-blue-400"></i>Nuevo Tratamiento</h5>
                 <button type="button" class="text-white" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
+
+            <!-- TAB NAVIGATION -->
+            <div class="border-b border-gray-100 flex gap-1 px-8 pt-4 bg-gray-50/50">
+                <button type="button" class="tab-btn active px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all rounded-t-xl hover:bg-gray-100/60" onclick="switchTab(this, 'detalles-generales-nuevo')">
+                    1. Detalles Generales
+                </button>
+                <button type="button" class="tab-btn px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all rounded-t-xl hover:bg-gray-100/60" onclick="switchTab(this, 'insumos-roi-nuevo')">
+                    2. Insumos y Rentabilidad
+                </button>
+            </div>
+
             <form action="{% url 'guardar_tratamiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre <span class="text-red-500">*</span></label>
-                        <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required placeholder="Ej: Profilaxis Ultrasónica">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" name="precio_venta" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.1" name="comision_clinica_porcentaje" value="30.0" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
-                    </div>
-                </div>
 
-                <div class="mb-8">
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
-                    <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
-                        <option value="">Doctor General (Clínica)</option>
-                        {% for doc in doctores %}
-                            <option value="{{ doc.id }}">{{ doc.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="bg-blue-50/50 p-6 rounded-2xl mb-8 border border-blue-100">
-                    <div class="flex items-center justify-between mb-4">
-                        <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos Requeridos</h6>
-                        <div class="flex gap-4">
-                            <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
+                <!-- TAB 1: DETALLES GENERALES -->
+                <div id="detalles-generales-nuevo" class="tab-content active space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre <span class="text-red-500">*</span></label>
+                            <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required placeholder="Ej: Profilaxis">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Precio ($) <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.01" name="precio_venta" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black input-precio" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">% Clínica <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.1" name="comision_clinica_porcentaje" value="30.0" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-black" required>
                         </div>
                     </div>
-                    <div id="materiales-nuevo" class="space-y-3 contenedor-materiales"></div>
-                    <button type="button" onclick="agregarMaterial('materiales-nuevo')" 
-                            class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800">
-                        <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
-                    </button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Categoría <span class="text-red-500">*</span></label>
+                            <select name="categoria" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                {% for cat in categorias_choices %}
+                                <option value="{{ cat.0 }}">{{ cat.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Especialista Referencia</label>
+                            <select name="doctor_referencia" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                <option value="">Doctor General (Clínica)</option>
+                                {% for doc in doctores %}
+                                    <option value="{{ doc.id }}">{{ doc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Duración Estimada <span class="text-red-500">*</span></label>
+                            <select name="duracion_estimada" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                                <option value="15">15 min</option>
+                                <option value="30" selected>30 min</option>
+                                <option value="45">45 min</option>
+                                <option value="60">60 min</option>
+                                <option value="90">90 min</option>
+                                <option value="120">120 min</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Color Etiqueta</label>
+                            <div class="flex items-center gap-3 bg-gray-50 px-5 py-2.5 rounded-xl">
+                                <input type="color" name="color_etiqueta" value="#3b82f6" class="w-10 h-10 border-0 bg-transparent cursor-pointer rounded overflow-hidden">
+                                <span class="text-xs font-bold text-gray-500">Haz clic para personalizar el color</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" name="aplica_impuestos" id="impuestos-nuevo" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="impuestos-nuevo" class="text-xs font-bold text-gray-700 uppercase tracking-widest cursor-pointer select-none">¿Aplica Impuestos?</label>
+                    </div>
+                </div>
+
+                <!-- TAB 2: INSUMOS Y MATERIALES -->
+                <div id="insumos-roi-nuevo" class="tab-content space-y-6">
+                    <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h6 class="text-xs font-black text-blue-900 uppercase tracking-widest">Insumos Requeridos</h6>
+                            <div class="flex gap-4">
+                                <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-lg border border-blue-100 badge-costo">Costo Insumos: $0.00</span>
+                            </div>
+                        </div>
+                        <div id="materiales-nuevo" class="space-y-3 contenedor-materiales"></div>
+                        <button type="button" onclick="agregarMaterial('materiales-nuevo')" 
+                                class="mt-4 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-800 transition-colors">
+                            <i class="fas fa-plus-circle mr-1"></i> Añadir Insumo
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="flex gap-4">
+                <div class="flex gap-4 mt-8">
                     <button type="button" class="flex-1 bg-gray-100 text-gray-600 font-bold py-4 rounded-xl hover:bg-gray-200 transition-all" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Registrar Servicio</button>
                 </div>
@@ -281,6 +427,15 @@
             dropdownParent: $('.modal')
         });
     });
+
+    function switchTab(btn, tabId) {
+        const modal = btn.closest('.modal-content');
+        modal.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const activeTab = modal.querySelector('#' + tabId);
+        if (activeTab) activeTab.classList.add('active');
+    }
 </script>
-<script src="{% static 'gestion/js/tratamiento.js' %}?v=3"></script>
+<script src="{% static 'gestion/js/tratamiento.js' %}?v=4"></script>
 {% endblock %}

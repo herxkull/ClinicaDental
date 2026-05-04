@@ -1,44 +1,47 @@
 {% extends 'gestion/base.html' %}
 
-{% block title %}Control de Inventario - {{ request.tenant.nombre_clinica }}{% endblock %}
+{% block title %}Centro de Suministros (Inventario) - {{ request.tenant.nombre_clinica }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
     
     <!-- ENCABEZADO Y ACCIONES RÁPIDAS -->
     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Centro de Suministros</h1>
-            <p class="text-sm text-gray-500 font-medium">Gestión de stock, trazabilidad de movimientos y alertas críticas.</p>
+            <h1 class="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                <span class="w-2.5 h-10 bg-blue-600 rounded-full"></span>
+                Centro de Suministros
+            </h1>
+            <p class="text-sm text-gray-500 font-medium mt-1">Gestión avanzada de stock por lotes, trazabilidad de movimientos y alertas empresariales.</p>
         </div>
         
         <div class="flex flex-wrap gap-3 w-full lg:w-auto">
             <button type="button" onclick="startScanner()" 
-                    class="flex-1 lg:flex-none bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center">
+                    class="flex-1 lg:flex-none bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-3.5 px-6 rounded-2xl transition-all flex items-center justify-center border border-blue-100/50 shadow-sm">
                 <i class="fas fa-barcode mr-2"></i> Escanear
             </button>
             <a href="{% url 'historial_movimientos' %}" 
-                    class="flex-1 lg:flex-none bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center">
-                <i class="fas fa-history mr-2"></i> Ver Kardex
+               class="flex-1 lg:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-6 rounded-2xl transition-all flex items-center justify-center border border-gray-200/50 shadow-sm">
+                <i class="fas fa-history mr-2"></i> Ver Kardex Completo
             </a>
             <button type="button" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto" 
-                    class="flex-1 lg:flex-none bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center justify-center group">
+                    class="flex-1 lg:flex-none bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-8 rounded-2xl shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center group">
                 <i class="fas fa-plus mr-2 text-xs text-blue-400 group-hover:rotate-90 transition-transform"></i> Nuevo Insumo
             </button>
         </div>
     </div>
 
     <!-- BARRA DE FILTROS Y BÚSQUEDA -->
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row gap-4 items-center">
+    <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row gap-4 items-center">
         <form method="GET" class="flex flex-col md:flex-row gap-4 w-full">
             <div class="relative flex-1">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o código de barras..." 
-                       class="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                       class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all">
             </div>
             <div class="w-full md:w-64">
                 <select name="cat" onchange="this.form.submit()" 
-                        class="w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                        class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 text-sm font-medium transition-all cursor-pointer">
                     <option value="">Todas las Categorías</option>
                     {% for key, val in categorias %}
                         <option value="{{ key }}" {% if cat_actual == key %}selected{% endif %}>{{ val }}</option>
@@ -50,59 +53,80 @@
     </div>
 
     <!-- KPIs DE INVENTARIO -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <!-- Stock Crítico -->
-        <div class="bg-white rounded-2xl border-l-4 border-amber-500 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all">
+        <div class="bg-white rounded-3xl border-l-4 border-red-500 shadow-sm p-6 flex items-center justify-between group hover:shadow-md transition-all">
             <div>
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">En Alerta</p>
-                <h2 class="text-2xl font-black text-amber-600 mt-1">{{ productos_bajos }}</h2>
+                <h2 class="text-3xl font-black text-red-600 mt-1">{{ productos_bajos }}</h2>
             </div>
-            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+            <div class="p-3 bg-red-50 text-red-600 rounded-2xl">
                 <i class="fas fa-exclamation-triangle fa-lg"></i>
             </div>
         </div>
 
         <!-- Valorización -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-md transition-all">
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-md transition-all">
             <div>
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Valorización</p>
-                <h2 class="text-2xl font-black text-green-600 mt-1">${{ valor_inventario|floatformat:2 }}</h2>
+                <h2 class="text-3xl font-black text-green-600 mt-1">${{ valor_inventario|floatformat:2 }}</h2>
             </div>
-            <div class="p-3 bg-green-50 text-green-600 rounded-xl">
+            <div class="p-3 bg-green-50 text-green-600 rounded-2xl">
                 <i class="fas fa-dollar-sign fa-lg"></i>
             </div>
         </div>
 
-        <!-- Presupuesto Reposición -->
-        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 flex items-center justify-between col-span-1 md:col-span-2 lg:col-span-2 group hover:bg-black transition-all">
+        <!-- Presupuesto Reposición (Botón de Acción Rápida) -->
+        <button type="button" onclick="openOrdenCompraModal()" 
+                class="bg-gray-900 rounded-3xl shadow-xl p-6 flex items-center justify-between col-span-1 md:col-span-2 lg:col-span-2 group hover:bg-black transition-all text-left w-full hover:scale-[1.01] duration-300 select-none">
             <div>
-                <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Compra Sugerida (Para alcanzar stock mínimo)</p>
-                <h2 class="text-2xl font-black text-white mt-1">${{ presupuesto_reposicion|floatformat:2 }}</h2>
+                <p class="text-[10px] font-bold text-blue-300 uppercase tracking-widest flex items-center gap-2">
+                    <span class="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    Compra Sugerida (Para alcanzar stock mínimo)
+                </p>
+                <h2 class="text-3xl font-black text-white mt-1">${{ presupuesto_reposicion|floatformat:2 }}</h2>
+                <span class="text-xs text-blue-400 font-bold mt-1 block uppercase tracking-tight">Haga clic para generar orden de compra</span>
             </div>
-            <div class="p-3 bg-white/10 text-blue-400 rounded-xl">
-                <i class="fas fa-shopping-cart fa-lg"></i>
+            <div class="p-4 bg-white/10 text-blue-400 rounded-2xl">
+                <i class="fas fa-shopping-cart fa-xl"></i>
             </div>
-        </div>
+        </button>
+    </div>
+
+    <!-- Pills Filtros Rápidos -->
+    <div class="flex flex-wrap gap-2.5 mb-8">
+        <button onclick="filterTableByState('ALL')" id="btnFilter-ALL" 
+                class="pill-filter active bg-blue-50 text-blue-600 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-blue-200/50 shadow-sm flex items-center gap-2">
+            <i class="fas fa-cubes"></i> Todos
+        </button>
+        <button onclick="filterTableByState('ALERTA')" id="btnFilter-ALERTA" 
+                class="pill-filter bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-gray-100 shadow-sm flex items-center">
+            <span class="w-2.5 h-2.5 bg-red-500 rounded-full mr-2"></span> En Alerta ({{ productos_bajos }})
+        </button>
+        <button onclick="filterTableByState('VENCER')" id="btnFilter-VENCER" 
+                class="pill-filter bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-gray-100 shadow-sm flex items-center">
+            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full mr-2"></span> Por Vencer ({{ por_vencer_count }})
+        </button>
     </div>
 
     <!-- LISTADO DE PRODUCTOS COMPACTO -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Insumo / Categoría</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Stock Actual</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Inversión</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Estado</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Acción</th>
+                    <th class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Insumo / Categoría</th>
+                    <th class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Stock Actual</th>
+                    <th class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-right">Inversión</th>
+                    <th class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Estado</th>
+                    <th class="px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-right">Acción Rápida</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
+            <tbody class="divide-y divide-gray-50 select-none">
                 {% for p in productos %}
-                <tr class="hover:bg-gray-50/50 transition-all">
-                    <td class="px-6 py-4">
+                <tr id="product-row-{{ p.id }}" data-state="{% if p.necesita_reabastecimiento %}ALERTA{% else %}OPTIMO{% endif %}" data-vencer="{% if p.proximo_a_vencer %}true{% else %}false{% endif %}" class="product-tr-row hover:bg-gray-50/40 transition-all cursor-pointer">
+                    <td onclick="toggleRowDetail({{ p.id }})" class="px-6 py-4">
                         <div class="flex flex-col">
-                            <span class="font-bold text-gray-900 text-sm">{{ p.nombre }}</span>
+                            <span class="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors">{{ p.nombre }}</span>
                             <div class="flex items-center gap-2 mt-1">
                                 <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-gray-100 text-gray-500">{{ p.get_categoria_display }}</span>
                                 {% if p.barcode %}
@@ -111,39 +135,87 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td onclick="toggleRowDetail({{ p.id }})" class="px-6 py-4 text-center">
                         <div class="flex flex-col">
                             <span class="font-black text-base {% if p.necesita_reabastecimiento %}text-red-600{% else %}text-gray-900{% endif %}">{{ p.cantidad_actual }}</span>
                             <span class="text-[9px] text-gray-400 font-bold uppercase">Mín: {{ p.stock_minimo }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-right">
+                    <td onclick="toggleRowDetail({{ p.id }})" class="px-6 py-4 text-right">
                         <div class="flex flex-col">
                             <span class="font-bold text-gray-900 text-sm">${{ p.total_valor_stock|floatformat:2 }}</span>
                             <span class="text-[9px] text-gray-400 font-bold uppercase">Costo: ${{ p.costo_unitario|floatformat:2 }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td onclick="toggleRowDetail({{ p.id }})" class="px-6 py-4 text-center">
+                        {% if p.proximo_a_vencer %}
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-600 border border-amber-100 mb-1">
+                                <i class="fas fa-hourglass-half mr-1.5 animate-pulse"></i> Próximo a Vencer
+                            </span>
+                        {% endif %}
                         {% if p.necesita_reabastecimiento %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase bg-red-50 text-red-600 border border-red-100">
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[9px] font-black uppercase bg-red-50 text-red-600 border border-red-100 block mt-0.5">
                                 <i class="fas fa-exclamation-circle mr-1.5"></i> Reordenar
                             </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase bg-green-50 text-green-600 border border-green-100">
+                        {% elif not p.proximo_a_vencer %}
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[9px] font-black uppercase bg-green-50 text-green-600 border border-green-100">
                                 <i class="fas fa-check-circle mr-1.5"></i> Óptimo
                             </span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="openMovimientoModal({{ p.id }}, '{{ p.nombre|escapejs }}', {{ p.cantidad_actual }}, {{ p.costo_unitario }})" 
-                                class="bg-gray-900 text-white p-2.5 rounded-xl hover:bg-black transition-all shadow-md">
-                            <i class="fas fa-exchange-alt"></i>
-                        </button>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2 justify-end">
+                            <button onclick="openQuickEntradaModal({{ p.id }}, '{{ p.nombre|escapejs }}', {{ p.costo_unitario }})" title="Entrada Rápida" class="w-9 h-9 bg-green-50 hover:bg-green-100 text-green-600 rounded-xl flex items-center justify-center transition-all border border-green-100/40 shadow-sm">
+                                <i class="fas fa-plus text-xs"></i>
+                            </button>
+                            <button onclick="openQuickSalidaModal({{ p.id }}, '{{ p.nombre|escapejs }}', {{ p.cantidad_actual }})" title="Salida Rápida" class="w-9 h-9 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl flex items-center justify-center transition-all border border-red-100/40 shadow-sm">
+                                <i class="fas fa-minus text-xs"></i>
+                            </button>
+                            <button onclick="openQuickEditModal({{ p.id }}, '{{ p.nombre|escapejs }}', {{ p.stock_minimo }}, {{ p.costo_unitario }})" title="Editar Mínimo/Costo" class="w-9 h-9 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center transition-all border border-blue-100/40 shadow-sm">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="toggleRowDetail({{ p.id }})" title="Ver Kardex y Lotes" class="w-9 h-9 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl flex items-center justify-center transition-all border border-gray-200/40 shadow-sm">
+                                <i id="eye-icon-{{ p.id }}" class="fas fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <!-- Sub-fila de detalles (Kardex y Lotes) -->
+                <tr id="detalle-row-{{ p.id }}" class="hidden bg-gray-50/50">
+                    <td colspan="5" class="px-8 py-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Col 1: Kardex -->
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <h4 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-4 flex items-center justify-between">
+                                    <span>Últimos 5 Movimientos (Kardex)</span>
+                                    <i class="fas fa-history text-blue-500"></i>
+                                </h4>
+                                <div id="kardex-list-{{ p.id }}" class="space-y-3">
+                                    <!-- Dynamic from JS -->
+                                    <p class="text-xs text-gray-400 p-2 text-center animate-pulse py-2">Cargando movimientos...</p>
+                                </div>
+                            </div>
+                            <!-- Col 2: Lotes -->
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                                <div>
+                                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-4 flex items-center justify-between">
+                                        <span>Desglose de Lotes activos</span>
+                                        <button onclick="openAddLoteModal({{ p.id }}, '{{ p.nombre|escapejs }}')" class="text-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 font-black px-3 py-1.5 rounded-xl transition-all flex items-center">
+                                            <i class="fas fa-plus mr-1"></i> Registrar Lote
+                                        </button>
+                                    </h4>
+                                    <div id="lotes-list-{{ p.id }}" class="space-y-3 max-h-48 overflow-y-auto pr-1">
+                                        <!-- Dynamic from JS -->
+                                        <p class="text-xs text-gray-400 p-2 text-center animate-pulse py-2">Cargando lotes...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="py-20 text-center text-gray-400">No se encontraron productos.</td>
+                    <td colspan="5" class="py-20 text-center text-gray-400 font-bold">No se encontraron productos.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -151,71 +223,201 @@
     </div>
 </div>
 
-<!-- MODAL DE MOVIMIENTO (PRO) -->
-<div class="modal fade" id="modalMovimiento" tabindex="-1" aria-hidden="true">
+<!-- ========================================== -->
+<!-- MODALES DE ACCIÓN RÁPIDA -->
+<!-- ========================================== -->
+
+<!-- MODAL ENTRADA RÁPIDA -->
+<div class="modal fade" id="modalQuickEntrada" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden">
-            <div class="bg-gray-900 px-8 py-5 text-white flex justify-between items-center">
-                <h5 class="font-bold text-lg" id="movLabel">Ajustar Stock</h5>
-                <button type="button" class="text-white hover:text-gray-400" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
+            <div class="bg-green-600 px-8 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h5 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-plus-circle"></i> Entrada Rápida</h5>
+                    <p class="text-[10px] font-medium uppercase tracking-wider text-green-100" id="qeLabel"></p>
+                </div>
+                <button type="button" class="text-white hover:text-green-200" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
             <form action="{% url 'registrar_movimiento' %}" method="POST" class="p-8">
                 {% csrf_token %}
-                <input type="hidden" name="producto_id" id="mov_id">
-                
-                <div class="space-y-6">
-                    <!-- TIPO DE MOVIMIENTO -->
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="tipo" value="ENTRADA" class="peer hidden" checked>
-                            <div class="p-3 text-center rounded-xl border border-gray-100 bg-gray-50 peer-checked:bg-green-600 peer-checked:text-white transition-all">
-                                <i class="fas fa-plus-circle mb-1 block"></i>
-                                <span class="text-[10px] font-black uppercase">Entrada</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="tipo" value="SALIDA" class="peer hidden">
-                            <div class="p-3 text-center rounded-xl border border-gray-100 bg-gray-50 peer-checked:bg-red-600 peer-checked:text-white transition-all">
-                                <i class="fas fa-minus-circle mb-1 block"></i>
-                                <span class="text-[10px] font-black uppercase">Salida</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="tipo" value="AJUSTE" class="peer hidden">
-                            <div class="p-3 text-center rounded-xl border border-gray-100 bg-gray-50 peer-checked:bg-amber-600 peer-checked:text-white transition-all">
-                                <i class="fas fa-sync mb-1 block"></i>
-                                <span class="text-[10px] font-black uppercase">Ajuste</span>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- CANTIDAD -->
+                <input type="hidden" name="producto_id" id="qe_id">
+                <input type="hidden" name="tipo" value="ENTRADA">
+                <div class="space-y-5">
                     <div class="space-y-1.5">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cantidad / Nuevo Stock</label>
-                        <input type="number" name="cantidad" required min="1" 
-                               class="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-xl">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cantidad a Ingresar</label>
+                        <input type="number" name="cantidad" required min="1" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-green-500 font-bold text-xl">
                     </div>
-
-                    <!-- NUEVO COSTO (SOLO ENTRADA) -->
-                    <div id="costo_container" class="space-y-1.5">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Actualizar Costo Unitario ($)</label>
-                        <input type="number" name="nuevo_costo" step="0.01" id="mov_costo"
-                               class="w-full px-5 py-3 bg-blue-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
-                    </div>
-
-                    <!-- NOTAS -->
                     <div class="space-y-1.5">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Motivo / Notas</label>
-                        <textarea name="notas" rows="2" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium" placeholder="Ej: Compra a Distribuidor Dental Express"></textarea>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nuevo Costo Unitario ($)</label>
+                        <input type="number" name="nuevo_costo" id="qe_costo" step="0.01" required class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-green-500 font-bold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Notas / Proveedor</label>
+                        <input type="text" name="notas" value="Entrada rápida desde el catálogo" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-green-500 text-sm font-medium">
                     </div>
                 </div>
-
-                <div class="mt-8 flex gap-3">
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
-                        Procesar Movimiento
+                <div class="mt-8">
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-green-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-tighter text-sm">
+                        Procesar Entrada
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SALIDA RÁPIDA -->
+<div class="modal fade" id="modalQuickSalida" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
+            <div class="bg-red-600 px-8 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h5 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-minus-circle"></i> Salida Rápida</h5>
+                    <p class="text-[10px] font-medium uppercase tracking-wider text-red-100" id="qsLabel"></p>
+                </div>
+                <button type="button" class="text-white hover:text-red-200" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form action="{% url 'registrar_movimiento' %}" method="POST" class="p-8">
+                {% csrf_token %}
+                <input type="hidden" name="producto_id" id="qs_id">
+                <input type="hidden" name="tipo" value="SALIDA">
+                <div class="space-y-5">
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cantidad a Descontar</label>
+                        <input type="number" name="cantidad" id="qs_max" required min="1" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-red-500 font-bold text-xl">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Notas / Motivo</label>
+                        <input type="text" name="notas" value="Salida por uso directo" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-red-500 text-sm font-medium">
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-red-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-tighter text-sm">
+                        Procesar Salida
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR MÍNIMO/COSTO -->
+<div class="modal fade" id="modalQuickEdit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
+            <div class="bg-blue-600 px-8 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h5 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-edit"></i> Editar Configuración</h5>
+                    <p class="text-[10px] font-medium uppercase tracking-wider text-blue-100" id="qeditLabel"></p>
+                </div>
+                <button type="button" class="text-white hover:text-blue-200" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form action="{% url 'editar_producto_minimo' %}" method="POST" class="p-8">
+                {% csrf_token %}
+                <input type="hidden" name="producto_id" id="qedit_id">
+                <div class="space-y-5">
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Costo Unitario ($)</label>
+                        <input type="number" step="0.01" name="costo_unitario" id="qedit_costo" required class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Stock de Alerta (Mínimo)</label>
+                        <input type="number" name="stock_minimo" id="qedit_minimo" required class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-tighter text-sm">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR LOTE -->
+<div class="modal fade" id="modalAddLote" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
+            <div class="bg-gray-900 px-8 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h5 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-boxes text-blue-400"></i> Registrar Nuevo Lote</h5>
+                    <p class="text-[10px] font-medium uppercase tracking-wider text-gray-400" id="alLabel"></p>
+                </div>
+                <button type="button" class="text-white hover:text-gray-400" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form action="{% url 'registrar_lote' %}" method="POST" class="p-8">
+                {% csrf_token %}
+                <input type="hidden" name="producto_id" id="al_id">
+                <div class="space-y-5">
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Número de Lote / Código</label>
+                        <input type="text" name="numero_lote" placeholder="Ej: LOT-12345" required class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cantidad del Lote</label>
+                        <input type="number" name="cantidad" required min="1" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold text-xl">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fecha de Caducidad</label>
+                        <input type="date" name="fecha_caducidad" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <button type="submit" class="w-full bg-gray-900 hover:bg-black text-white font-black py-4 rounded-2xl shadow-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-2 uppercase tracking-tighter text-sm">
+                        Registrar en Lotes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Generar Orden de Compra -->
+<div class="modal fade" id="modalOrdenCompra" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
+            <div class="bg-gray-900 px-8 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h5 class="font-bold text-lg flex items-center gap-2">
+                        <i class="fas fa-file-invoice text-blue-400"></i> Generar Orden de Compra
+                    </h5>
+                    <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Insumos en Alerta para Reordenar</p>
+                </div>
+                <button type="button" class="text-white hover:text-gray-400" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <!-- Items list -->
+                <div class="max-h-72 overflow-y-auto border border-gray-100 rounded-2xl p-4 bg-gray-50/50 space-y-3">
+                    {% for p in productos %}
+                        {% if p.necesita_reabastecimiento %}
+                            <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                <div>
+                                    <h4 class="text-sm font-bold text-gray-900">{{ p.nombre }}</h4>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase">Stock: {{ p.cantidad_actual }} | Mínimo: {{ p.stock_minimo }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs font-black text-gray-800 block">Sugerido: {{ p.stock_minimo|default:5|add:"5"|add:p.cantidad_actual }}</span>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Costo: ${{ p.costo_unitario|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Resumen y acciones -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Monto Estimado de Reposición: <strong class="text-gray-900 text-base ml-1">${{ presupuesto_reposicion|floatformat:2 }}</strong></span>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="copiarOrdenWhatsApp()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white text-xs font-black px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20 uppercase tracking-tighter">
+                            <i class="fab fa-whatsapp text-sm"></i> WhatsApp
+                        </button>
+                        <button onclick="exportarOrdenPDF()" class="flex-1 sm:flex-none bg-gray-900 hover:bg-black text-white text-xs font-black px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-tighter">
+                            <i class="fas fa-file-pdf text-sm"></i> Imprimir PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -226,50 +428,52 @@
         <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-gray-900">
             <div class="p-6">
                 <div id="reader" class="rounded-2xl overflow-hidden"></div>
-                <button type="button" class="w-full mt-4 bg-white/10 text-white font-bold py-3 rounded-xl" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="w-full mt-4 bg-white/10 text-white font-bold py-3.5 rounded-xl transition-all" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL NUEVO PRODUCTO (ACTUALIZADO) -->
+<!-- MODAL NUEVO PRODUCTO -->
 <div class="modal fade" id="modalNuevoProducto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden">
+        <div class="modal-content rounded-3xl border-0 shadow-2xl overflow-hidden bg-white">
             <div class="bg-gray-900 px-8 py-5 flex justify-between items-center text-white">
-                <h5 class="font-bold text-lg flex items-center"><i class="fas fa-plus-circle mr-3 text-blue-400"></i>Alta de Insumo</h5>
+                <h5 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-plus-circle mr-1 text-blue-400"></i> Alta de Insumo</h5>
                 <button type="button" class="text-white hover:text-gray-400" data-bs-dismiss="modal"><i class="fas fa-times"></i></button>
             </div>
             <form action="{% url 'crear_producto' %}" method="POST" class="p-8">
                 {% csrf_token %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Material</label>
-                        <input type="text" name="nombre" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-medium" required>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre del Material</label>
+                        <input type="text" name="nombre" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Categoría</label>
-                        <select name="categoria" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-medium">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Categoría</label>
+                        <select name="categoria" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium">
                             {% for key, val in categorias %}
                                 <option value="{{ key }}">{{ val }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Código de Barras</label>
-                        <input type="text" name="barcode" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-medium font-mono">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Código de Barras</label>
+                        <input type="text" name="barcode" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Costo Unitario ($)</label>
-                        <input type="number" step="0.01" name="costo_unitario" value="0.00" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold" required>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Costo Unitario ($)</label>
+                        <input type="number" step="0.01" name="costo_unitario" value="0.00" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Stock de Alerta (Mínimo)</label>
-                        <input type="number" name="stock_minimo" value="5" class="w-full px-5 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 font-bold">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Stock de Alerta (Mínimo)</label>
+                        <input type="number" name="stock_minimo" value="5" class="w-full px-5 py-3.5 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold">
                     </div>
                 </div>
-                <div class="mt-10 flex gap-4">
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all">Guardar en Inventario</button>
+                <div class="mt-8">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-blue-700 transition-all uppercase tracking-tighter text-sm">
+                        Registrar en Catálogo
+                    </button>
                 </div>
             </form>
         </div>
@@ -280,35 +484,165 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicialización diferida para evitar errores de ReferenceError
-        window.movementModal = new bootstrap.Modal(document.getElementById('modalMovimiento'));
+        // Inicialización diferida para evitar errores
+        window.quickEntradaModal = new bootstrap.Modal(document.getElementById('modalQuickEntrada'));
+        window.quickSalidaModal = new bootstrap.Modal(document.getElementById('modalQuickSalida'));
+        window.quickEditModal = new bootstrap.Modal(document.getElementById('modalQuickEdit'));
+        window.addLoteModal = new bootstrap.Modal(document.getElementById('modalAddLote'));
+        window.ordenCompraModal = new bootstrap.Modal(document.getElementById('modalOrdenCompra'));
         window.scannerModal = new bootstrap.Modal(document.getElementById('modalScanner'));
-        
-        // Toggle Costo Container
-        document.querySelectorAll('input[name="tipo"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const container = document.getElementById('costo_container');
-                if (container) {
-                    container.style.display = e.target.value === 'ENTRADA' ? 'block' : 'none';
-                }
-            });
-        });
     });
 
-    function openMovimientoModal(id, nombre, stock, costo) {
-        document.getElementById('mov_id').value = id;
-        document.getElementById('movLabel').innerText = `Ajustar: ${nombre}`;
-        document.getElementById('mov_costo').value = costo;
-        if (window.movementModal) {
-            window.movementModal.show();
+    // Expandir/colapsar detalles (kardex y lotes)
+    function toggleRowDetail(id) {
+        const rowDetail = document.getElementById('detalle-row-' + id);
+        const eyeIcon = document.getElementById('eye-icon-' + id);
+        
+        if (rowDetail.classList.contains('hidden')) {
+            // Cerrar todos los detalles abiertos
+            document.querySelectorAll('[id^="detalle-row-"]').forEach(row => row.classList.add('hidden'));
+            document.querySelectorAll('[id^="eye-icon-"]').forEach(icon => {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            });
+
+            // Mostrar el actual
+            rowDetail.classList.remove('hidden');
+            if (eyeIcon) {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            }
+
+            // Fetch AJAX data
+            const kardexCont = document.getElementById('kardex-list-' + id);
+            const lotesCont = document.getElementById('lotes-list-' + id);
+            
+            kardexCont.innerHTML = `<p class='text-xs text-gray-400 text-center animate-pulse py-2'>Cargando movimientos...</p>`;
+            lotesCont.innerHTML = `<p class='text-xs text-gray-400 text-center animate-pulse py-2'>Cargando lotes...</p>`;
+
+            fetch(`/api/inventario/${id}/detalle/`)
+                .then(res => res.json())
+                .then(data => {
+                    // Cargar kardex
+                    if (data.movimientos && data.movimientos.length > 0) {
+                        let kmHtml = '';
+                        data.movimientos.forEach(m => {
+                            const bg = m.tipo_raw === 'ENTRADA' ? 'bg-green-50 text-green-700' : (m.tipo_raw === 'SALIDA' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
+                            kmHtml += `
+                                <div class="flex items-center justify-between bg-gray-50/60 p-3 rounded-xl border border-gray-100">
+                                    <div>
+                                        <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${bg}">${m.tipo}</span>
+                                        <p class="text-[10px] text-gray-400 font-bold mt-1 uppercase">${m.fecha} | Por: ${m.usuario}</p>
+                                        <p class="text-xs text-gray-700 font-medium mt-1">${m.notas || 'No hay descripción'}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm font-black text-gray-900 block">${m.tipo_raw === 'ENTRADA' ? '+' : '-'}${m.cantidad}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        kardexCont.innerHTML = kmHtml;
+                    } else {
+                        kardexCont.innerHTML = `<p class='text-xs text-gray-400 text-center py-4'>No hay movimientos registrados.</p>`;
+                    }
+
+                    // Cargar lotes
+                    if (data.lotes && data.lotes.length > 0) {
+                        let lmHtml = '';
+                        data.lotes.forEach(l => {
+                            lmHtml += `
+                                <div class="flex items-center justify-between bg-gray-50/60 p-3 rounded-xl border border-gray-100">
+                                    <div>
+                                        <h5 class="text-xs font-bold text-gray-900">Lote: <span class="font-black">${l.numero_lote}</span></h5>
+                                        <span class="text-[9px] text-gray-400 font-bold uppercase block mt-1">Expira: ${l.fecha_caducidad}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm font-black text-gray-900">${l.cantidad}</span>
+                                        <span class="text-[8px] text-gray-400 block uppercase font-bold">Unidades</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        lotesCont.innerHTML = lmHtml;
+                    } else {
+                        lotesCont.innerHTML = `<p class='text-xs text-gray-400 text-center py-4'>No hay lotes configurados.</p>`;
+                    }
+                });
         } else {
-            // Fallback si por alguna razón no se inicializó en el DOMContentLoaded
-            window.movementModal = new bootstrap.Modal(document.getElementById('modalMovimiento'));
-            window.movementModal.show();
+            rowDetail.classList.add('hidden');
+            if (eyeIcon) {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
         }
     }
 
-    // Lógica del Scanner
+    // Modal quick actions
+    function openQuickEntradaModal(id, nombre, costo) {
+        document.getElementById('qe_id').value = id;
+        document.getElementById('qeLabel').innerText = nombre;
+        document.getElementById('qe_costo').value = costo;
+        window.quickEntradaModal.show();
+    }
+
+    function openQuickSalidaModal(id, nombre, currentStock) {
+        document.getElementById('qs_id').value = id;
+        document.getElementById('qsLabel').innerText = nombre;
+        document.getElementById('qs_max').value = 1;
+        window.quickSalidaModal.show();
+    }
+
+    function openQuickEditModal(id, nombre, stockMin, costo) {
+        document.getElementById('qedit_id').value = id;
+        document.getElementById('qeditLabel').innerText = nombre;
+        document.getElementById('qedit_minimo').value = stockMin;
+        document.getElementById('qedit_costo').value = costo;
+        window.quickEditModal.show();
+    }
+
+    function openAddLoteModal(id, nombre) {
+        document.getElementById('al_id').value = id;
+        document.getElementById('alLabel').innerText = nombre;
+        window.addLoteModal.show();
+    }
+
+    function openOrdenCompraModal() {
+        window.ordenCompraModal.show();
+    }
+
+    // Pills Dynamic Filtering
+    function filterTableByState(state) {
+        document.querySelectorAll('.pill-filter').forEach(btn => {
+            btn.classList.remove('bg-blue-50', 'text-blue-600', 'border-blue-200/50');
+            btn.classList.add('bg-white', 'text-gray-600', 'border-gray-100');
+        });
+
+        const activeBtn = document.getElementById('btnFilter-' + state);
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-100');
+            activeBtn.classList.add('bg-blue-50', 'text-blue-600', 'border-blue-200/50');
+        }
+
+        document.querySelectorAll('.product-tr-row').forEach(row => {
+            const rowState = row.getAttribute('data-state');
+            const rowVencer = row.getAttribute('data-vencer') === 'true';
+
+            if (state === 'ALL') {
+                row.classList.remove('hidden');
+            } else if (state === 'ALERTA' && rowState === 'ALERTA') {
+                row.classList.remove('hidden');
+            } else if (state === 'VENCER' && rowVencer) {
+                row.classList.remove('hidden');
+            } else {
+                row.classList.add('hidden');
+            }
+            
+            const detailRowId = row.id.replace('product-row-', 'detalle-row-');
+            const detailRow = document.getElementById(detailRowId);
+            if (detailRow) detailRow.classList.add('hidden');
+        });
+    }
+
     function startScanner() {
         if (window.scannerModal) {
             window.scannerModal.show();
@@ -327,11 +661,46 @@
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
         html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback);
     }
+
+    function copiarOrdenWhatsApp() {
+        let msg = `Hola, me gustaría solicitar los siguientes insumos para la clínica {{ request.tenant.nombre_clinica }}:\n\n`;
+        {% for p in productos %}
+            {% if p.necesita_reabastecimiento %}
+                msg += `• {{ p.nombre }} - Cantidad Sugerida: {{ p.stock_minimo|default:5|add:"5"|add:p.cantidad_actual }}\n`;
+            {% endif %}
+        {% endfor %}
+        msg += `\nMonto Reposición Estimado: $` + `{{ presupuesto_reposicion|floatformat:2 }}`;
+        
+        navigator.clipboard.writeText(msg).then(() => {
+            alert("¡Texto de la orden de compra copiado al portapapeles! Listo para pegar en WhatsApp.");
+            window.open(`https://wa.me/?text=` + encodeURIComponent(msg), '_blank');
+        }).catch(err => {
+            alert("Error copiando al portapapeles. Abriendo WhatsApp directamente...");
+            window.open(`https://wa.me/?text=` + encodeURIComponent(msg), '_blank');
+        });
+    }
+
+    function exportarOrdenPDF() {
+        let msg = `=====================================\n`;
+        msg += `ORDEN DE COMPRA - {{ request.tenant.nombre_clinica }}\n`;
+        msg += `=====================================\n\n`;
+        {% for p in productos %}
+            {% if p.necesita_reabastecimiento %}
+                msg += `• {{ p.nombre }} - Sugerido: {{ p.stock_minimo|default:5|add:"5"|add:p.cantidad_actual }} unidades\n`;
+            {% endif %}
+        {% endfor %}
+        msg += `\nMonto Reposición Estimado: $` + `{{ presupuesto_reposicion|floatformat:2 }}`;
+
+        const win = window.open("", "_blank");
+        win.document.write("<pre style='font-family: monospace; font-size: 14px;'>" + msg + "</pre>");
+        win.document.close();
+        win.print();
+    }
 </script>
 
 <style>
     #reader { width: 100% !important; border: none !important; }
-    #reader video { border-radius: 1rem; }
+    #reader video { border-radius: 1.25rem; }
     #reader__dashboard { background: transparent !important; border: none !important; color: white !important; }
 </style>
 {% endblock %}

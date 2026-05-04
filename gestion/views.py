@@ -42,7 +42,7 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Q, Count, F, OuterRef, Subquery, DecimalField
 from django.db.models.functions import Coalesce
 from .decorators import grupo_requerido
-from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica, MovimientoInventario, DoctorColaborador, LogActividad
+from .models import Paciente, Cita, Tratamiento, Pago, ArchivoPaciente, Receta, Producto, MaterialTratamiento, GoogleCalendarConfig, ConfiguracionClinica, MovimientoInventario, DoctorColaborador, LogActividad, Lote, GestionGasto
 from .forms import PacienteForm, CitaForm, TratamientoForm, PagoForm, ArchivoPacienteForm, RecetaForm, ConfiguracionClinicaForm
 
 # Inicializar Logger de Auditori­a
@@ -82,7 +82,7 @@ def dashboard(request):
     # --- PRÓXIMAS CITAS (Elegante y compacto) ---
     citas_proximas = Cita.objects.select_related('paciente', 'tratamiento', 'doctor').filter(
         fecha=hoy
-    ).order_by('hora')[:5]
+    ).order_by('hora')[:50]
 
     # --- ALERTAS DE STOCK CRÍTICO ---
     productos_criticos = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).order_by('cantidad_actual')
@@ -535,27 +535,42 @@ def citas_json(request):
     eventos = []
 
     for cita in citas:
-        start_dt = f"{cita.fecha.isoformat()}T{cita.hora.strftime('%H:%M:%S')}"
+        import datetime
+        from datetime import timedelta
+        start_datetime = datetime.datetime.combine(cita.fecha, cita.hora)
+        duracion = getattr(cita.tratamiento, 'duracion_estimada', 30) or 30
+        end_datetime = start_datetime + timedelta(minutes=duracion)
+        start_dt = start_datetime.isoformat()
+        end_dt = end_datetime.isoformat()
+
         nombre_tratamiento = cita.tratamiento.nombre if cita.tratamiento else "Consulta General"
 
         color = '#3b82f6'
-        if cita.doctor and cita.doctor.color_agenda:
+        if cita.tratamiento and (getattr(cita.tratamiento, 'color_etiqueta', None) or getattr(cita.tratamiento, 'color', None)):
+            color = cita.tratamiento.color_etiqueta or cita.tratamiento.color
+        elif cita.doctor and cita.doctor.color_agenda:
             color = cita.doctor.color_agenda
-        elif cita.tratamiento and cita.tratamiento.color:
-            color = cita.tratamiento.color
 
         eventos.append({
             'id': f"local_{cita.id}",
             'title': f"{cita.paciente.nombre}",
             'start': start_dt,
+            'end': end_dt,
             'url': reverse('detalle_paciente', args=[cita.paciente.pk]),
             'backgroundColor': color,
             'borderColor': color,
             'color': color,
             'extendedProps': {
+                'cita_id': cita.id,
+                'estado': cita.estado,
+                'estado_display': cita.get_estado_display(),
+                'badge_class': cita.badge_class,
                 'tratamiento_nombre': nombre_tratamiento,
                 'motivo': cita.motivo,
-                'paciente_nombre': cita.paciente.nombre
+                'paciente_nombre': cita.paciente.nombre,
+                'paciente_telefono': cita.paciente.telefono,
+                'paciente_id': cita.paciente.id,
+                'tratamiento_precio': float(cita.tratamiento.precio_venta) if (cita.tratamiento and cita.tratamiento.precio_venta) else 0.0
             }
         })
 
@@ -843,12 +858,16 @@ def completar_cita_con_pago(request, cita_id):
 @login_required
 def lista_tratamientos(request):
     tratamientos = Tratamiento.objects.prefetch_related('materiales__producto').all().order_by('nombre')
+    cat = request.GET.get('categoria')
+    if cat:
+        tratamientos = tratamientos.filter(categoria=cat)
     productos = Producto.objects.all().order_by('nombre')
     doctores = DoctorColaborador.objects.all().order_by('nombre')
     return render(request, 'gestion/lista_tratamientos.html', {
         'tratamientos': tratamientos, 
         'productos': productos,
-        'doctores': doctores
+        'doctores': doctores,
+        'categorias_choices': Tratamiento.CATEGORIA_CHOICES
     })
 
 
@@ -882,33 +901,52 @@ def guardar_tratamiento(request):
     comision = request.POST.get('comision_clinica_porcentaje', 30.00)
     doctor_id = request.POST.get('doctor_referencia')
 
-    if tratamiento_id:
-        tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
-        tratamiento.nombre = nombre
-        tratamiento.descripcion = descripcion
-        tratamiento.precio_venta = precio_venta
-        tratamiento.comision_clinica_porcentaje = comision
-        if doctor_id:
-            tratamiento.doctor_referencia_id = doctor_id
-        tratamiento.save()
-        MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
-    else:
-        tratamiento = Tratamiento.objects.create(
-            nombre=nombre, 
-            descripcion=descripcion, 
-            precio_venta=precio_venta,
-            comision_clinica_porcentaje=comision,
-            doctor_referencia_id=doctor_id if doctor_id else None
-        )
+    # Nuevos campos
+    duracion_estimada = request.POST.get('duracion_estimada', 30)
+    color_etiqueta = request.POST.get('color_etiqueta', '#3b82f6')
+    categoria = request.POST.get('categoria', 'Consulta General')
+    aplica_impuestos = request.POST.get('aplica_impuestos') == 'on' or request.POST.get('aplica_impuestos') == 'true'
 
-    # Â¡AQUÃ  ESTÃ  LA MAGIA! Sin corchetes []
-    productos_ids = request.POST.getlist('producto_id')
-    cantidades = request.POST.getlist('cantidad')
+    with transaction.atomic():
+        if tratamiento_id:
+            tratamiento = get_object_or_404(Tratamiento, pk=tratamiento_id)
+            tratamiento.nombre = nombre
+            tratamiento.descripcion = descripcion
+            tratamiento.precio_venta = precio_venta
+            tratamiento.comision_clinica_porcentaje = comision
+            if doctor_id:
+                tratamiento.doctor_referencia_id = doctor_id
+            else:
+                tratamiento.doctor_referencia = None
+            tratamiento.duracion_estimada = duracion_estimada
+            tratamiento.color_etiqueta = color_etiqueta
+            # Para mantener compatibilidad con el campo color anterior:
+            tratamiento.color = color_etiqueta
+            tratamiento.categoria = categoria
+            tratamiento.aplica_impuestos = aplica_impuestos
+            tratamiento.save()
+            MaterialTratamiento.objects.filter(tratamiento=tratamiento).delete()
+        else:
+            tratamiento = Tratamiento.objects.create(
+                nombre=nombre, 
+                descripcion=descripcion, 
+                precio_venta=precio_venta,
+                comision_clinica_porcentaje=comision,
+                doctor_referencia_id=doctor_id if doctor_id else None,
+                duracion_estimada=duracion_estimada,
+                color_etiqueta=color_etiqueta,
+                color=color_etiqueta,
+                categoria=categoria,
+                aplica_impuestos=aplica_impuestos
+            )
 
-    for p_id, cant in zip(productos_ids, cantidades):
-        if p_id and cant and int(cant) > 0:
-            producto = get_object_or_404(Producto, pk=p_id)
-            MaterialTratamiento.objects.create(tratamiento=tratamiento, producto=producto, cantidad_usada=int(cant))
+        productos_ids = request.POST.getlist('producto_id')
+        cantidades = request.POST.getlist('cantidad')
+
+        for p_id, cant in zip(productos_ids, cantidades):
+            if p_id and cant and int(cant) > 0:
+                producto = get_object_or_404(Producto, pk=p_id)
+                MaterialTratamiento.objects.create(tratamiento=tratamiento, producto=producto, cantidad_usada=int(cant))
 
     return redirect('lista_tratamientos')
 
@@ -941,12 +979,15 @@ def inventario(request):
         total=Sum((F('stock_minimo') - F('cantidad_actual')) * F('costo_unitario'))
     )['total'] or 0
 
+    por_vencer_count = sum(1 for p in productos if p.proximo_a_vencer)
+
     context = {
         'productos': productos,
         'total_productos': total_productos,
         'productos_bajos': productos_bajos,
         'valor_inventario': valor_inventario,
         'presupuesto_reposicion': presupuesto_reposicion,
+        'por_vencer_count': por_vencer_count,
         'categorias': Producto.CATEGORIAS,
         'q': q,
         'cat_actual': cat,
@@ -1006,6 +1047,95 @@ def historial_movimientos(request, producto_id=None):
         'producto': producto
     })
 
+from django.http import JsonResponse
+
+@login_required
+def api_detalle_producto(request, pk):
+    producto = get_object_or_404(Producto, pk=pk)
+    movimientos = producto.movimientos.all().order_by('-fecha')[:5]
+    lotes = producto.lotes.all().order_by('fecha_caducidad')
+    
+    mov_list = []
+    for m in movimientos:
+        mov_list.append({
+            'tipo': m.get_tipo_display(),
+            'tipo_raw': m.tipo,
+            'cantidad': m.cantidad,
+            'fecha': m.fecha.strftime('%Y-%m-%d %H:%M'),
+            'usuario': m.usuario.nombre if (m.usuario and hasattr(m.usuario, 'nombre')) else (m.usuario.username if m.usuario else 'Sistema'),
+            'notas': m.notas
+        })
+        
+    lote_list = []
+    for l in lotes:
+        lote_list.append({
+            'id': l.id,
+            'numero_lote': l.numero_lote,
+            'cantidad': l.cantidad,
+            'fecha_caducidad': l.fecha_caducidad.isoformat() if l.fecha_caducidad else 'N/A'
+        })
+        
+    return JsonResponse({
+        'id': producto.id,
+        'nombre': producto.nombre,
+        'categoria': producto.get_categoria_display(),
+        'cantidad_actual': producto.cantidad_actual,
+        'stock_minimo': producto.stock_minimo,
+        'costo_unitario': float(producto.costo_unitario),
+        'necesita_reabastecimiento': producto.necesita_reabastecimiento,
+        'proximo_a_vencer': producto.proximo_a_vencer,
+        'movimientos': mov_list,
+        'lotes': lote_list
+    })
+
+@login_required
+@require_POST
+def registrar_lote(request):
+    producto_id = request.POST.get('producto_id')
+    numero_lote = request.POST.get('numero_lote')
+    cantidad = int(request.POST.get('cantidad', 0))
+    fecha_caducidad = request.POST.get('fecha_caducidad')
+    
+    producto = get_object_or_404(Producto, pk=producto_id)
+    with transaction.atomic():
+        lote = Lote.objects.create(
+            producto=producto,
+            numero_lote=numero_lote,
+            cantidad=cantidad,
+            fecha_caducidad=fecha_caducidad if fecha_caducidad else None
+        )
+        # Also register a movement for stock in!
+        stock_anterior = producto.cantidad_actual
+        producto.actualizar_stock_desde_lotes()
+        
+        MovimientoInventario.objects.create(
+            producto=producto,
+            usuario=request.user,
+            tipo='ENTRADA',
+            cantidad=cantidad,
+            stock_anterior=stock_anterior,
+            stock_nuevo=producto.cantidad_actual,
+            notas=f"Ingreso de Lote {numero_lote}"
+        )
+        
+    messages.success(request, f"Lote {numero_lote} registrado exitosamente para {producto.nombre}.")
+    return redirect('inventario')
+
+@login_required
+@require_POST
+def editar_producto_minimo(request):
+    producto_id = request.POST.get('producto_id')
+    stock_minimo = int(request.POST.get('stock_minimo', 5))
+    costo_unitario = request.POST.get('costo_unitario')
+    
+    producto = get_object_or_404(Producto, pk=producto_id)
+    producto.stock_minimo = stock_minimo
+    if costo_unitario:
+        producto.costo_unitario = Decimal(costo_unitario)
+    producto.save()
+    
+    messages.success(request, f"Producto {producto.nombre} actualizado correctamente.")
+    return redirect('inventario')
 
 @login_required
 @grupo_requerido('Doctor', 'Recepcionista')
@@ -1026,26 +1156,23 @@ def crear_producto(request):
 
 
 # ==========================================
-# 7. MÃ“DULO DE FINANZAS Y PAGOS
-# ==========================================
-
+# 7. MÓDULO DE FINANZAS
 @login_required
 @grupo_requerido('Doctor')
 def reporte_finanzas(request):
     hoy = timezone.localtime(timezone.now()).date()
     primer_dia_mes = hoy.replace(day=1)
     
-    # 1. FILTROS DINÃ MICOS
+    # 1. FILTROS DINÁMICOS
     fecha_inicio_str = request.GET.get('fecha_inicio')
     fecha_fin_str = request.GET.get('fecha_fin')
     metodo_pago = request.GET.get('metodo')
-    estado_pago = request.GET.get('estado') # 'pagado', 'pendiente'
     search_query = request.GET.get('q')
 
     pagos = Pago.objects.select_related('paciente', 'cita__tratamiento')
     citas = Cita.objects.select_related('paciente', 'tratamiento')
 
-    # Por defecto: Mes actual (para coincidir con el Dashboard)
+    # Por defecto: Mes actual
     inicio = hoy.replace(day=1)
     fin = hoy
     if fecha_inicio_str and fecha_fin_str:
@@ -1055,7 +1182,7 @@ def reporte_finanzas(request):
         except ValueError:
             pass
     
-    # Aplicar filtros siempre (ya sea por defecto o por selección del usuario)
+    # Aplicar filtros
     pagos = pagos.filter(fecha__date__range=(inicio, fin))
     citas = citas.filter(fecha__range=(inicio, fin))
 
@@ -1066,10 +1193,22 @@ def reporte_finanzas(request):
         pagos = pagos.filter(Q(paciente__nombre__icontains=search_query) | Q(notas__icontains=search_query))
         citas = citas.filter(paciente__nombre__icontains=search_query)
 
-    # 2. MÃ‰TRICAS PRINCIPALES (KPIs)
+    # 2. MÉTRICAS PRINCIPALES (KPIs)
     ingresos_totales = pagos.aggregate(total=Sum('monto'))['total'] or 0
     total_facturado = citas.aggregate(total=Sum('tratamiento__precio_venta'))['total'] or 0
     deuda_total = total_facturado - ingresos_totales
+
+    # Ticket Promedio Periodo vs Pasado
+    total_tx = pagos.count()
+    ticket_promedio = (ingresos_totales / total_tx) if total_tx > 0 else 0
+
+    ultimo_dia_mes_pasado = primer_dia_mes - timezone.timedelta(days=1)
+    primer_dia_mes_pasado = ultimo_dia_mes_pasado.replace(day=1)
+    pagos_pasado = Pago.objects.filter(fecha__date__range=(primer_dia_mes_pasado, ultimo_dia_mes_pasado))
+    ingresos_mes_pasado = pagos_pasado.aggregate(total=Sum('monto'))['total'] or 0
+    total_tx_pasado = pagos_pasado.count()
+    ticket_promedio_pasado = (ingresos_mes_pasado / total_tx_pasado) if total_tx_pasado > 0 else 0
+    sube_ticket = ticket_promedio >= ticket_promedio_pasado
 
     # --- DESGLOSE REVENUE SHARE (DOCTORES) ---
     pagos_con_doctor = Pago.objects.select_related('cita', 'cita__doctor', 'cita__tratamiento').filter(
@@ -1083,19 +1222,30 @@ def reporte_finanzas(request):
         if pago.cita and pago.cita.tratamiento:
             porcentaje_clinica = pago.cita.tratamiento.comision_clinica_porcentaje
         else:
-            porcentaje_clinica = 30 # Porcentaje por defecto si no hay tratamiento
+            porcentaje_clinica = 30
         parte_clinica = (pago.monto * porcentaje_clinica) / 100
         ingresos_alquiler_espacio += parte_clinica
         pagos_a_doctores += (pago.monto - parte_clinica)
 
+    # Gastos en el periodo
+    gastos_periodo = GestionGasto.objects.filter(fecha__range=(inicio, fin)).aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos_periodo = gastos_periodo + pagos_a_doctores
+    
+    # Margen Neto
+    # Margen = (Ingresos Alquiler Espacio - Gastos Periodo) / Ingresos Totales * 100
+    margen_neto_porcentaje = ((ingresos_alquiler_espacio - gastos_periodo) / ingresos_totales * 100) if ingresos_totales > 0 else 0
+
+    # Ingresos Proyectados (Resto del mes)
+    ultimo_dia_mes_actual = primer_dia_mes + timezone.timedelta(days=32)
+    ultimo_dia_mes_actual = ultimo_dia_mes_actual.replace(day=1) - timezone.timedelta(days=1)
+    citas_proyectadas = Cita.objects.filter(
+        estado__in=['PROGRAMADA', 'CONFIRMADA'],
+        fecha__gt=hoy,
+        fecha__lte=ultimo_dia_mes_actual
+    ).select_related('tratamiento')
+    ingresos_proyectados = sum(c.tratamiento.precio_venta for c in citas_proyectadas if c.tratamiento)
+
     # Tendencia (vs Mes Anterior)
-    ultimo_dia_mes_pasado = primer_dia_mes - timezone.timedelta(days=1)
-    primer_dia_mes_pasado = ultimo_dia_mes_pasado.replace(day=1)
-    
-    ingresos_mes_pasado = Pago.objects.filter(
-        fecha__date__range=(primer_dia_mes_pasado, ultimo_dia_mes_pasado)
-    ).aggregate(total=Sum('monto'))['total'] or 0
-    
     tendencia_ingresos = ((ingresos_totales - ingresos_mes_pasado) / ingresos_mes_pasado * 100) if ingresos_mes_pasado > 0 else 100
 
     # Punto de Equilibrio
@@ -1103,16 +1253,26 @@ def reporte_finanzas(request):
     falta_punto_equilibrio = max(0, gastos_fijos - ingresos_totales)
     progreso_equilibrio = min(100, (ingresos_totales / gastos_fijos * 100)) if gastos_fijos > 0 else 100
 
-    # 3. DATOS PARA GRÁFICOS (Sincronizados con el filtro)
-    # Columna A: Flujo en el periodo seleccionado
-    flujo_periodo = Pago.objects.filter(fecha__date__range=(inicio, fin)).extra(
-        select={'day': "date(fecha)"}
-    ).values('day').annotate(total=Sum('monto')).order_by('day')
-    
-    labels_flujo = [item['day'].strftime('%d %b') if isinstance(item['day'], date) else item['day'] for item in flujo_periodo]
-    data_flujo = [float(item['total']) for item in flujo_periodo]
+    # 3. DATOS PARA GRÁFICOS DIARIOS
+    labels_flujo = []
+    data_flujo = []
+    data_egresos_flujo = []
+    current = inicio
+    while current <= fin:
+        labels_flujo.append(current.strftime('%d %b'))
+        i_val = Pago.objects.filter(fecha__date=current).aggregate(total=Sum('monto'))['total'] or 0
+        g_val = GestionGasto.objects.filter(fecha=current).aggregate(total=Sum('monto'))['total'] or 0
+        c_val = 0
+        p_d = Pago.objects.filter(fecha__date=current).select_related('cita', 'cita__tratamiento')
+        for p in p_d:
+            pct = p.cita.tratamiento.comision_clinica_porcentaje if (p.cita and p.cita.tratamiento) else 30
+            c_val += p.monto * (100 - pct) / 100
+            
+        data_flujo.append(float(i_val))
+        data_egresos_flujo.append(float(g_val + c_val))
+        current += timezone.timedelta(days=1)
 
-    # Columna B: Ingresos por Tratamiento en el periodo seleccionado (incluyendo abonos)
+    # Ingresos por Tratamiento
     ingresos_por_tratamiento = Pago.objects.filter(
         fecha__date__range=(inicio, fin)
     ).values(
@@ -1124,7 +1284,8 @@ def reporte_finanzas(request):
 
     # 4. TABLA DE MOVIMIENTOS PRO (Aging & Status)
     movimientos = []
-    # AÃ±adimos pagos realizados
+    
+    # Pagos realizados
     for p in pagos.order_by('-fecha')[:50]:
         movimientos.append({
             'id': p.id,
@@ -1135,10 +1296,26 @@ def reporte_finanzas(request):
             'monto': p.monto,
             'metodo': p.get_metodo_display(),
             'estado': 'COMPLETO',
-            'es_mora': False
+            'es_mora': False,
+            'doctor': p.cita.doctor.nombre if (p.cita and p.cita.doctor) else "No asignado"
+        })
+        
+    # Egresos registrados
+    for g in GestionGasto.objects.filter(fecha__range=(inicio, fin)).order_by('-fecha'):
+        movimientos.append({
+            'id': g.id,
+            'tipo': 'EGRESO',
+            'fecha': timezone.make_aware(datetime.combine(g.fecha, time.min)) if timezone.is_naive(datetime.combine(g.fecha, time.min)) else datetime.combine(g.fecha, time.min),
+            'paciente': None,
+            'concepto': f"Gasto: {g.concepto}",
+            'monto': g.monto,
+            'metodo': g.get_metodo_pago_display(),
+            'estado': 'PAGADO',
+            'es_mora': False,
+            'doctor': 'N/A'
         })
     
-    # Añadimos citas pendientes de pago (Aging > 15 días)
+    # Citas pendientes (Aging > 15 días)
     limite_mora = hoy - timezone.timedelta(days=15)
     citas_pendientes = citas.filter(estado='COMPLETADA', fecha__lte=limite_mora).annotate(
         pagado=Coalesce(Sum('pagos_detalle__monto'), 0, output_field=DecimalField())
@@ -1153,29 +1330,37 @@ def reporte_finanzas(request):
             'monto': c.tratamiento.precio_venta - c.pagado,
             'metodo': 'N/A',
             'estado': 'PENDIENTE',
-            'es_mora': True
+            'es_mora': True,
+            'doctor': 'N/A'
         })
 
     # Ordenar por fecha descendente
     movimientos.sort(key=lambda x: x['fecha'], reverse=True)
 
-    # Ingresos Históricos (All time)
+    # Ingresos Históricos
     ingresos_historicos = Pago.objects.aggregate(total=Sum('monto'))['total'] or 0
 
     import json
     context = {
         'ingresos_totales': ingresos_totales,
+        'gastos_periodo': gastos_periodo,
+        'total_egresos_periodo': total_egresos_periodo,
         'ingresos_historicos': ingresos_historicos,
         'ingresos_alquiler_espacio': ingresos_alquiler_espacio,
         'pagos_a_doctores': pagos_a_doctores,
         'total_facturado': total_facturado,
         'deuda_total': deuda_total,
+        'ticket_promedio': round(ticket_promedio, 2),
+        'sube_ticket': sube_ticket,
+        'ingresos_proyectados': ingresos_proyectados,
+        'margen_neto_porcentaje': round(margen_neto_porcentaje, 1),
         'tendencia_ingresos': round(tendencia_ingresos, 1),
         'gastos_fijos': gastos_fijos,
         'falta_equilibrio': falta_punto_equilibrio,
         'progreso_equilibrio': round(progreso_equilibrio, 1),
         'labels_flujo_json': json.dumps(labels_flujo),
         'data_flujo_json': json.dumps(data_flujo),
+        'data_egresos_flujo_json': json.dumps(data_egresos_flujo),
         'labels_tratamientos_json': json.dumps(labels_tratamientos),
         'data_tratamientos_json': json.dumps(data_tratamientos),
         'movimientos': movimientos,
@@ -1546,4 +1731,182 @@ def descargar_respaldo(request):
         return response
     else:
         raise Http404("Base de datos no encontrada")
+
+
+@login_required
+@require_POST
+def api_cambiar_estado(request, pk):
+    cita = get_object_or_404(Cita, pk=pk)
+    nuevo_estado = request.POST.get('nuevo_estado')
+    motivo = request.POST.get('motivo', '')
+    fecha_reprogramada = request.POST.get('fecha')
+    hora_reprogramada = request.POST.get('hora')
+
+    if not nuevo_estado:
+        return JsonResponse({'status': 'error', 'message': 'El nuevo estado es requerido.'}, status=400)
+
+    try:
+        if nuevo_estado == 'REPROGRAMADA':
+            if fecha_reprogramada and hora_reprogramada:
+                cita.fecha = datetime.strptime(fecha_reprogramada, '%Y-%m-%d').date()
+                cita.hora = datetime.strptime(hora_reprogramada, '%H:%M').time()
+                cita.save(update_fields=['fecha', 'hora'])
+        
+        if nuevo_estado in ['CANCELADA', 'NO_ASISTIO'] and motivo:
+            cita.observaciones_doctor = f"Motivo: {motivo}"
+            cita.save(update_fields=['observaciones_doctor'])
+
+        cita.cambiar_estado(nuevo_estado, usuario=request.user)
+        log_audit(request, "CAMBIO_ESTADO_CITA", f"Cita ID: {cita.id} cambiada a {nuevo_estado}")
+
+        return JsonResponse({
+            'status': 'success',
+            'nuevo_estado': cita.get_estado_display(),
+            'nuevo_estado_val': cita.estado,
+            'badge_class': cita.badge_class,
+            'fecha': cita.fecha.strftime('%Y-%m-%d'),
+            'hora': cita.hora.strftime('%H:%M')
+        })
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@grupo_requerido('Doctor')
+@require_POST
+def registrar_gasto(request):
+    fecha = request.POST.get('fecha')
+    concepto = request.POST.get('concepto')
+    monto = request.POST.get('monto')
+    metodo = request.POST.get('metodo_pago')
+    notas = request.POST.get('notas', '')
+    
+    if not fecha or not concepto or not monto:
+        messages.error(request, 'Fecha, concepto y monto son requeridos para registrar un gasto.')
+        return redirect('reporte_finanzas')
+        
+    GestionGasto.objects.create(
+        fecha=fecha,
+        concepto=concepto,
+        monto=Decimal(monto),
+        metodo_pago=metodo or 'EFECTIVO',
+        notas=notas
+    )
+    messages.success(request, 'Gasto registrado exitosamente.')
+    return redirect('reporte_finanzas')
+
+
+@login_required
+@grupo_requerido('Doctor')
+def exportar_finanzas(request):
+    formato = request.GET.get('format', 'excel')
+    inicio_str = request.GET.get('fecha_inicio')
+    fin_str = request.GET.get('fecha_fin')
+    
+    hoy = timezone.now().date()
+    inicio = hoy.replace(day=1)
+    fin = hoy
+    if inicio_str and fin_str:
+        try:
+            inicio = datetime.strptime(inicio_str, '%Y-%m-%d').date()
+            fin = datetime.strptime(fin_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+            
+    pagos = Pago.objects.filter(fecha__date__range=(inicio, fin)).select_related('paciente', 'cita')
+    gastos = GestionGasto.objects.filter(fecha__range=(inicio, fin))
+    
+    efectivo = sum(p.monto for p in pagos if p.metodo == 'EFECTIVO')
+    tarjeta = sum(p.monto for p in pagos if p.metodo == 'TARJETA')
+    transferencia = sum(p.monto for p in pagos if p.metodo == 'TRANSFERENCIA')
+    total_gastos = sum(g.monto for g in gastos)
+    
+    if formato == 'pdf':
+        clinica = getattr(request, 'tenant', None)
+        nombre_clinica = getattr(clinica, 'nombre_comercial', 'Clínica Dental')
+        html = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: sans-serif; padding: 40px; color: #333; }}
+                h1 {{ color: #111; margin-bottom: 5px; }}
+                h2 {{ color: #555; font-size: 14px; margin-top: 0; margin-bottom: 30px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+                th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }}
+                th {{ background-color: #f8f9fa; font-weight: bold; }}
+                .total-card {{ background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 20px; }}
+            </style>
+        </head>
+        <body onload="window.print()">
+            <h1>Cierre de Caja Detallado</h1>
+            <h2>Periodo: {inicio} al {fin} | Clínica: {nombre_clinica}</h2>
+            
+            <div class="total-card">
+                <p><strong>Recaudación por Efectivo:</strong> ${efectivo:.2f}</p>
+                <p><strong>Recaudación por Tarjeta:</strong> ${tarjeta:.2f}</p>
+                <p><strong>Recaudación por Transferencias:</strong> ${transferencia:.2f}</p>
+                <p><strong>Total de Gastos en el Periodo:</strong> ${total_gastos:.2f}</p>
+                <p style="font-size: 16px; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                    <strong>Balance Neto:</strong> ${(efectivo + tarjeta + transferencia - total_gastos):.2f}
+                </p>
+            </div>
+            
+            <h3>Desglose de Transacciones (Ingresos)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Paciente</th>
+                        <th>Concepto</th>
+                        <th>Método</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        for p in pagos:
+            html += f"""
+                <tr>
+                    <td>{p.fecha.strftime('%d/%m/%Y')}</td>
+                    <td>{p.paciente.nombre}</td>
+                    <td>{p.notas or 'Consulta'}</td>
+                    <td>{p.get_metodo_display()}</td>
+                    <td>${p.monto:.2f}</td>
+                </tr>
+            """
+        html += """
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+        return HttpResponse(html)
+    else:
+        import csv
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="cierre_caja_{inicio}_{fin}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['CIERRE DE CAJA DETALLADO', f'Desde {inicio} hasta {fin}'])
+        writer.writerow([])
+        writer.writerow(['METRICAS DE CAJA'])
+        writer.writerow(['Efectivo', efectivo])
+        writer.writerow(['Tarjeta', tarjeta])
+        writer.writerow(['Transferencias', transferencia])
+        writer.writerow(['Total Gastos', total_gastos])
+        writer.writerow(['Balance Neto', efectivo + tarjeta + transferencia - total_gastos])
+        writer.writerow([])
+        writer.writerow(['DETALLE DE INGRESOS'])
+        writer.writerow(['Fecha', 'Paciente', 'Concepto', 'Metodo', 'Monto'])
+        for p in pagos:
+            writer.writerow([p.fecha.strftime('%d/%m/%Y'), p.paciente.nombre, p.notas or 'Consulta', p.get_metodo_display(), p.monto])
+            
+        writer.writerow([])
+        writer.writerow(['DETALLE DE GASTOS'])
+        writer.writerow(['Fecha', 'Concepto', 'Metodo Pago', 'Monto'])
+        for g in gastos:
+            writer.writerow([g.fecha.strftime('%d/%m/%Y'), g.concepto, g.get_metodo_pago_display(), g.monto])
+            
+        return response
 

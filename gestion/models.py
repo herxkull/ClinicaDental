@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 import uuid
 
 class DoctorColaborador(models.Model):
@@ -36,12 +37,24 @@ class Paciente(models.Model):
 
 
 class Tratamiento(models.Model):
+    CATEGORIA_CHOICES = [
+        ('Consulta General', 'Consulta General'),
+        ('Ortodoncia', 'Ortodoncia'),
+        ('Periodoncia', 'Periodoncia'),
+        ('Cirugía', 'Cirugía'),
+        ('Estética', 'Estética'),
+    ]
+
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio cobrado al paciente")
     color = models.CharField(max_length=7, default="#3b82f6", help_text="Color en formato HEX")
+    color_etiqueta = models.CharField(max_length=7, default="#3b82f6", help_text="Color hexadecimal para la etiqueta")
     comision_clinica_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=30.00, help_text="Porcentaje que se queda la clínica (ej: 30.00)")
     doctor_referencia = models.ForeignKey('DoctorColaborador', on_delete=models.SET_NULL, null=True, blank=True, help_text="Doctor que suele realizar este tratamiento")
+    duracion_estimada = models.IntegerField(default=30, help_text="Duración en minutos")
+    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES, default='Consulta General')
+    aplica_impuestos = models.BooleanField(default=False)
 
     def __str__(self):
         return self.nombre
@@ -66,8 +79,13 @@ class Cita(models.Model):
     ESTADO_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
         ('CONFIRMADA', 'Confirmada'),
+        ('PROGRAMADA', 'Programada'),
+        ('EN_SALA', 'En Sala (Esperando)'),
+        ('EN_CURSO', 'En Curso'),
         ('COMPLETADA', 'Completada'),
         ('CANCELADA', 'Cancelada'),
+        ('REPROGRAMADA', 'Reprogramada'),
+        ('NO_ASISTIO', 'No Asistió'),
     ]
 
     # Agregamos related_name='citas' para búsquedas más rápidas
@@ -88,6 +106,18 @@ class Cita(models.Model):
     # Campo para sincronización con Google Calendar
     google_event_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
+    def cambiar_estado(self, nuevo_estado, usuario=None):
+        validos = [choice[0] for choice in self.ESTADO_CHOICES]
+        if nuevo_estado not in validos:
+            raise ValueError(f"Estado {nuevo_estado} no es válido.")
+        
+        if self.estado in ['CANCELADA', 'NO_ASISTIO'] and nuevo_estado in ['EN_CURSO', 'EN_SALA']:
+            raise ValueError(f"No se puede cambiar de {self.estado} a {nuevo_estado}.")
+
+        self.estado = nuevo_estado
+        self.save(update_fields=['estado'])
+        return self
+
     def __str__(self):
         return f"{self.paciente.nombre} - {self.fecha.strftime('%d/%m/%Y')}"
 
@@ -96,8 +126,13 @@ class Cita(models.Model):
         classes = {
             'PENDIENTE': 'bg-gray-500',
             'CONFIRMADA': 'bg-blue-500',
+            'PROGRAMADA': 'bg-indigo-500',
+            'EN_SALA': 'bg-yellow-500',
+            'EN_CURSO': 'bg-purple-500',
             'COMPLETADA': 'bg-green-500',
             'CANCELADA': 'bg-red-500',
+            'REPROGRAMADA': 'bg-orange-500',
+            'NO_ASISTIO': 'bg-gray-700',
         }
         return classes.get(self.estado, 'bg-gray-500')
 
@@ -167,6 +202,24 @@ class Producto(models.Model):
     barcode = models.CharField(max_length=100, blank=True, null=True, unique=True)
     ultima_actualizacion = models.DateTimeField(auto_now=True)
 
+    def actualizar_stock_desde_lotes(self):
+        lotes = self.lotes.all()
+        if lotes.exists():
+            self.cantidad_actual = sum(l.cantidad for l in lotes)
+        else:
+            # Si no hay lotes, conservamos la cantidad actual o la ponemos en 0
+            pass
+        self.save(update_fields=['cantidad_actual'])
+
+    @property
+    def proximo_a_vencer(self):
+        """Verifica si hay lotes que expiran en los próximos 30 días."""
+        from django.utils import timezone
+        import datetime
+        hoy = timezone.now().date()
+        limite = hoy + datetime.timedelta(days=30)
+        return self.lotes.filter(fecha_caducidad__gte=hoy, fecha_caducidad__lte=limite).exists()
+
     @property
     def total_valor_stock(self):
         return self.cantidad_actual * self.costo_unitario
@@ -177,6 +230,26 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"[{self.categoria}] {self.nombre} (Stock: {self.cantidad_actual})"
+
+
+class Lote(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='lotes')
+    numero_lote = models.CharField(max_length=50, db_index=True)
+    cantidad = models.IntegerField(default=0)
+    fecha_caducidad = models.DateField(blank=True, null=True, db_index=True)
+    fecha_ingreso = models.DateField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.producto.actualizar_stock_desde_lotes()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.producto.actualizar_stock_desde_lotes()
+
+    def __str__(self):
+        return f"Lote {self.numero_lote} ({self.cantidad})"
+
 
 class MovimientoInventario(models.Model):
     TIPO_MOVIMIENTO = [
@@ -264,3 +337,31 @@ class LogActividad(models.Model):
 
     def __str__(self):
         return f"{self.fecha.strftime('%d/%m/%Y %H:%M')} - {self.usuario} - {self.accion}"
+
+
+class GestionGasto(models.Model):
+    CATEGORIAS = [
+        ('Laboratorio', 'Laboratorio'),
+        ('Nómina', 'Nómina'),
+        ('Servicios', 'Servicios'),
+        ('Insumos Externos', 'Insumos Externos'),
+        ('Otros', 'Otros'),
+    ]
+    METODOS_PAGO = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('TARJETA', 'Tarjeta'),
+    ]
+    fecha = models.DateField(default=timezone.now, db_index=True)
+    concepto = models.CharField(max_length=50, choices=CATEGORIAS, default='Otros')
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='EFECTIVO')
+    notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Gasto Financiero"
+        verbose_name_plural = "Gastos Financieros"
+
+    def __str__(self):
+        return f"{self.concepto} - ${self.monto} ({self.get_metodo_pago_display()})"

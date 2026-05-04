@@ -9,7 +9,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        background: #f9fafb;
+        background: #0f172a;
     }
 
     .card-gradient-blue {
@@ -31,131 +31,164 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
 
-    <!-- ENCABEZADO CON DROPDOWN DE EXPORTACIÓN -->
+    <!-- ENCABEZADO CON BOTONES DE ACCIÓN RÁPIDA -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Gestión Financiera</h1>
-            <p class="text-sm text-gray-500 font-medium">Análisis de rendimiento, flujo de caja y proyecciones de
-                rentabilidad.</p>
+            <h1 class="text-3xl font-extrabold text-white tracking-tight flex items-center">
+                <i class="fas fa-wallet mr-3 text-emerald-400"></i>Gestión Financiera
+            </h1>
+            <p class="text-sm text-gray-400 font-medium">Análisis de rendimiento, flujo de caja y proyecciones de rentabilidad en tiempo real.</p>
         </div>
         <div class="flex gap-3 w-full md:w-auto">
-            <div class="relative group">
-                <button
-                    class="w-full md:w-auto bg-gray-900 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-black transition-all flex items-center justify-center">
-                    <i class="fas fa-file-export mr-2 text-xs text-brand-400"></i> Exportar
-                    <i class="fas fa-chevron-down ml-2 text-[10px] opacity-50"></i>
-                </button>
-                <div
-                    class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 hidden group-hover:block z-50 overflow-hidden">
-                    <a href="#" onclick="window.print()"
-                        class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
-                        <i class="fas fa-file-pdf mr-3 text-red-500"></i> Formato PDF (Pro)
-                    </a>
-                    <a href="{% url 'exportar_excel' %}"
-                        class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
-                        <i class="fas fa-file-excel mr-3 text-green-600"></i> Data pura (Excel)
-                    </a>
-                </div>
-            </div>
+            <!-- Botón Registrar Gasto -->
+            <button onclick="openModalGasto()" 
+                class="w-full md:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center">
+                <i class="fas fa-minus-circle mr-2"></i> [-] Registrar Gasto
+            </button>
+
+            <!-- Botón Exportar Contable -->
+            <button onclick="openExportModal()"
+                class="w-full md:w-auto bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg border border-slate-700 transition-all flex items-center justify-center">
+                <i class="fas fa-file-export mr-2 text-emerald-400"></i> Exportar
+            </button>
         </div>
     </div>
 
-    <!-- MÉTRICAS ENTERPRISE (4 CARDS) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <!-- MÉTRICAS ENTERPRISE (5 CARDS) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
         <!-- Ingresos del Periodo -->
         <div class="card-gradient-blue rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Periodo</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display">${{ ingresos_totales|floatformat:2 }}</h2>
-                <p class="text-[10px] text-blue-200 mt-2">Filtro seleccionado</p>
+            <div class="relative z-10 flex flex-col justify-between h-full">
+                <div>
+                    <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Ingresos Periodo</p>
+                    <h2 class="text-3xl font-extrabold mt-2 font-display">${{ ingresos_totales|floatformat:2 }}</h2>
+                </div>
+                <div class="flex items-center justify-between mt-4">
+                    <p class="text-[10px] text-blue-200">Filtro seleccionado</p>
+                    {% if tendencia_ingresos >= 0 %}
+                    <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fas fa-arrow-up mr-1"></i>+{{ tendencia_ingresos|floatformat:1 }}%</span>
+                    {% else %}
+                    <span class="bg-rose-500/20 text-rose-300 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fas fa-arrow-down mr-1"></i>{{ tendencia_ingresos|floatformat:1 }}%</span>
+                    {% endif %}
+                </div>
             </div>
-            <i
-                class="fas fa-calendar-check absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-calendar-check absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
-        <!-- Ingresos Históricos -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos Históricos</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-gray-900">${{ ingresos_historicos|floatformat:2 }}</h2>
-                <p class="text-[10px] text-gray-400 mt-2">Acumulado total</p>
+        <!-- Ticket Promedio -->
+        <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 p-6 relative overflow-hidden group">
+            <div class="relative z-10 flex flex-col justify-between h-full">
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ticket Promedio</p>
+                    <h2 class="text-3xl font-extrabold mt-2 font-display text-white">${{ ticket_promedio|floatformat:2 }}</h2>
+                </div>
+                <div class="flex items-center justify-between mt-4">
+                    <p class="text-[10px] text-gray-400">Por transacción</p>
+                    {% if sube_ticket %}
+                    <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fas fa-chart-line mr-1"></i>Estable</span>
+                    {% else %}
+                    <span class="bg-rose-500/20 text-rose-300 font-bold px-2 py-0.5 rounded text-[10px]"><i class="fas fa-arrow-down mr-1"></i>Bajando</span>
+                    {% endif %}
+                </div>
             </div>
-            <i
-                class="fas fa-archive absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-receipt absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
         </div>
 
         <!-- Ganancia Clínica -->
-        <div class="bg-gray-900 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
-                <p class="text-[10px] text-gray-400 mt-2">Neto para la clínica</p>
+        <div class="bg-slate-900 rounded-2xl shadow-xl p-6 text-white border border-slate-700 relative overflow-hidden group">
+            <div class="relative z-10 flex flex-col justify-between h-full">
+                <div>
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ganancia Clínica</p>
+                    <h2 class="text-3xl font-extrabold mt-2 font-display text-blue-400">${{ ingresos_alquiler_espacio|floatformat:2 }}</h2>
+                </div>
+                <div class="flex items-center justify-between mt-4">
+                    <p class="text-[10px] text-gray-400">Neto para clínica</p>
+                    <span class="{% if margen_neto_porcentaje >= 0 %}bg-emerald-500/20 text-emerald-300{% else %}bg-rose-500/20 text-rose-300{% endif %} font-bold px-2 py-0.5 rounded text-[10px]">
+                        {{ margen_neto_porcentaje|floatformat:1 }}% Margen
+                    </span>
+                </div>
             </div>
-            <i
-                class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-building absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
 
-        <!-- Deuda Pendiente -->
-        <div class="card-gradient-red rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-red-100 uppercase tracking-widest">Cuentas por Cobrar</p>
-                <h2 class="text-3xl font-extrabold mt-2 font-display">${{ deuda_total|floatformat:2 }}</h2>
-                <p class="text-[10px] text-red-200 mt-2">Cartera activa</p>
+        <!-- Ingresos Proyectados -->
+        <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 p-6 relative overflow-hidden group">
+            <div class="relative z-10 flex flex-col justify-between h-full">
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ingresos Proyectados</p>
+                    <h2 class="text-3xl font-extrabold mt-2 font-display text-white">${{ ingresos_proyectados|floatformat:2 }}</h2>
+                </div>
+                <div class="flex items-center mt-4">
+                    <p class="text-[10px] text-emerald-400"><i class="fas fa-radar mr-1"></i>Resto del mes</p>
+                </div>
             </div>
-            <i
-                class="fas fa-hand-holding-usd absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
+            <i class="fas fa-bullseye absolute -right-4 -bottom-4 text-8xl opacity-5 group-hover:scale-110 transition-transform"></i>
+        </div>
+
+        <!-- Cuentas por Cobrar -->
+        <div class="card-gradient-red rounded-2xl shadow-xl p-6 text-white relative overflow-hidden group">
+            <div class="relative z-10 flex flex-col justify-between h-full">
+                <div>
+                    <p class="text-[10px] font-bold text-red-100 uppercase tracking-widest">Cuentas por Cobrar</p>
+                    <h2 class="text-3xl font-extrabold mt-2 font-display">${{ deuda_total|floatformat:2 }}</h2>
+                </div>
+                <div class="flex items-center mt-4">
+                    <p class="text-[10px] text-red-200">Cartera activa</p>
+                </div>
+            </div>
+            <i class="fas fa-hand-holding-usd absolute -right-4 -bottom-4 text-8xl opacity-10 group-hover:scale-110 transition-transform"></i>
         </div>
     </div>
 
     <!-- SECCIÓN DE GRÁFICOS (DATA VIZ) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 p-6">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="font-bold text-gray-900 flex items-center">
-                    <i class="fas fa-chart-area mr-2 text-blue-500"></i> Flujo de Ingresos (30d)
+                <h3 class="font-bold text-white flex items-center">
+                    <i class="fas fa-chart-area mr-2 text-blue-400"></i> Flujo Diario: Ingresos Brutos vs Gastos + Comisiones
                 </h3>
             </div>
-            <div class="h-[300px]">
+            <div class="h-[320px]">
                 <canvas id="chartFlujo"></canvas>
             </div>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 p-6">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="font-bold text-gray-900 flex items-center">
-                    <i class="fas fa-chart-pie mr-2 text-purple-500"></i> Ingresos por Tratamiento
+                <h3 class="font-bold text-white flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-purple-400"></i> Ingresos por Tratamiento
                 </h3>
             </div>
-            <div class="h-[300px]">
+            <div class="h-[320px]">
                 <canvas id="chartTratamientos"></canvas>
             </div>
         </div>
     </div>
 
     <!-- BARRA DE BÚSQUEDA Y FILTROS PRO -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-8">
+    <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 p-4 mb-8">
         <form method="GET" class="flex flex-col lg:flex-row gap-4">
             <div class="relative flex-grow">
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input type="text" name="q" value="{{ search_query|default:'' }}"
                     placeholder="Buscar por paciente o concepto..."
-                    class="w-full pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                    class="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 text-sm font-medium">
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}"
-                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                    class="px-4 py-3 bg-slate-900 border border-slate-700 text-white rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
                 <input type="date" name="fecha_fin" value="{{ fecha_fin }}"
-                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                    class="px-4 py-3 bg-slate-900 border border-slate-700 text-white rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
                 <select name="metodo"
-                    class="px-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                    class="px-4 py-3 bg-slate-900 border border-slate-700 text-white rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
                     <option value="">Método Pago</option>
-                    <option value="EFECTIVO">💵 Efectivo</option>
-                    <option value="TRANSFERENCIA">📱 Transferencia</option>
-                    <option value="TARJETA">💳 Tarjeta</option>
+                    <option value="EFECTIVO" {% if request.GET.metodo == 'EFECTIVO' %}selected{% endif %}>💵 Efectivo</option>
+                    <option value="TRANSFERENCIA" {% if request.GET.metodo == 'TRANSFERENCIA' %}selected{% endif %}>📱 Transferencia</option>
+                    <option value="TARJETA" {% if request.GET.metodo == 'TARJETA' %}selected{% endif %}>💳 Tarjeta</option>
                 </select>
                 <button type="submit"
-                    class="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center px-6">
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all flex items-center justify-center px-6">
                     <i class="fas fa-filter mr-2"></i> Filtrar
                 </button>
             </div>
@@ -163,88 +196,78 @@
     </div>
 
     <!-- TABLA DE MOVIMIENTOS PRO -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-8 py-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-            <h3 class="font-bold text-gray-900 text-lg">Historial de Transacciones</h3>
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mostrando últimos 50
-                movimientos</span>
+    <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
+        <div class="px-8 py-5 border-b border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-900/50 gap-4">
+            <div class="flex flex-col gap-1">
+                <h3 class="font-bold text-white text-lg">Historial de Transacciones</h3>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mostrando últimos movimientos</span>
+            </div>
+            <!-- Tabs JS Filter -->
+            <div class="flex gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                <button onclick="filterType('ALL')" id="tab-ALL" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">Todos</button>
+                <button onclick="filterType('INGRESO')" id="tab-INGRESO" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">Ingresos</button>
+                <button onclick="filterType('EGRESO')" id="tab-EGRESO" class="tab-btn px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">Egresos</button>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="sticky-header">
                     <tr>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Fecha / Tipo
-                        </th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Paciente</th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Concepto</th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Método</th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Monto</th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Fecha / Tipo</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Paciente</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Doctor Colaborador</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Concepto</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Método</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Monto</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-slate-700">Estado</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-50">
+                <tbody class="divide-y divide-slate-700" id="tx-tbody">
                     {% for mov in movimientos %}
-                    <tr class="hover:bg-gray-50/50 transition-colors {% if mov.es_mora %}bg-red-50/30{% endif %}">
+                    <tr data-tipo="{{ mov.tipo }}" class="tx-row hover:bg-slate-700/50 transition-colors {% if mov.es_mora %}bg-red-500/10{% endif %}">
                         <td class="px-8 py-5">
-                            <p class="text-sm font-bold text-gray-900">{{ mov.fecha|date:"d M, Y" }}</p>
-                            <p
-                                class="text-[10px] {% if mov.tipo == 'INGRESO' %}text-green-500{% else %}text-red-500{% endif %} font-bold uppercase">
-                                {{ mov.tipo }}</p>
+                            <p class="text-sm font-bold text-white">{{ mov.fecha|date:"d M, Y" }}</p>
+                            <p class="text-[10px] {% if mov.tipo == 'INGRESO' %}text-emerald-400{% else %}text-rose-400{% endif %} font-bold uppercase tracking-widest mt-0.5">
+                                {{ mov.tipo }}
+                            </p>
                         </td>
                         <td class="px-8 py-5">
+                            {% if mov.paciente %}
                             <a href="{% url 'detalle_paciente' mov.paciente.pk %}" class="flex items-center group">
-                                <div
-                                    class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 mr-3 group-hover:bg-brand-500 group-hover:text-white transition-all text-xs">
+                                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-gray-300 mr-3 group-hover:bg-emerald-500 group-hover:text-white transition-all text-xs">
                                     {{ mov.paciente.nombre|slice:":1" }}
                                 </div>
-                                <span class="font-bold text-gray-700 group-hover:text-brand-600 transition-colors">{{ mov.paciente.nombre }}</span>
+                                <span class="font-bold text-white group-hover:text-emerald-400 transition-colors">{{ mov.paciente.nombre }}</span>
                             </a>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
                         </td>
-                        <td class="px-8 py-5 text-sm text-gray-500 italic">{{ mov.concepto }}</td>
+                        <td class="px-8 py-5 text-sm font-semibold text-gray-300">
+                            {{ mov.doctor|default:"N/A" }}
+                        </td>
+                        <td class="px-8 py-5 text-sm text-gray-400">{{ mov.concepto }}</td>
                         <td class="px-8 py-5">
-                            <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">{{ mov.metodo }}</span>
+                            <span class="text-xs font-bold text-gray-300 bg-slate-700 px-2 py-1 rounded-md">{{ mov.metodo }}</span>
                         </td>
                         <td class="px-8 py-5">
-                            <span
-                                class="font-display font-bold {% if mov.tipo == 'INGRESO' %}text-green-600{% else %}text-red-600{% endif %}">
+                            <span class="font-display font-extrabold {% if mov.tipo == 'INGRESO' %}text-emerald-400{% else %}text-rose-400{% endif %}">
                                 {% if mov.tipo == 'INGRESO' %}+{% else %}-{% endif %} ${{ mov.monto|floatformat:2 }}
                             </span>
                         </td>
                         <td class="px-8 py-5">
-                            {% if mov.estado == 'COMPLETO' %}
-                            <span
-                                class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-widest">Liquidado</span>
+                            {% if mov.estado == 'COMPLETO' or mov.estado == 'PAGADO' %}
+                            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-widest">Liquidado</span>
                             {% else %}
-                            <span
-                                class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-widest animate-pulse">Pendiente</span>
+                            <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-widest animate-pulse">Pendiente</span>
                             {% endif %}
-                        </td>
-                        <td class="px-8 py-5">
-                            <div class="flex gap-2">
-                                {% if mov.tipo == 'INGRESO' %}
-                                <a href="{% url 'imprimir_ticket' mov.id %}" target="_blank"
-                                    class="p-2 text-gray-400 hover:text-blue-600 transition-colors" title="Ver Recibo">
-                                    <i class="fas fa-receipt"></i>
-                                </a>
-                                {% else %}
-                                <button class="p-2 text-gray-200 cursor-not-allowed" disabled
-                                    title="No disponible para deudas">
-                                    <i class="fas fa-receipt"></i>
-                                </button>
-                                {% endif %}
-                                {% if mov.es_mora %}
-                                <button class="p-2 text-red-400 hover:text-red-600 transition-colors"
-                                    title="Enviar Recordatorio"><i class="fas fa-bell"></i></button>
-                                {% endif %}
-                            </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="7" class="py-20 text-center">
-                            <i class="fas fa-inbox text-gray-200 text-5xl mb-4"></i>
+                            <i class="fas fa-inbox text-gray-600 text-5xl mb-4"></i>
                             <p class="text-gray-400 font-bold uppercase tracking-widest">Sin movimientos registrados</p>
                         </td>
                     </tr>
@@ -255,46 +278,158 @@
     </div>
 </div>
 
-<!-- SCRIPTS DE GRÁFICOS -->
+<!-- MODAL REGISTRAR GASTO -->
+<div id="modal-gasto" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+                <i class="fas fa-minus-circle mr-2 text-rose-500"></i> Registrar Gasto
+            </h3>
+            <button onclick="closeModalGasto()" class="text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'registrar_gasto' %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Fecha</label>
+                <input type="date" name="fecha" required value="{{ today_str }}"
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Concepto / Categoría</label>
+                <select name="concepto" required
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500">
+                    <option value="Laboratorio">Laboratorio</option>
+                    <option value="Nómina">Nómina</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Insumos Externos">Insumos Externos</option>
+                    <option value="Otros">Otros</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Monto ($)</label>
+                <input type="number" step="0.01" name="monto" required min="0.01" placeholder="0.00"
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Método de Pago</label>
+                <select name="metodo_pago" required
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-rose-500">
+                    <option value="EFECTIVO">💵 Efectivo</option>
+                    <option value="TRANSFERENCIA">📱 Transferencia</option>
+                    <option value="TARJETA">💳 Tarjeta</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Notas / Detalle</label>
+                <textarea name="notas" rows="2" placeholder="Notas opcionales..."
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-rose-500"></textarea>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeModalGasto()"
+                    class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-xl transition-all border border-slate-700">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-xl transition-all">
+                    Registrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EXPORTAR CONTABLE -->
+<div id="modal-export" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-white flex items-center">
+                <i class="fas fa-file-export mr-2 text-emerald-400"></i> Exportar Cierre de Caja
+            </h3>
+            <button onclick="closeExportModal()" class="text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <p class="text-xs text-gray-400 mb-4 font-medium">Genera y descarga un reporte consolidado con el desglose de ingresos por método de pago y gastos externos.</p>
+        
+        <form method="GET" action="{% url 'exportar_finanzas' %}" target="_blank" class="space-y-4">
+            <input type="hidden" name="fecha_inicio" value="{{ fecha_inicio|default:'' }}">
+            <input type="hidden" name="fecha_fin" value="{{ fecha_fin|default:'' }}">
+            
+            <div>
+                <label class="block text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Formato de Salida</label>
+                <select name="format" required
+                    class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500">
+                    <option value="excel">📊 Excel CSV (Data completa)</option>
+                    <option value="pdf">📄 PDF Imprimible (Cierre Detallado)</option>
+                </select>
+            </div>
+            
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeExportModal()"
+                    class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-xl transition-all border border-slate-700">
+                    Cancelar
+                </button>
+                <button type="submit" onclick="setTimeout(closeExportModal, 500)"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-all">
+                    Generar Reporte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SCRIPTS DE GRÁFICOS Y FILTROS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const FINANCE_DATA = {
         labelsFlujo: JSON.parse('{{ labels_flujo_json|safe }}'),
         dataFlujo: JSON.parse('{{ data_flujo_json|safe }}'),
+        dataEgresosFlujo: JSON.parse('{{ data_egresos_flujo_json|safe }}'),
         labelsTratamientos: JSON.parse('{{ labels_tratamientos_json|safe }}'),
         dataTratamientos: JSON.parse('{{ data_tratamientos_json|safe }}')
     };
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Configuración común
         Chart.defaults.font.family = 'Inter';
         Chart.defaults.color = '#94a3b8';
 
-        // 1. Gráfico de Líneas (Flujo)
+        // 1. Gráfico de Área Apilada / Doble Línea (Ingresos vs Gastos)
         const ctxFlujo = document.getElementById('chartFlujo').getContext('2d');
         new Chart(ctxFlujo, {
             type: 'line',
             data: {
                 labels: FINANCE_DATA.labelsFlujo,
-                datasets: [{
-                    label: 'Ingresos ($)',
-                    data: FINANCE_DATA.dataFlujo,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#3b82f6'
-                }]
+                datasets: [
+                    {
+                        label: 'Ingresos Brutos ($)',
+                        data: FINANCE_DATA.dataFlujo,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3
+                    },
+                    {
+                        label: 'Gastos + Comisiones ($)',
+                        data: FINANCE_DATA.dataEgresosFlujo,
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: true, labels: { boxWidth: 12 } } },
                 scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [5, 5], drawBorder: false } },
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5], color: 'rgba(255, 255, 255, 0.05)', drawBorder: false } },
                     x: { grid: { display: false } }
                 }
             }
@@ -308,8 +443,8 @@
                 labels: FINANCE_DATA.labelsTratamientos,
                 datasets: [{
                     data: FINANCE_DATA.dataTratamientos,
-                    backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
-                    hoverOffset: 15,
+                    backgroundColor: ['#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6'],
+                    hoverOffset: 12,
                     borderWidth: 0
                 }]
             },
@@ -317,11 +452,54 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, padding: 20, font: { size: 11 } } }
+                    legend: { position: 'bottom', labels: { boxWidth: 10, padding: 20, font: { size: 11 }, color: '#fff' } }
                 },
                 cutout: '70%'
             }
         });
     });
+
+    // Filtros de Pestañas JS
+    function filterType(tipo) {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('bg-emerald-600', 'text-white');
+            b.classList.add('text-gray-400');
+        });
+        document.getElementById(`tab-${tipo}`).classList.remove('text-gray-400');
+        document.getElementById(`tab-${tipo}`).classList.add('bg-emerald-600', 'text-white');
+
+        const rows = document.querySelectorAll('.tx-row');
+        rows.forEach(r => {
+            if (tipo === 'ALL') {
+                r.style.display = '';
+            } else if (r.getAttribute('data-tipo') === tipo) {
+                r.style.display = '';
+            } else {
+                r.style.display = 'none';
+            }
+        });
+    }
+
+    // Modal Gasto
+    function openModalGasto() {
+        document.getElementById('modal-gasto').classList.remove('hidden');
+        document.getElementById('modal-gasto').classList.add('flex');
+    }
+
+    function closeModalGasto() {
+        document.getElementById('modal-gasto').classList.remove('flex');
+        document.getElementById('modal-gasto').classList.add('hidden');
+    }
+
+    // Modal Exportar
+    function openExportModal() {
+        document.getElementById('modal-export').classList.remove('hidden');
+        document.getElementById('modal-export').classList.add('flex');
+    }
+
+    function closeExportModal() {
+        document.getElementById('modal-export').classList.remove('flex');
+        document.getElementById('modal-export').classList.add('hidden');
+    }
 </script>
 {% endblock %}

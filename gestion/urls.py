@@ -49,4 +49,12 @@ urlpatterns = [
     path('pacientes/<int:pk>/editar-rapido/', views.editar_paciente_rapido, name='editar_paciente_rapido'),
     path('staff/', views.gestion_doctores, name='gestion_doctores'),
     path('configuracion/respaldo/', views.descargar_respaldo, name='descargar_respaldo'),
+    path('api/citas/<int:pk>/cambiar-estado/', views.api_cambiar_estado, name='api_cambiar_estado'),
+    
+    path('api/inventario/<int:pk>/detalle/', views.api_detalle_producto, name='api_detalle_producto'),
+    path('inventario/lote/crear/', views.registrar_lote, name='registrar_lote'),
+    path('inventario/editar-minimo/', views.editar_producto_minimo, name='editar_producto_minimo'),
+    
+    path('finanzas/gasto/crear/', views.registrar_gasto, name='registrar_gasto'),
+    path('finanzas/exportar/', views.exportar_finanzas, name='exportar_finanzas'),
 ]
