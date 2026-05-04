@@ -76,7 +76,7 @@
                                         <p class="text-xs font-bold text-gray-400">{{ cita.tratamiento.nombre|default:"Consulta" }}</p>
                                         <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
                                         <span class="text-[10px] font-black uppercase" style="color: {{ cita.doctor.color_agenda|default:'#3b82f6' }}">
-                                            Dr. {{ cita.doctor.nombre|default:"General" }}
+                                            {{ cita.doctor.nombre|default:"General" }}
                                         </span>
                                     </div>
                                 </div>

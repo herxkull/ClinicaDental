@@ -129,3 +129,5 @@
 [2026-05-03 17:20:39,831] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
 [2026-05-03 17:20:41,923] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
 [2026-05-03 17:20:42,395] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: MODIFICACION_ODONTOGRAMA | DETAILS: Paciente: Ana Guevara (ID: 22)
+[2026-05-03 18:30:28,985] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: FINALIZAR_CITA_COBRO | DETAILS: Paciente: Isabel la Católica | Monto: 80.00
+[2026-05-03 18:32:11,603] [INFO] [gestion.audit] [Tenant:Peluca Smile] [User:elpelucasabee15@gmail.com] ACTION: REGISTRAR_PAGO | DETAILS: Pago de 60.0 para Napoleón Bonaparte (Abono General)

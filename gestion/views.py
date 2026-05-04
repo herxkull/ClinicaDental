@@ -80,9 +80,9 @@ def dashboard(request):
     total_pacientes = Paciente.objects.count()
     
     # --- PRÓXIMAS CITAS (Elegante y compacto) ---
-    citas_proximas = Cita.objects.select_related('paciente', 'tratamiento').filter(
-        fecha__gte=hoy
-    ).exclude(estado='COMPLETADA').order_by('fecha', 'hora')[:5]
+    citas_proximas = Cita.objects.select_related('paciente', 'tratamiento', 'doctor').filter(
+        fecha=hoy
+    ).order_by('hora')[:5]
 
     # --- ALERTAS DE STOCK CRÍTICO ---
     productos_criticos = Producto.objects.filter(cantidad_actual__lte=F('stock_minimo')).order_by('cantidad_actual')
